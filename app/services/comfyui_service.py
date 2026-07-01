@@ -129,6 +129,14 @@ class ComfyUIService:
                     videos.extend(
                         item for item in value if isinstance(item, dict) and item.get("filename")
                     )
+            image_descriptors = output.get("images", [])
+            if isinstance(image_descriptors, list):
+                videos.extend(
+                    item
+                    for item in image_descriptors
+                    if isinstance(item, dict)
+                    and str(item.get("filename", "")).lower().endswith((".mp4", ".webm"))
+                )
         return videos
 
     async def download_output_image(self, image_info: dict[str, Any]) -> bytes:
