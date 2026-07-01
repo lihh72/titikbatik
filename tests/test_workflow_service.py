@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from app.services.workflow_service import WorkflowService
@@ -53,6 +54,14 @@ def test_video_workflow_uses_costume_at_512_square_without_audio():
     assert prompt["75"]["inputs"]["filename_prefix"] == "video_test"
     assert prompt["320:300"]["inputs"]["value"] == 25
     assert prompt["320:301"]["inputs"]["value"] == 5
+
+
+def test_video_workflow_source_is_saved_without_audio_at_512_square():
+    workflow = json.loads(Path("workflows/videobatik.json").read_text(encoding="utf-8"))
+
+    assert workflow["320:312"]["inputs"]["value"] == 512
+    assert workflow["320:299"]["inputs"]["value"] == 512
+    assert "audio" not in workflow["320:310"]["inputs"]
 
 
 def test_inspect_workflows_reports_nodes():
