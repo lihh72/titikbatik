@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 
 import httpx
 import pytest
@@ -120,3 +121,14 @@ async def test_compatibility_api_keeps_single_video_filename(client, session):
 
     assert response.status_code == 200
     assert response.json()["batiks"][0]["file_video"] == "fashion.mp4"
+
+
+def test_admin_web_contains_video_controls_and_preview():
+    html = Path("app/web/index.html").read_text(encoding="utf-8")
+    javascript = Path("app/web/static/admin.js").read_text(encoding="utf-8")
+
+    assert 'name="video_enabled"' in html
+    assert "video_enabled" in javascript
+    assert "<video" in javascript
+    assert "muted" in javascript
+    assert "regenerate-video" in javascript
