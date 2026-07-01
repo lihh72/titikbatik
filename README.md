@@ -66,10 +66,19 @@ python scripts/inspect_workflows.py
 ```powershell
 cd C:\Users\faihi\OneDrive\Dokumen\GitHub\titikbatik
 python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 copy .env.example .env
 ```
+
+Linux/macOS:
+
+```bash
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r requirements.txt
+cp .env.example .env
+```
+
+Runner `app.dev`, `app.server`, dan `app.worker` otomatis berpindah ke interpreter `.venv` jika perintah dijalankan dari Python global yang belum mempunyai dependensi proyek.
 
 Edit `.env`, terutama:
 
@@ -143,9 +152,10 @@ Buka terminal kedua jika API dijalankan terpisah:
 
 ```powershell
 cd C:\Users\faihi\OneDrive\Dokumen\GitHub\titikbatik
-.venv\Scripts\activate
 python -m app.worker
 ```
+
+Jika `.venv` belum dibuat, selesaikan langkah instalasi terlebih dahulu. Perintah langsung tanpa bootstrap juga tersedia melalui `.\.venv\Scripts\python.exe -m app.worker` di Windows atau `./.venv/bin/python -m app.worker` di Linux/macOS.
 
 Worker akan:
 

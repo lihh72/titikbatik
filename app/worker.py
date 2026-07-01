@@ -2,6 +2,10 @@ import asyncio
 import logging
 from pathlib import Path
 
+from app.runtime import ensure_project_runtime
+
+ensure_project_runtime("app.worker", ("sqlalchemy", "httpx", "PIL"))
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
