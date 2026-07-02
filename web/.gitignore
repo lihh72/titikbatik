@@ -1,0 +1,36 @@
+# Next.js
+node_modules/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*
+!.env.example
+
+# Python / FastAPI
+backend/venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Database lokal
+*.db
+*.sqlite
+*.sqlite3
+
+# ComfyUI outputs
+output/
+temp/
+
+# Editor dan OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
