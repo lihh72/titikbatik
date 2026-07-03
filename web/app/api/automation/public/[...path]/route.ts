@@ -5,7 +5,7 @@ type RouteContext = { params: Promise<{ path: string[] }> };
 export async function GET(request: Request, context: RouteContext) {
   const segments = (await context.params).path;
   const path = safeBackendPath(segments);
-  if (!path || segments[0] !== "batiks") {
+  if (!path || !["batiks", "images"].includes(segments[0])) {
     return Response.json({ success: false, message: "Endpoint publik tidak tersedia.", errors: {} }, { status: 404 });
   }
   return proxyBackendRequest(request, `/api/v1/${path}`, false);
