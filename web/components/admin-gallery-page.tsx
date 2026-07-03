@@ -1,58 +1,94 @@
 "use client";
 
-import { useApp } from "@/components/app-provider";
-import { MotifArt } from "@/components/motif-art";
-import { CheckCircle2, Eye, EyeOff, GalleryHorizontalEnd, Search, ShieldCheck } from "lucide-react";
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { BatikMedia } from "@/components/batik-media";
+import { deleteBatik, listAdminBatiks, publishBatik, regenerateCostume, regenerateVideo, unpublishBatik, updateBatik } from "@/lib/automation-api";
+import type { Batik } from "@/lib/automation-types";
+import { AlertCircle, Eye, EyeOff, LoaderCircle, RefreshCw, Save, Shirt, Trash2, Video } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+
+const inputClass = "w-full border border-white/12 bg-black/25 px-3 py-2 text-sm outline-none focus:border-[#ff9d42]/60";
 
 export function AdminGalleryPage() {
-  const { history, publishedIds, publishResult, unpublishResult } = useApp();
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "draft" | "published">("all");
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [items, setItems] = useState<Batik[]>([]);
+  const [selected, setSelected] = useState<Batik | null>(null);
+  const [draft, setDraft] = useState({ keyword: "", warna: "", style: "" });
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  async function changePublication(id: string, published: boolean) {
-    setBusyId(id);
+
+  const select = useCallback((batik: Batik | null) => {
+    setSelected(batik);
+    setDraft({ keyword: batik?.keyword ?? "", warna: batik?.warna ?? "", style: batik?.style ?? "" });
+  }, []);
+
+  const load = useCallback(async (preferredId?: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listAdminBatiks({ limit: 200, offset: 0 });
+      setItems(data);
+      select(data.find((item) => item.id === preferredId) ?? data[0] ?? null);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Data batik gagal dimuat.");
+    } finally {
+      setLoading(false);
+    }
+  }, [select]);
+
+  useEffect(() => {
+    let active = true;
+    listAdminBatiks({ limit: 200, offset: 0 })
+      .then((data) => { if (active) { setItems(data); select(data[0] ?? null); } })
+      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Data batik gagal dimuat."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [select]);
+
+  async function perform(action: () => Promise<unknown>, success: string, keepSelection = true) {
+    if (!selected) return;
+    const id = selected.id;
+    setBusy(true);
+    setError(null);
     setNotice(null);
     try {
-      const response = await fetch(`/api/admin/gallery/${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ published }),
-      });
-      if (!response.ok && response.status !== 404 && response.status !== 503) {
-        const payload = await response.json().catch(() => ({})) as { detail?: string };
-        throw new Error(payload.detail ?? "Status publikasi gagal diperbarui.");
-      }
-      if (published) publishResult(id); else unpublishResult(id);
-      setNotice(response.ok
-        ? (published ? "Karya berhasil dipublikasikan ke galeri backend." : "Karya berhasil ditarik dari galeri backend.")
-        : "FastAPI belum menyimpan hasil ini; status publikasi tetap diterapkan pada mode lokal.");
+      await action();
+      setNotice(success);
+      await load(keepSelection ? id : undefined);
     } catch (reason) {
-      setNotice(reason instanceof Error ? reason.message : "Status publikasi gagal diperbarui.");
+      setError(reason instanceof Error ? reason.message : "Aksi batik gagal.");
     } finally {
-      setBusyId(null);
+      setBusy(false);
     }
   }
 
-  const visible = useMemo(() => history.filter((item) => {
-    const published = publishedIds.includes(item.id);
-    const matchFilter = filter === "all" || (filter === "published" ? published : !published);
-    const normalized = query.trim().toLowerCase();
-    const matchQuery = !normalized || [item.title, item.stage, item.prompt].join(" ").toLowerCase().includes(normalized);
-    return matchFilter && matchQuery;
-  }), [history, publishedIds, query, filter]);
-
   return (
     <main className="mx-auto max-w-[1480px] px-4 pb-10 sm:px-6 lg:px-8">
-      <section className="glass-panel rounded-[34px] p-6 sm:p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-xs uppercase tracking-[.2em] text-[#ffb66c]"><span className="h-px w-8 bg-[#ff9d42]" />Kurasi Galeri</div><h1 className="mt-4 text-3xl font-semibold tracking-[-.035em] sm:text-5xl">Tentukan karya yang boleh dilihat publik.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-white/48">Hasil baru bersifat draft. Tekan Publikasikan hanya setelah motif selesai diperiksa.</p></div><div className="glass-soft flex items-center gap-2 rounded-full px-4 py-2.5 text-xs text-white/55"><ShieldCheck size={14} className="text-[#ffad5d]" />{publishedIds.length} karya publik</div></div>
-        <div className="mt-8 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]"><label className="glass-soft flex items-center gap-3 rounded-2xl px-4 py-3"><Search size={17} className="text-white/35" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari hasil generate..." className="w-full bg-transparent text-sm outline-none placeholder:text-white/28" /></label><div className="flex gap-2">{(["all", "draft", "published"] as const).map((value) => <button key={value} onClick={() => setFilter(value)} className={`rounded-full border px-4 py-2 text-xs capitalize transition ${filter === value ? "border-[#ff9d42]/45 bg-[#ff9d42]/14 text-[#ffbd7e]" : "border-white/10 bg-white/4 text-white/45 hover:text-white"}`}>{value === "all" ? "Semua" : value === "draft" ? "Draft" : "Published"}</button>)}</div></div>
-      </section>
-      {notice && <div className="mt-4 rounded-2xl border border-[#ff9d42]/20 bg-[#ff9d42]/8 px-4 py-3 text-sm text-[#ffd2a2]">{notice}</div>}
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6"><div><p className="text-xs uppercase text-[#ffb66c]">Batik Results</p><h1 className="mt-3 text-3xl font-semibold">Preview, costume, video, dan publikasi</h1><p className="mt-3 text-sm text-white/45">Seluruh media dan status berasal dari SQLite serta storage automation.</p></div><button onClick={() => void load(selected?.id)} disabled={loading} className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/6" title="Muat ulang"><RefreshCw size={17} className={loading ? "animate-spin" : ""} /></button></header>
+      {error && <div className="mt-5 flex gap-2 border border-red-400/20 bg-red-400/8 p-4 text-sm text-red-100/80"><AlertCircle size={17} />{error}</div>}
+      {notice && <div className="mt-5 border border-emerald-400/20 bg-emerald-400/8 p-4 text-sm text-emerald-100/80">{notice}</div>}
+      {loading && !items.length ? <div className="flex items-center gap-2 py-16 text-sm text-white/45"><LoaderCircle size={17} className="animate-spin" />Memuat hasil...</div> :
+        <div className="mt-6 grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <section className="max-h-[780px] overflow-auto border border-white/10">{items.map((batik) => <button key={batik.id} onClick={() => select(batik)} className={`block w-full border-b border-white/8 p-4 text-left ${selected?.id === batik.id ? "bg-[#ff9d42]/12" : "bg-black/15 hover:bg-white/5"}`}><div className="flex items-center justify-between gap-3"><span className="truncate text-sm">#{batik.id} {batik.keyword}</span><span className={batik.is_published ? "text-xs text-emerald-300" : "text-xs text-white/35"}>{batik.is_published ? "Publik" : "Draft"}</span></div><p className="mt-2 truncate text-xs text-white/35">{batik.style} · {batik.warna}</p></button>)}{!items.length && <p className="p-6 text-sm text-white/40">Belum ada hasil batik.</p>}</section>
 
-      {visible.length ? <section className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visible.map((item) => { const published = publishedIds.includes(item.id); return <article key={item.id} className="glass-panel overflow-hidden rounded-[28px] p-2.5"><div className="relative aspect-[1.3] overflow-hidden rounded-[22px] bg-black/25"><MotifArt id={`publish-${item.id}`} variant={item.variant} colors={item.colors} seamless={item.stage === "seamless"} className="h-full w-full" /><span className={`absolute left-4 top-4 flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.14em] backdrop-blur-xl ${published ? "border-emerald-300/25 bg-emerald-400/15 text-emerald-100" : "border-white/15 bg-black/35 text-white/60"}`}>{published ? <Eye size={13} /> : <EyeOff size={13} />}{published ? "Published" : "Draft"}</span></div><div className="p-4"><div className="text-[10px] uppercase tracking-[.15em] text-[#ffb66c]">{item.stage}</div><h2 className="mt-2 font-semibold">{item.title}</h2><p className="mt-3 line-clamp-2 text-xs leading-5 text-white/38">{item.prompt}</p><button onClick={() => changePublication(item.id, !published)} disabled={busyId === item.id} className={`mt-5 flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition hover:scale-[1.02] ${published ? "border border-white/12 bg-white/6 text-white/65 hover:bg-white/10" : "bg-[#ff9d42] text-[#201307] hover:bg-[#ffb363]"}`}>{published ? <EyeOff size={15} /> : <CheckCircle2 size={15} />}{busyId === item.id ? "Menyimpan..." : published ? "Tarik dari Galeri" : "Publikasikan"}</button></div></article>; })}</section> : <section className="glass-panel mt-7 rounded-[34px] p-12 text-center"><GalleryHorizontalEnd size={38} className="mx-auto text-white/20" /><h2 className="mt-5 text-xl font-semibold">Belum ada hasil untuk dikurasi.</h2><p className="mt-2 text-sm text-white/40">Buat hasil baru melalui Studio AI.</p><Link href="/admin/studio" className="mt-6 inline-flex rounded-full bg-[#ff9d42] px-5 py-3 text-sm font-semibold text-[#201307]">Buka Studio AI</Link></section>}
+          {selected && <section className="min-w-0 space-y-5">
+            <div className="grid gap-5 border border-white/10 bg-white/4 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+              <BatikMedia batik={selected} />
+              <div>
+                <p className="text-xs uppercase text-[#ffb66c]">Batik #{selected.id}</p>
+                <div className="mt-4 space-y-3"><label className="block text-xs text-white/45">Keyword<input className={`${inputClass} mt-1`} value={draft.keyword} onChange={(event) => setDraft((value) => ({ ...value, keyword: event.target.value }))} /></label><label className="block text-xs text-white/45">Warna<input className={`${inputClass} mt-1`} value={draft.warna} onChange={(event) => setDraft((value) => ({ ...value, warna: event.target.value }))} /></label><label className="block text-xs text-white/45">Style<input className={`${inputClass} mt-1`} value={draft.style} onChange={(event) => setDraft((value) => ({ ...value, style: event.target.value }))} /></label></div>
+                <button disabled={busy} onClick={() => void perform(() => updateBatik(selected.id, draft), "Metadata batik disimpan.")} className="mt-4 flex w-full items-center justify-center gap-2 border border-white/12 px-4 py-2.5 text-sm"><Save size={15} />Simpan metadata</button>
+                <div className="mt-5 grid gap-2">
+                  <button disabled={busy} onClick={() => void perform(() => selected.is_published ? unpublishBatik(selected.id) : publishBatik(selected.id), selected.is_published ? "Batik ditarik dari galeri publik." : "Batik dipublikasikan.")} className="flex items-center justify-center gap-2 bg-[#ff9d42] px-4 py-2.5 text-sm font-semibold text-[#201307]">{selected.is_published ? <EyeOff size={15} /> : <Eye size={15} />}{selected.is_published ? "Unpublish" : "Publish"}</button>
+                  <button disabled={busy} onClick={() => void perform(() => regenerateCostume(selected.id), "Regenerate costume masuk antrean.")} className="flex items-center justify-center gap-2 border border-white/12 px-4 py-2.5 text-sm"><Shirt size={15} />Regenerate costume</button>
+                  <button disabled={busy} onClick={() => void perform(() => regenerateVideo(selected.id), "Regenerate video masuk antrean.")} className="flex items-center justify-center gap-2 border border-white/12 px-4 py-2.5 text-sm"><Video size={15} />Regenerate video</button>
+                  <button disabled={busy} onClick={() => { if (window.confirm(`Hapus batik #${selected.id}?`)) void perform(() => deleteBatik(selected.id), "Batik dihapus.", false); }} className="flex items-center justify-center gap-2 border border-red-300/20 px-4 py-2.5 text-sm text-red-200"><Trash2 size={15} />Hapus</button>
+                </div>
+                <div className="mt-5 text-xs leading-5 text-white/35"><p>Seed: {selected.seed}</p><p>Prompt hash: {selected.prompt_hash}</p><p>Dibuat: {new Date(selected.created_at).toLocaleString("id-ID")}</p></div>
+              </div>
+            </div>
+          </section>}
+        </div>}
     </main>
   );
 }
