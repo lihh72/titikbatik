@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createGenerationBatch, listBatches, uploadCostumeTemplate } from "@/lib/automation-api";
+import { createGenerationBatch, listBatches, listPublicBatiks, uploadCostumeTemplate } from "@/lib/automation-api";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -80,5 +80,22 @@ describe("automation API client", () => {
     );
 
     await expect(listBatches()).rejects.toThrow("At least one active costume template is required");
+  });
+
+  it("maps relative backend media paths to the Next.js image proxy", async () => {
+    const batik = {
+      id: 1, keyword: "kawung", warna: "biru", style: "modern", seed: 4,
+      positive_prompt: null, negative_prompt: null, file_preview: "preview.webp", file_video: null,
+      prompt_hash: "hash", is_published: true, created_at: "2026-07-03T00:00:00Z", updated_at: "2026-07-03T00:00:00Z",
+      preview_url: "/api/image/preview.webp", costume_urls: ["/api/image/costume.webp"],
+      costume_files: [{ id: 2, filename: "costume.webp", file_video: "video.mp4", video_url: "/api/image/video.mp4", template_id: null, template: null, sort_order: 0, created_at: "2026-07-03T00:00:00Z" }],
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: true, message: "ok", data: { items: [batik], pagination: { page: 1, per_page: 32, total: 1, total_pages: 1 } } }), { status: 200, headers: { "Content-Type": "application/json" } })));
+
+    const result = await listPublicBatiks();
+
+    expect(result.items[0].preview_url).toBe("/api/automation/public/images/preview/preview.webp");
+    expect(result.items[0].costume_urls[0]).toBe("/api/automation/public/images/costume/costume.webp");
+    expect(result.items[0].costume_files[0].video_url).toBe("/api/automation/public/images/video/video.mp4");
   });
 });

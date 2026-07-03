@@ -50,10 +50,10 @@ export function AdminLoginPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_32%_26%,rgba(255,157,66,.22),transparent_25%),linear-gradient(145deg,rgba(20,55,52,.88),rgba(12,12,14,.75))]" />
             <div className="relative flex h-full flex-col justify-between">
               <div>
-                <div className="flex items-center gap-3"><LogoMark /><div><strong className="block">TitikBatik AI</strong><span className="text-xs text-white/38">Internal Creative Studio</span></div></div>
+                <div className="flex items-center gap-3"><LogoMark /><div><strong className="block">TitikBatik AI</strong><span className="text-xs text-white/38">Automation Admin</span></div></div>
                 <span className="mt-10 inline-flex items-center gap-2 rounded-full border border-[#ff9d42]/25 bg-[#ff9d42]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.18em] text-[#ffbd7e]"><ShieldCheck size={14} />Area terbatas</span>
-                <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight tracking-[-.04em] sm:text-5xl">Tujuh fitur AI hanya untuk administrator dan tim internal.</h1>
-                <p className="mt-5 max-w-lg leading-7 text-white/50">Pengguna umum hanya dapat melihat koleksi yang telah dikurasi dan dipublikasikan melalui galeri.</p>
+                <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">Automation Titik Batik hanya untuk administrator.</h1>
+                <p className="mt-5 max-w-lg leading-7 text-white/50">Kelola generation, batch, hasil batik, wordlist, template costume, dan settings dari satu panel internal.</p>
               </div>
               <Link href="/" className="mt-10 inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2.5 text-sm text-white/60 transition hover:bg-white/10 hover:text-white"><ArrowLeft size={15} />Kembali ke galeri publik</Link>
             </div>
@@ -62,7 +62,7 @@ export function AdminLoginPage() {
           <div className="p-7 sm:p-12 lg:p-14">
             <div className="mx-auto max-w-md">
               <div className="text-xs uppercase tracking-[.18em] text-[#ffb66c]">Autentikasi administrator</div>
-              <h2 className="mt-3 text-3xl font-semibold">Masuk ke studio internal</h2>
+              <h2 className="mt-3 text-3xl font-semibold">Masuk ke panel automation</h2>
               <p className="mt-3 text-sm leading-6 text-white/42">Gunakan akun admin yang ditentukan pada file <code className="text-white/65">.env.local</code>.</p>
 
               <form onSubmit={submit} className="mt-8 space-y-4">

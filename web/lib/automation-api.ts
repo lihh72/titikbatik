@@ -47,6 +47,25 @@ function queryString(values: Record<string, string | number | boolean | null | u
   return encoded ? `?${encoded}` : "";
 }
 
+function mediaUrl(category: "preview" | "costume" | "video", filename: string | null | undefined) {
+  return filename ? `${PUBLIC_BASE}/images/${category}/${encodeURIComponent(filename)}` : null;
+}
+
+export function normalizeBatikMedia(batik: Batik): Batik {
+  const costumeFiles = batik.costume_files.map((costume) => ({
+    ...costume,
+    video_url: mediaUrl("video", costume.file_video),
+  }));
+  return {
+    ...batik,
+    preview_url: mediaUrl("preview", batik.file_preview),
+    costume_urls: costumeFiles.length
+      ? costumeFiles.map((costume) => mediaUrl("costume", costume.filename) as string)
+      : batik.costume_urls,
+    costume_files: costumeFiles,
+  };
+}
+
 export const getDashboard = () => automationRequest<DashboardData>(`${ADMIN_BASE}/dashboard`);
 
 export const createGenerationBatch = (request: GenerationBatchCreate) =>
@@ -72,13 +91,14 @@ export const listBatchJobs = (batchId: string) =>
 export const getGenerationJob = (jobId: string) =>
   automationRequest<GenerationJob>(`${ADMIN_BASE}/generation-jobs/${encodeURIComponent(jobId)}`);
 
-export const listAdminBatiks = (options: { limit?: number; offset?: number } = {}) =>
-  automationRequest<Batik[]>(`${ADMIN_BASE}/batiks${queryString({ limit: options.limit, offset: options.offset })}`);
+export const listAdminBatiks = async (options: { limit?: number; offset?: number } = {}) =>
+  (await automationRequest<Batik[]>(`${ADMIN_BASE}/batiks${queryString({ limit: options.limit, offset: options.offset })}`))
+    .map(normalizeBatikMedia);
 
-export const getAdminBatik = (id: number) => automationRequest<Batik>(`${ADMIN_BASE}/batiks/${id}`);
+export const getAdminBatik = async (id: number) => normalizeBatikMedia(await automationRequest<Batik>(`${ADMIN_BASE}/batiks/${id}`));
 
-export const updateBatik = (id: number, values: Partial<Pick<Batik, "keyword" | "warna" | "style" | "is_published">>) =>
-  automationRequest<Batik>(`${ADMIN_BASE}/batiks/${id}`, jsonRequest("PATCH", values));
+export const updateBatik = async (id: number, values: Partial<Pick<Batik, "keyword" | "warna" | "style" | "is_published">>) =>
+  normalizeBatikMedia(await automationRequest<Batik>(`${ADMIN_BASE}/batiks/${id}`, jsonRequest("PATCH", values)));
 
 export const deleteBatik = (id: number) => automationRequest<unknown>(`${ADMIN_BASE}/batiks/${id}`, { method: "DELETE" });
 export const publishBatik = (id: number) => automationRequest<unknown>(`${ADMIN_BASE}/batiks/${id}/publish`, jsonRequest("POST"));
@@ -118,7 +138,7 @@ export const listPublicBatiks = (options: { page?: number; perPage?: number; que
   const path = options.query ? "batiks/search" : "batiks";
   return automationRequest<PublicBatikList>(
     `${PUBLIC_BASE}/${path}${queryString({ q: options.query, page: options.page, per_page: options.perPage })}`,
-  );
+  ).then((result) => ({ ...result, items: result.items.map(normalizeBatikMedia) }));
 };
 
-export const getPublicBatik = (id: number) => automationRequest<Batik>(`${PUBLIC_BASE}/batiks/${id}`);
+export const getPublicBatik = async (id: number) => normalizeBatikMedia(await automationRequest<Batik>(`${PUBLIC_BASE}/batiks/${id}`));
