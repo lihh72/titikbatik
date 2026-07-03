@@ -1,71 +1,75 @@
 # TitikBatik AI Web
 
-Aplikasi Next.js untuk galeri publik dan area administrator Titik Batik. Backend FastAPI, worker ComfyUI, database, storage, serta admin sederhana bawaan backend berada terpisah di folder `../automation`.
+Aplikasi Next.js untuk galeri publik dan pengelolaan automation Titik Batik. FastAPI, durable worker, SQLite, storage, dan admin backend berada di `../automation`.
 
-## Menjalankan Frontend
+## Konfigurasi
 
-Windows:
+Salin file environment frontend:
 
 ```powershell
 cd C:\path\to\titikbatik\web
-copy .env.example .env.local
-npm.cmd install
-npm.cmd run dev
+Copy-Item .env.example .env.local
 ```
 
-Linux/macOS:
+Isi `web/.env.local`:
 
-```bash
-cd /path/to/titikbatik/web
-cp .env.example .env.local
-npm install
-npm run dev
+```env
+INTERNAL_API_URL=http://127.0.0.1:8000
+ADMIN_API_KEY=nilai-yang-sama-dengan-automation
+ADMIN_EMAIL=admin@titikbatik.local
+ADMIN_PASSWORD=replace-with-a-strong-password
+ADMIN_SESSION_TOKEN=replace-with-a-long-random-session-token
 ```
 
-Buka `http://localhost:3000`.
+`ADMIN_API_KEY` wajib sama dengan nilai pada `automation/.env`. Key hanya dibaca route handler Next.js dan tidak dikirim ke browser.
 
-## Menjalankan Automation Backend
+## Menjalankan
 
-Windows:
+Terminal pertama menjalankan FastAPI dan worker:
 
 ```powershell
 cd C:\path\to\titikbatik\automation
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-copy .env.example .env
+Copy-Item .env.example .env
 python -m app.dev
 ```
 
-Linux/macOS:
+Terminal kedua menjalankan web:
 
-```bash
-cd /path/to/titikbatik/automation
-python3 -m venv .venv
-./.venv/bin/python -m pip install -r requirements.txt
-cp .env.example .env
-python3 -m app.dev
+```powershell
+cd C:\path\to\titikbatik\web
+npm.cmd install
+npm.cmd run dev
 ```
 
-API tersedia di `http://127.0.0.1:8000`, dokumentasi di `/docs`, dan admin sederhana bawaan automation di `/admin`.
+Linux/macOS menggunakan perintah yang sama dengan `python3`, `./.venv/bin/python`, dan `npm`.
 
-## Konfigurasi Frontend
+Alamat aplikasi:
 
-Salin `web/.env.example` menjadi `web/.env.local`, lalu atur:
+- Web: `http://localhost:3000`
+- Login admin: `http://localhost:3000/admin/login`
+- FastAPI: `http://127.0.0.1:8000`
+- Dokumentasi API: `http://127.0.0.1:8000/docs`
 
-```env
-INTERNAL_API_URL=http://127.0.0.1:8000
-ADMIN_EMAIL=admin@titikbatik.local
-ADMIN_PASSWORD=replace-with-a-strong-password
-ADMIN_SESSION_TOKEN=replace-with-a-long-random-session-token
-ADMIN_API_TOKEN=replace-with-a-long-random-api-token
-ALLOW_LOCAL_DEMO=true
-```
+## Fitur Admin
 
-Route handler Next.js saat ini masih mengikuti kontrak API web sebelumnya. Saat integrasi automation dilakukan, mapping endpoint dan header admin perlu disesuaikan dengan API di `../automation`; backend demo lama di `web/backend` sudah dihapus agar tidak ada dua sumber backend.
+- Dashboard kesehatan FastAPI, worker, dan ComfyUI.
+- Generation batch dengan mode random, mixed, atau fixed.
+- Pipeline generate, combine costume, dan video 720x1280 tanpa audio.
+- Pemantauan batch/job, cancel, serta retry pekerjaan gagal.
+- Preview pasangan motif, costume, dan video.
+- Publish, unpublish, hapus, regenerate costume, dan regenerate video.
+- CRUD dan import wordlist.
+- Upload serta pengelolaan costume template.
+- Penyimpanan app settings.
+
+Semua proses generation bersifat asynchronous. Web menampilkan status yang disimpan worker; tidak ada fallback hasil simulasi ketika FastAPI atau ComfyUI mati.
 
 ## Pemeriksaan
 
 ```powershell
+npm.cmd test
 npm.cmd run lint
 npx.cmd tsc --noEmit
 npm.cmd run build

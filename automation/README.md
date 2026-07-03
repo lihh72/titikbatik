@@ -139,6 +139,8 @@ http://127.0.0.1:8000/admin
 
 Masukkan `ADMIN_API_KEY` dari `.env` ke field Admin Key di halaman admin. Browser akan menyimpannya di localStorage.
 
+Web Next.js utama berjalan dari folder `../web` pada `http://localhost:3000`. Nilai `ADMIN_API_KEY` pada `web/.env.local` harus sama dengan file `automation/.env`; Next.js meneruskannya sebagai `X-Admin-Key` hanya dari server route handler.
+
 Health:
 
 ```text
