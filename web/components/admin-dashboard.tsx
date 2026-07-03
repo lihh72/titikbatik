@@ -1,44 +1,80 @@
 "use client";
 
-import { useApp } from "@/components/app-provider";
-import { moduleItems } from "@/lib/data";
-import { ArrowRight, Eye, GalleryHorizontalEnd, History, ShieldCheck, Sparkles, WandSparkles } from "lucide-react";
+import { getDashboard } from "@/lib/automation-api";
+import type { DashboardData } from "@/lib/automation-types";
+import { Activity, AlertTriangle, Database, Eye, LoaderCircle, RefreshCw, Server, WandSparkles } from "lucide-react";
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 
 export function AdminDashboard() {
-  const { history, publishedIds } = useApp();
-  const draftCount = history.filter((item) => !publishedIds.includes(item.id)).length;
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await getDashboard());
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Dashboard gagal dimuat.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    getDashboard()
+      .then((result) => { if (active) setData(result); })
+      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Dashboard gagal dimuat."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const metrics = data ? [
+    { label: "Total batik", value: data.total_batik, icon: Database },
+    { label: "Dipublikasikan", value: data.published_batik, icon: Eye },
+    { label: "Batch aktif", value: data.active_batches, icon: Activity },
+    { label: "Job gagal", value: data.job_failed, icon: AlertTriangle },
+  ] : [];
 
   return (
     <main className="mx-auto max-w-[1480px] px-4 pb-10 sm:px-6 lg:px-8">
-      <section className="glass-panel overflow-hidden rounded-[34px] p-6 sm:p-9">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <section className="border-b border-white/10 pb-7">
+        <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[.2em] text-[#ffb66c]"><span className="h-px w-8 bg-[#ff9d42]" />Dashboard Administrator</div>
-            <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-.04em] sm:text-6xl">Kelola proses AI tanpa mengekspos fiturnya kepada pengguna umum.</h1>
-            <p className="mt-5 max-w-3xl text-sm leading-7 text-white/48">Seluruh hasil masuk sebagai draft. Hanya motif yang dipilih dan dipublikasikan oleh admin yang muncul di galeri publik.</p>
+            <p className="text-xs uppercase text-[#ffb66c]">Dashboard Automation</p>
+            <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">Status produksi Titik Batik</h1>
+            <p className="mt-3 text-sm text-white/45">Data langsung dari FastAPI, SQLite, worker, dan ComfyUI.</p>
           </div>
-          <Link href="/admin/studio" className="flex w-fit items-center gap-2 rounded-full bg-[#ff9d42] px-6 py-3.5 text-sm font-semibold text-[#201307] transition hover:scale-105 hover:bg-[#ffb363]"><WandSparkles size={17} />Buka Studio AI</Link>
-        </div>
-
-        <div className="mt-9 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            { label: "Modul internal", value: "7", note: "FR-01—FR-07", icon: ShieldCheck },
-            { label: "Total hasil", value: String(history.length), note: "Riwayat lokal", icon: History },
-            { label: "Menunggu kurasi", value: String(draftCount), note: "Status draft", icon: Sparkles },
-            { label: "Dipublikasikan", value: String(publishedIds.length), note: "Tampil publik", icon: Eye },
-          ].map(({ label, value, note, icon: Icon }) => <article key={label} className="glass-soft rounded-[24px] p-5"><Icon size={18} className="text-[#ffad5d]" /><div className="mt-5 text-xs uppercase tracking-[.16em] text-white/38">{label}</div><div className="mt-2 text-3xl font-semibold">{value}</div><p className="mt-2 text-xs text-white/35">{note}</p></article>)}
+          <div className="flex gap-2">
+            <button onClick={() => void load()} disabled={loading} className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/6 text-white/65" title="Muat ulang"><RefreshCw size={17} className={loading ? "animate-spin" : ""} /></button>
+            <Link href="/admin/studio" className="flex items-center gap-2 rounded-full bg-[#ff9d42] px-5 py-3 text-sm font-semibold text-[#201307]"><WandSparkles size={16} />Buat batch</Link>
+          </div>
         </div>
       </section>
 
-      <section className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {moduleItems.map((item) => <Link key={item.id} href={`/admin/studio?module=${item.id}`} className="glass-panel group rounded-[26px] p-5 transition hover:-translate-y-1 hover:border-white/25"><div className="flex items-center justify-between"><span className="rounded-full border border-[#ff9d42]/25 bg-[#ff9d42]/10 px-3 py-1 text-[10px] font-semibold tracking-[.16em] text-[#ffbd7e]">{item.code}</span><ArrowRight size={15} className="text-white/25 transition group-hover:translate-x-1 group-hover:text-[#ffad5d]" /></div><h2 className="mt-5 font-semibold">{item.label}</h2><p className="mt-2 text-sm leading-6 text-white/42">{item.description}</p></Link>)}
-      </section>
+      {loading && !data && <div className="flex items-center gap-2 py-16 text-sm text-white/45"><LoaderCircle size={17} className="animate-spin" />Memuat dashboard...</div>}
+      {error && <div className="mt-6 border border-red-400/20 bg-red-400/8 p-4 text-sm text-red-100/80">{error}</div>}
 
-      <section className="mt-7 grid gap-5 lg:grid-cols-2">
-        <Link href="/admin/history" className="glass-panel group rounded-[30px] p-7 transition hover:border-white/25"><History size={22} className="text-[#ffad5d]" /><h2 className="mt-5 text-2xl font-semibold">Periksa riwayat hasil</h2><p className="mt-3 text-sm leading-6 text-white/45">Lihat metadata dan hasil dari seluruh modul internal.</p><span className="mt-5 flex items-center gap-2 text-sm text-[#ffb363]">Buka riwayat <ArrowRight size={15} className="transition group-hover:translate-x-1" /></span></Link>
-        <Link href="/admin/gallery" className="glass-panel group rounded-[30px] p-7 transition hover:border-white/25"><GalleryHorizontalEnd size={22} className="text-[#ffad5d]" /><h2 className="mt-5 text-2xl font-semibold">Kurasi dan publikasi galeri</h2><p className="mt-3 text-sm leading-6 text-white/45">Pilih hasil yang layak untuk ditampilkan kepada pengguna umum.</p><span className="mt-5 flex items-center gap-2 text-sm text-[#ffb363]">Kelola publikasi <ArrowRight size={15} className="transition group-hover:translate-x-1" /></span></Link>
-      </section>
+      {data && <>
+        <section className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 xl:grid-cols-4">
+          {metrics.map(({ label, value, icon: Icon }) => <article key={label} className="bg-[#11110f] p-5"><Icon size={18} className="text-[#ffad5d]" /><p className="mt-5 text-xs uppercase text-white/35">{label}</p><p className="mt-2 text-3xl font-semibold">{value}</p></article>)}
+        </section>
+
+        <section className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="border border-white/10 bg-white/4 p-5">
+            <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-sm font-medium"><Server size={17} className="text-[#ffad5d]" />ComfyUI</span><span className={data.comfyui === "connected" ? "text-emerald-300" : "text-red-300"}>{data.comfyui === "connected" ? "Terhubung" : "Terputus"}</span></div>
+            <div className="mt-5 grid grid-cols-2 gap-4 text-sm"><div><p className="text-white/35">Job antre</p><p className="mt-1 text-xl">{data.job_queued}</p></div><div><p className="text-white/35">Job berjalan</p><p className="mt-1 text-xl">{data.job_running}</p></div></div>
+          </div>
+          <div className="border border-white/10 bg-white/4 p-5">
+            <p className="flex items-center gap-2 text-sm font-medium"><Activity size={17} className="text-[#ffad5d]" />Heartbeat worker</p>
+            <p className="mt-5 text-sm text-white/60">{data.last_worker_heartbeat?.heartbeat_at ? new Date(data.last_worker_heartbeat.heartbeat_at).toLocaleString("id-ID") : "Belum ada heartbeat"}</p>
+            <p className="mt-1 text-xs text-white/30">{data.last_worker_heartbeat?.worker_id ?? "Worker belum teridentifikasi"}</p>
+          </div>
+        </section>
+      </>}
     </main>
   );
 }

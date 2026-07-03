@@ -1,81 +1,108 @@
 "use client";
 
-import { useApp } from "@/components/app-provider";
-import { MotifArt } from "@/components/motif-art";
-import { downloadResultMetadata } from "@/lib/download";
-import type { GenerationStage } from "@/lib/types";
-import { Download, History, Search, Trash2 } from "lucide-react";
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { cancelBatch, getBatch, listBatchJobs, listBatches, retryFailedBatch } from "@/lib/automation-api";
+import type { GenerationBatch, GenerationJob } from "@/lib/automation-types";
+import { AlertCircle, Ban, LoaderCircle, RefreshCw, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
-const filters: Array<{ value: "all" | GenerationStage; label: string }> = [
-  { value: "all", label: "Semua" },
-  { value: "motif", label: "Motif" },
-  { value: "auto-generate", label: "Auto Generate" },
-  { value: "seamless", label: "Seamless" },
-  { value: "garment", label: "Batik Baju" },
-  { value: "human", label: "Model" },
-  { value: "video", label: "Video" },
-  { value: "upscale", label: "Upscale" },
-];
+const activeStatuses = new Set(["queued", "running"]);
+
+function date(value: string | null) {
+  return value ? new Date(value).toLocaleString("id-ID") : "-";
+}
 
 export function HistoryPage() {
-  const { history, removeHistory, clearHistory, publishedIds } = useApp();
-  const [filter, setFilter] = useState<"all" | GenerationStage>("all");
-  const [query, setQuery] = useState("");
+  const [batches, setBatches] = useState<GenerationBatch[]>([]);
+  const [selected, setSelected] = useState<GenerationBatch | null>(null);
+  const [jobs, setJobs] = useState<GenerationJob[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const visible = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return history.filter((item) => {
-      const matchStage = filter === "all" || item.stage === filter;
-      const matchQuery = !normalized || [item.title, item.prompt, item.stage].join(" ").toLowerCase().includes(normalized);
-      return matchStage && matchQuery;
-    });
-  }, [history, filter, query]);
+  const loadDetails = useCallback(async (id: string) => {
+    const [batch, jobData] = await Promise.all([getBatch(id), listBatchJobs(id)]);
+    setSelected(batch);
+    setJobs(jobData);
+  }, []);
+
+  const load = useCallback(async (preferredId?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listBatches({ limit: 100, offset: 0 });
+      setBatches(data);
+      const id = preferredId && data.some((item) => item.id === preferredId) ? preferredId : data[0]?.id;
+      if (id) await loadDetails(id);
+      else { setSelected(null); setJobs([]); }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Riwayat batch gagal dimuat.");
+    } finally {
+      setLoading(false);
+    }
+  }, [loadDetails]);
+
+  useEffect(() => {
+    let active = true;
+    listBatches({ limit: 100, offset: 0 })
+      .then(async (data) => {
+        if (!active) return;
+        setBatches(data);
+        const requested = new URLSearchParams(window.location.search).get("batch");
+        const id = requested && data.some((item) => item.id === requested) ? requested : data[0]?.id;
+        if (id) await loadDetails(id);
+      })
+      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Riwayat batch gagal dimuat."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [loadDetails]);
+
+  useEffect(() => {
+    if (!selected || !activeStatuses.has(selected.status)) return;
+    const timer = window.setInterval(() => {
+      void loadDetails(selected.id).catch((reason) => setError(reason instanceof Error ? reason.message : "Polling gagal."));
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [loadDetails, selected]);
+
+  async function action(kind: "cancel" | "retry") {
+    if (!selected) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (kind === "cancel") await cancelBatch(selected.id);
+      else await retryFailedBatch(selected.id);
+      await load(selected.id);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Aksi batch gagal.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
-      <section className="glass-panel rounded-[34px] p-5 sm:p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[.2em] text-[#ffb66c]"><span className="h-px w-8 bg-[#ff9d42]" />Riwayat Hasil Generate</div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-[-.035em] sm:text-5xl">Hasil eksplorasi tersimpan di perangkat.</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/48">Riwayat ini hanya tersedia pada area administrator. Status publikasi setiap hasil dikelola melalui menu Publikasi Galeri.</p>
-          </div>
-          {history.length > 0 && <button onClick={clearHistory} className="glass-soft flex w-fit items-center gap-2 rounded-full px-4 py-2.5 text-sm text-white/55 transition hover:border-red-300/20 hover:bg-red-400/8 hover:text-red-200"><Trash2 size={15} /> Hapus semua</button>}
-        </div>
+    <main className="mx-auto max-w-[1480px] px-4 pb-10 sm:px-6 lg:px-8">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
+        <div><p className="text-xs uppercase text-[#ffb66c]">Durable Worker</p><h1 className="mt-3 text-3xl font-semibold">Batch dan job</h1><p className="mt-3 text-sm text-white/45">Status nyata termasuk retry, error ComfyUI, dan output setiap tahap.</p></div>
+        <button onClick={() => void load(selected?.id)} disabled={loading} className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/6" title="Muat ulang"><RefreshCw size={17} className={loading ? "animate-spin" : ""} /></button>
+      </header>
+      {error && <div className="mt-5 flex gap-2 border border-red-400/20 bg-red-400/8 p-4 text-sm text-red-100/80"><AlertCircle size={17} />{error}</div>}
+      {loading && !batches.length ? <div className="flex items-center gap-2 py-16 text-sm text-white/45"><LoaderCircle size={17} className="animate-spin" />Memuat batch...</div> :
+        <div className="mt-6 grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <section className="max-h-[720px] overflow-auto border border-white/10">
+            {batches.map((batch) => <button key={batch.id} onClick={() => void loadDetails(batch.id)} className={`block w-full border-b border-white/8 p-4 text-left ${selected?.id === batch.id ? "bg-[#ff9d42]/12" : "bg-black/15 hover:bg-white/5"}`}><div className="flex items-center justify-between gap-2"><span className="text-xs text-[#ffb66c]">{batch.status}</span><span className="text-xs text-white/35">{batch.progress_percent}%</span></div><p className="mt-2 truncate text-sm">{batch.id}</p><p className="mt-2 text-xs text-white/35">{date(batch.created_at)} · {batch.requested_count} motif</p></button>)}
+            {!batches.length && <p className="p-6 text-sm text-white/40">Belum ada batch.</p>}
+          </section>
 
-        <div className="mt-8 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-          <label className="glass-soft flex items-center gap-3 rounded-2xl px-4 py-3"><Search size={17} className="text-white/35" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari judul atau proses..." className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/28" /></label>
-          <div className="flex flex-wrap gap-2">{filters.map((item) => <button key={item.value} onClick={() => setFilter(item.value)} className={`rounded-full border px-3.5 py-2 text-xs transition ${filter === item.value ? "border-[#ff9d42]/45 bg-[#ff9d42]/14 text-[#ffbd7e]" : "border-white/10 bg-white/4 text-white/45 hover:text-white"}`}>{item.label}</button>)}</div>
-        </div>
-      </section>
-
-      {visible.length > 0 ? (
-        <section className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {visible.map((item) => (
-            <article key={item.id} className="glass-panel overflow-hidden rounded-[28px] p-2.5">
-              <div className="aspect-[1.3] overflow-hidden rounded-[22px] bg-black/25"><MotifArt id={`history-${item.id}`} variant={item.variant} colors={item.colors} seamless={item.stage === "seamless"} className="h-full w-full" /></div>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-3"><div><span className="text-[10px] uppercase tracking-[.15em] text-[#ffb66c]">{item.stage}</span><h2 className="mt-2 font-semibold">{item.title}</h2></div><span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-white/36">{item.resolution}</span></div>
-                <p className="mt-3 line-clamp-2 text-xs leading-5 text-white/38">{item.prompt}</p>
-                <div className="mt-4 flex items-center justify-between gap-3 text-[10px] text-white/28"><span>{new Date(item.createdAt).toLocaleString("id-ID")}</span><span className={publishedIds.includes(item.id) ? "text-emerald-300/70" : "text-white/28"}>{publishedIds.includes(item.id) ? "Published" : "Draft"}</span></div>
-                <div className="mt-5 flex gap-2">
-                  <button onClick={() => downloadResultMetadata(item)} className="flex flex-1 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/6 px-3 py-2.5 text-xs text-white/60 transition hover:bg-white/10 hover:text-white"><Download size={14} /> Metadata</button>
-                  <button onClick={() => removeHistory(item.id)} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/4 text-white/35 transition hover:border-red-300/20 hover:bg-red-400/8 hover:text-red-200" aria-label="Hapus hasil"><Trash2 size={14} /></button>
-                </div>
+          <section className="min-w-0">
+            {selected ? <>
+              <div className="border border-white/10 bg-white/4 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs uppercase text-[#ffb66c]">{selected.status}</p><h2 className="mt-2 break-all text-lg font-medium">{selected.id}</h2></div><div className="flex gap-2">{activeStatuses.has(selected.status) && <button disabled={busy} onClick={() => void action("cancel")} className="flex items-center gap-2 border border-red-300/20 px-3 py-2 text-xs text-red-200"><Ban size={14} />Batalkan</button>}{selected.failed_count > 0 && <button disabled={busy} onClick={() => void action("retry")} className="flex items-center gap-2 border border-white/12 px-3 py-2 text-xs"><RotateCcw size={14} />Retry gagal</button>}</div></div>
+                <div className="mt-5 grid grid-cols-3 gap-px bg-white/10 sm:grid-cols-5">{[["Antre", selected.queued_count], ["Berjalan", selected.running_count], ["Selesai", selected.completed_count], ["Gagal", selected.failed_count], ["Batal", selected.cancelled_count]].map(([label, value]) => <div key={String(label)} className="bg-[#11110f] p-3"><p className="text-xs text-white/35">{label}</p><p className="mt-1 text-xl">{value}</p></div>)}</div>
               </div>
-            </article>
-          ))}
-        </section>
-      ) : (
-        <section className="glass-panel mt-7 rounded-[34px] p-12 text-center">
-          <History size={38} className="mx-auto text-white/20" />
-          <h2 className="mt-5 text-xl font-semibold">Belum ada hasil pada filter ini.</h2>
-          <p className="mt-2 text-sm text-white/40">Jalankan salah satu modul untuk menyimpan hasil baru.</p>
-          <Link href="/admin/studio" className="mt-6 inline-flex rounded-full bg-[#ff9d42] px-5 py-3 text-sm font-semibold text-[#201307] transition hover:scale-105 hover:bg-[#ffb363]">Buka Studio AI</Link>
-        </section>
-      )}
+              <div className="mt-4 overflow-x-auto border border-white/10"><table className="w-full min-w-[900px] text-left text-sm"><thead className="bg-white/6 text-xs text-white/40"><tr><th className="p-3">Urutan</th><th className="p-3">Tahap</th><th className="p-3">Status</th><th className="p-3">Percobaan</th><th className="p-3">Output</th><th className="p-3">ComfyUI</th><th className="p-3">Error</th></tr></thead><tbody>{jobs.map((job) => <tr key={job.id} className="border-t border-white/8"><td className="p-3">{job.sequence_number}</td><td className="p-3">{job.job_type}</td><td className="p-3 text-[#ffb66c]">{job.status}</td><td className="p-3">{job.attempt_count}/{job.max_attempts}</td><td className="max-w-48 truncate p-3">{job.output_filename ?? "-"}</td><td className="max-w-40 truncate p-3">{job.comfyui_prompt_id ?? "-"}</td><td className="max-w-72 p-3 text-red-200/75">{job.error_message ?? "-"}</td></tr>)}</tbody></table></div>
+            </> : <p className="py-16 text-center text-sm text-white/40">Pilih batch untuk melihat job.</p>}
+          </section>
+        </div>}
     </main>
   );
 }
