@@ -1,36 +1,29 @@
 "use client";
 
-import { useApp } from "@/components/app-provider";
 import { MotifDetail } from "@/components/motif-detail";
-import { generationToMotif, motifs } from "@/lib/data";
-import type { Motif, GenerationResult } from "@/lib/types";
+import { getPublicBatik } from "@/lib/automation-api";
+import type { Batik } from "@/lib/automation-types";
+import { LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function GalleryDetailPage({ id }: { id: string }) {
-  const { history, publishedIds } = useApp();
-  const staticMotif = motifs.find((item) => item.id === id);
-  const generated = history.find((item) => item.id === id && publishedIds.includes(item.id));
-  const [remoteMotif, setRemoteMotif] = useState<Motif | null>(null);
-  const [loading, setLoading] = useState(!staticMotif && !generated);
+  const numericId = Number(id);
+  const [batik, setBatik] = useState<Batik | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (staticMotif || generated) return;
+    if (!Number.isInteger(numericId) || numericId < 1) return;
     let active = true;
-    fetch(`/api/public/gallery/${encodeURIComponent(id)}`, { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const payload = await response.json() as { result?: GenerationResult };
-        return payload.result ? generationToMotif(payload.result) : null;
-      })
-      .then((result) => { if (active) setRemoteMotif(result); })
-      .catch(() => { if (active) setRemoteMotif(null); })
-      .finally(() => { if (active) setLoading(false); });
+    getPublicBatik(numericId).then((result) => { if (active) setBatik(result); }).catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Batik tidak tersedia."); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [id, staticMotif, generated]);
+  }, [numericId]);
 
-  const motif = staticMotif ?? (generated ? generationToMotif(generated) : remoteMotif);
-  if (loading) return <main className="mx-auto max-w-4xl px-4 pb-8 sm:px-6"><section className="glass-panel rounded-[34px] p-12 text-center"><p className="text-sm text-white/45">Memuat detail motif...</p></section></main>;
-  if (!motif) return <main className="mx-auto max-w-4xl px-4 pb-8 sm:px-6"><section className="glass-panel rounded-[34px] p-12 text-center"><h1 className="text-3xl font-semibold">Motif tidak tersedia.</h1><p className="mt-3 text-sm text-white/45">Motif mungkin belum dipublikasikan atau telah ditarik dari galeri.</p><Link href="/gallery" className="mt-7 inline-flex rounded-full bg-[#ff9d42] px-5 py-3 text-sm font-semibold text-[#201307]">Kembali ke galeri</Link></section></main>;
-  return <MotifDetail motif={motif} />;
+  if (!Number.isInteger(numericId) || numericId < 1) return <NotFound message="ID batik tidak valid." />;
+  if (loading) return <main className="mx-auto max-w-4xl px-4 py-20"><p className="flex items-center justify-center gap-2 text-sm text-white/45"><LoaderCircle size={17} className="animate-spin" />Memuat batik...</p></main>;
+  if (!batik) return <NotFound message={error ?? "Batik tidak tersedia."} />;
+  return <MotifDetail batik={batik} />;
 }
+
+function NotFound({ message }: { message: string }) { return <main className="mx-auto max-w-4xl px-4 py-20 text-center"><h1 className="text-2xl font-semibold">Batik tidak tersedia</h1><p className="mt-3 text-sm text-white/45">{message}</p><Link href="/gallery" className="mt-6 inline-flex bg-[#ff9d42] px-5 py-3 text-sm font-semibold text-[#201307]">Kembali ke galeri</Link></main>; }
