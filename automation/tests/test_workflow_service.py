@@ -40,7 +40,7 @@ def test_combine_workflow_only_patches_images_and_output_prefix():
     assert prompt["60"]["inputs"]["filename_prefix"] == "costume_test"
 
 
-def test_video_workflow_uses_costume_at_512_square_without_audio():
+def test_video_workflow_uses_costume_at_720_by_1280_without_audio():
     service = WorkflowService()
     prompt = service.build_video_prompt(
         costume_image_name="costume.webp",
@@ -49,8 +49,8 @@ def test_video_workflow_uses_costume_at_512_square_without_audio():
 
     assert prompt["269"]["class_type"] == "LoadImage"
     assert prompt["269"]["inputs"]["image"] == "costume.webp"
-    assert prompt["320:312"]["inputs"]["value"] == 512
-    assert prompt["320:299"]["inputs"]["value"] == 512
+    assert prompt["320:312"]["inputs"]["value"] == 720
+    assert prompt["320:299"]["inputs"]["value"] == 1280
     assert "audio" not in prompt["320:310"]["inputs"]
     assert prompt["75"]["inputs"]["filename_prefix"] == "video_test"
     assert prompt["320:300"]["inputs"]["value"] == 25

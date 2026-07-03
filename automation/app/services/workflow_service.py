@@ -76,8 +76,8 @@ class WorkflowService:
         workflow = self._load_workflow(self.settings.path(self.settings.video_workflow_path))
         self._validate_mapping(workflow, VIDEO_NODE_MAPPING)
         self._set_input(workflow, "269", "image", costume_image_name)
-        self._set_input(workflow, "320:312", "value", 512)
-        self._set_input(workflow, "320:299", "value", 512)
+        self._set_input(workflow, "320:312", "value", 720)
+        self._set_input(workflow, "320:299", "value", 1280)
         self._node(workflow, "320:310").setdefault("inputs", {}).pop("audio", None)
         self._set_input(workflow, "75", "filename_prefix", filename_prefix)
         return workflow

@@ -122,8 +122,8 @@ async def test_worker_processes_video_and_updates_costume_pair(worker_context):
 
     queued_prompt = worker.comfyui.queue_prompt.call_args.args[0]
     assert queued_prompt["269"]["inputs"]["image"] == "costume.webp"
-    assert queued_prompt["320:312"]["inputs"]["value"] == 512
-    assert queued_prompt["320:299"]["inputs"]["value"] == 512
+    assert queued_prompt["320:312"]["inputs"]["value"] == 720
+    assert queued_prompt["320:299"]["inputs"]["value"] == 1280
     assert "audio" not in queued_prompt["320:310"]["inputs"]
     async with worker_context.factory() as session:
         job = await session.get(GenerationJob, job_id)

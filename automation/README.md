@@ -48,12 +48,12 @@ Admin API hanya mengganti prompt generate, input gambar model/batik, dan prefix 
 `../workflows/videobatik.json`:
 
 - Input hasil combine: node `269`, `LoadImage`
-- Width: node `320:312`, dipaksa `512`
-- Height: node `320:299`, dipaksa `512`
+- Width: node `320:312`, dipaksa `720`
+- Height: node `320:299`, dipaksa `1280`
 - Create video: node `320:310`, input audio dilepas
 - Save video: node `75`, `SaveVideo`
 
-Parameter model, prompt, sampler, frame rate, durasi, dan LoRA video tetap mengikuti workflow. Hasil akhirnya selalu 512x512 tanpa audio.
+Parameter model, prompt, sampler, frame rate, durasi, dan LoRA video tetap mengikuti workflow. Hasil akhirnya selalu 720x1280 tanpa audio.
 
 Lihat tabel node:
 
