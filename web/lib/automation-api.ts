@@ -1,0 +1,124 @@
+import {
+  type AppSettings,
+  type AutomationResponse,
+  type Batik,
+  type CostumeTemplate,
+  type DashboardData,
+  type GenerationBatch,
+  type GenerationBatchCreate,
+  type GenerationBatchQueued,
+  type GenerationJob,
+  type PublicBatikList,
+  type WordlistCategory,
+  type WordlistItem,
+  unwrapAutomationResponse,
+} from "@/lib/automation-types";
+
+const ADMIN_BASE = "/api/automation/admin";
+const PUBLIC_BASE = "/api/automation/public";
+
+async function automationRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, { cache: "no-store", ...init });
+  const payload = (await response.json().catch(() => ({
+    success: false,
+    message: "Respons backend tidak valid.",
+    errors: {},
+  }))) as AutomationResponse<T> & { detail?: string };
+  if (!response.ok) {
+    throw new Error(payload.message ?? payload.detail ?? `Server mengembalikan status ${response.status}`);
+  }
+  return unwrapAutomationResponse(payload);
+}
+
+function jsonRequest(method: string, body?: unknown): RequestInit {
+  return {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  };
+}
+
+function queryString(values: Record<string, string | number | boolean | null | undefined>) {
+  const query = new URLSearchParams();
+  Object.entries(values).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") query.set(key, String(value));
+  });
+  const encoded = query.toString();
+  return encoded ? `?${encoded}` : "";
+}
+
+export const getDashboard = () => automationRequest<DashboardData>(`${ADMIN_BASE}/dashboard`);
+
+export const createGenerationBatch = (request: GenerationBatchCreate) =>
+  automationRequest<GenerationBatchQueued>(`${ADMIN_BASE}/generation-batches`, jsonRequest("POST", request));
+
+export const listBatches = (options: { limit?: number; offset?: number } = {}) =>
+  automationRequest<GenerationBatch[]>(
+    `${ADMIN_BASE}/generation-batches${queryString({ limit: options.limit, offset: options.offset })}`,
+  );
+
+export const getBatch = (batchId: string) =>
+  automationRequest<GenerationBatch>(`${ADMIN_BASE}/generation-batches/${encodeURIComponent(batchId)}`);
+
+export const cancelBatch = (batchId: string) =>
+  automationRequest<GenerationBatch>(`${ADMIN_BASE}/generation-batches/${encodeURIComponent(batchId)}/cancel`, jsonRequest("POST"));
+
+export const retryFailedBatch = (batchId: string) =>
+  automationRequest<GenerationBatch>(`${ADMIN_BASE}/generation-batches/${encodeURIComponent(batchId)}/retry-failed`, jsonRequest("POST"));
+
+export const listBatchJobs = (batchId: string) =>
+  automationRequest<GenerationJob[]>(`${ADMIN_BASE}/generation-batches/${encodeURIComponent(batchId)}/jobs`);
+
+export const getGenerationJob = (jobId: string) =>
+  automationRequest<GenerationJob>(`${ADMIN_BASE}/generation-jobs/${encodeURIComponent(jobId)}`);
+
+export const listAdminBatiks = (options: { limit?: number; offset?: number } = {}) =>
+  automationRequest<Batik[]>(`${ADMIN_BASE}/batiks${queryString({ limit: options.limit, offset: options.offset })}`);
+
+export const getAdminBatik = (id: number) => automationRequest<Batik>(`${ADMIN_BASE}/batiks/${id}`);
+
+export const updateBatik = (id: number, values: Partial<Pick<Batik, "keyword" | "warna" | "style" | "is_published">>) =>
+  automationRequest<Batik>(`${ADMIN_BASE}/batiks/${id}`, jsonRequest("PATCH", values));
+
+export const deleteBatik = (id: number) => automationRequest<unknown>(`${ADMIN_BASE}/batiks/${id}`, { method: "DELETE" });
+export const publishBatik = (id: number) => automationRequest<unknown>(`${ADMIN_BASE}/batiks/${id}/publish`, jsonRequest("POST"));
+export const unpublishBatik = (id: number) => automationRequest<unknown>(`${ADMIN_BASE}/batiks/${id}/unpublish`, jsonRequest("POST"));
+export const regenerateCostume = (id: number) => automationRequest<{ queued_count: number }>(`${ADMIN_BASE}/batiks/${id}/regenerate-costume`, jsonRequest("POST"));
+export const regenerateVideo = (id: number) => automationRequest<{ queued_count: number; job_id: string }>(`${ADMIN_BASE}/batiks/${id}/regenerate-video`, jsonRequest("POST"));
+
+export const listWordlistCategories = () => automationRequest<WordlistCategory[]>(`${ADMIN_BASE}/wordlist-categories`);
+export const createWordlistCategory = (values: Omit<WordlistCategory, "id">) =>
+  automationRequest<WordlistCategory>(`${ADMIN_BASE}/wordlist-categories`, jsonRequest("POST", values));
+export const updateWordlistCategory = (id: number, values: Partial<Omit<WordlistCategory, "id" | "code">>) =>
+  automationRequest<WordlistCategory>(`${ADMIN_BASE}/wordlist-categories/${id}`, jsonRequest("PATCH", values));
+export const deleteWordlistCategory = (id: number) => automationRequest<unknown>(`${ADMIN_BASE}/wordlist-categories/${id}`, { method: "DELETE" });
+
+export const listWordlistItems = (categoryId?: number) =>
+  automationRequest<WordlistItem[]>(`${ADMIN_BASE}/wordlist-items${queryString({ category_id: categoryId })}`);
+export const createWordlistItem = (values: Omit<WordlistItem, "id">) =>
+  automationRequest<WordlistItem>(`${ADMIN_BASE}/wordlist-items`, jsonRequest("POST", values));
+export const updateWordlistItem = (id: number, values: Partial<Omit<WordlistItem, "id">>) =>
+  automationRequest<WordlistItem>(`${ADMIN_BASE}/wordlist-items/${id}`, jsonRequest("PATCH", values));
+export const deleteWordlistItem = (id: number) => automationRequest<unknown>(`${ADMIN_BASE}/wordlist-items/${id}`, { method: "DELETE" });
+export const importWordlistItems = (values: { category_code: string; items: string[]; replace: boolean }) =>
+  automationRequest<{ count: number }>(`${ADMIN_BASE}/wordlist-items/import`, jsonRequest("POST", values));
+
+export const listCostumeTemplates = () => automationRequest<CostumeTemplate[]>(`${ADMIN_BASE}/costume-templates`);
+export const uploadCostumeTemplate = (form: FormData) =>
+  automationRequest<CostumeTemplate>(`${ADMIN_BASE}/costume-templates/upload`, { method: "POST", body: form });
+export const updateCostumeTemplate = (id: number, values: Partial<Omit<CostumeTemplate, "id" | "created_at" | "updated_at">>) =>
+  automationRequest<CostumeTemplate>(`${ADMIN_BASE}/costume-templates/${id}`, jsonRequest("PATCH", values));
+export const deleteCostumeTemplate = (id: number) => automationRequest<unknown>(`${ADMIN_BASE}/costume-templates/${id}`, { method: "DELETE" });
+
+export const listSettings = () => automationRequest<AppSettings>(`${ADMIN_BASE}/settings`);
+export const putSetting = (key: string, value: Record<string, unknown>) =>
+  automationRequest<{ key: string; value: Record<string, unknown> }>(`${ADMIN_BASE}/settings/${encodeURIComponent(key)}`, jsonRequest("PUT", value));
+
+export const listPublicBatiks = (options: { page?: number; perPage?: number; query?: string } = {}) => {
+  const path = options.query ? "batiks/search" : "batiks";
+  return automationRequest<PublicBatikList>(
+    `${PUBLIC_BASE}/${path}${queryString({ q: options.query, page: options.page, per_page: options.perPage })}`,
+  );
+};
+
+export const getPublicBatik = (id: number) => automationRequest<Batik>(`${PUBLIC_BASE}/batiks/${id}`);
