@@ -45,6 +45,7 @@ async def seed_batik_with_costume(session, *, with_video=False):
     session.add(batch)
     batik = Batik(
         keyword="kawung",
+        slug="kawung",
         warna="indigo",
         style="traditional",
         seed=42,
@@ -81,6 +82,45 @@ async def seed_batik_with_costume(session, *, with_video=False):
     session.add(combine_job)
     await session.commit()
     return batik
+
+
+@pytest.mark.asyncio
+async def test_public_batik_detail_uses_slug_and_hides_unpublished(client, session):
+    published = Batik(
+        keyword="kawung biru",
+        slug="kawung-biru",
+        warna="biru",
+        style="modern",
+        seed=1,
+        positive_prompt="batik kawung",
+        negative_prompt="blur",
+        file_preview="kawung-biru.webp",
+        prompt_hash=uuid.uuid4().hex,
+        is_published=True,
+    )
+    hidden = Batik(
+        keyword="kawung rahasia",
+        slug="kawung-rahasia",
+        warna="biru",
+        style="modern",
+        seed=2,
+        positive_prompt="batik kawung",
+        negative_prompt="blur",
+        file_preview="kawung-rahasia.webp",
+        prompt_hash=uuid.uuid4().hex,
+        is_published=False,
+    )
+    session.add_all([published, hidden])
+    await session.commit()
+
+    found = await client.get("/api/v1/batiks/kawung-biru")
+    hidden_response = await client.get("/api/v1/batiks/kawung-rahasia")
+    numeric_response = await client.get("/api/v1/batiks/10")
+
+    assert found.status_code == 200
+    assert found.json()["data"]["slug"] == "kawung-biru"
+    assert hidden_response.status_code == 404
+    assert numeric_response.status_code == 404
 
 
 @pytest.mark.asyncio

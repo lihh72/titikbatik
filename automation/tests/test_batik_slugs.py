@@ -1,13 +1,36 @@
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+import uuid
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect, text
+import pytest
+from sqlalchemy import create_engine, inspect, select, text
 
 from app.core.config import get_settings
+from app.models import Batik
+from app.repositories.batik_repository import BatikRepository
+from app.services.generation_service import GenerationService
+from app.services.legacy_import_service import LegacyImportService
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def make_batik(*, slug: str, keyword: str = "Kawung") -> Batik:
+    return Batik(
+        slug=slug,
+        keyword=keyword,
+        warna="biru",
+        style="modern",
+        seed=1,
+        positive_prompt="batik kawung",
+        negative_prompt="blur",
+        file_preview=f"{uuid.uuid4().hex}.webp",
+        prompt_hash=uuid.uuid4().hex,
+        is_published=True,
+    )
 
 
 def test_slugify_batik_normalizes_keyword() -> None:
@@ -96,3 +119,89 @@ def test_migration_backfills_permanent_unique_slugs(tmp_path, monkeypatch) -> No
         if engine is not None:
             engine.dispose()
         get_settings.cache_clear()
+
+
+@pytest.mark.asyncio
+async def test_repository_allocates_next_available_slug(session):
+    session.add_all(
+        [
+            make_batik(slug="kawung"),
+            make_batik(slug="kawung-2"),
+            make_batik(slug="kawung-3"),
+        ]
+    )
+    await session.flush()
+
+    slug = await BatikRepository().next_slug(session, "Kawung")
+
+    assert slug == "kawung-4"
+
+
+@pytest.mark.asyncio
+async def test_generation_service_assigns_repository_slug(session):
+    repository = BatikRepository()
+    repository.next_slug = AsyncMock(return_value="kawung-biru")
+    service = GenerationService(batik_repository=repository)
+    job = SimpleNamespace(
+        id=str(uuid.uuid4()),
+        seed=42,
+        positive_prompt="batik kawung",
+        negative_prompt="blur",
+        prompt_hash=uuid.uuid4().hex,
+        settings_json={"keyword": "Kawung Biru", "warna": "biru", "style": "modern"},
+    )
+
+    batik = await service.create_batik_from_job(session, job, file_preview="generated.webp")
+
+    repository.next_slug.assert_awaited_once_with(session, "Kawung Biru")
+    assert batik.slug == "kawung-biru"
+
+
+class FakeLegacyResponse:
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self) -> dict:
+        return {
+            "batiks": [
+                {
+                    "id": 7,
+                    "keyword": "Parang Emas",
+                    "warna": "emas",
+                    "style": "tradisional",
+                    "seed": 7,
+                    "file_preview": "legacy.webp",
+                    "file_costume": None,
+                    "file_video": None,
+                }
+            ]
+        }
+
+
+class FakeLegacyClient:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, traceback):
+        return None
+
+    async def get(self, path, params=None):
+        return FakeLegacyResponse()
+
+
+@pytest.mark.asyncio
+async def test_legacy_import_assigns_repository_slug(session, monkeypatch):
+    repository = BatikRepository()
+    repository.next_slug = AsyncMock(return_value="parang-emas")
+    monkeypatch.setattr(
+        "app.services.legacy_import_service.httpx.AsyncClient",
+        lambda **kwargs: FakeLegacyClient(),
+    )
+    service = LegacyImportService(batik_repository=repository)
+
+    result = await service.import_pages(session, max_pages=1)
+
+    imported = await session.scalar(select(Batik).where(Batik.file_preview == "legacy.webp"))
+    assert result["imported"] == 1
+    assert imported is not None
+    assert imported.slug == "parang-emas"

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models import Batik, CostumeTemplate, GenerationBatch, GenerationJob
+from app.repositories.batik_repository import BatikRepository
 from app.repositories.batch_repository import BatchRepository
 from app.schemas.generation import GenerationBatchCreate
 from app.services.prompt_generator_service import PromptGeneratorService
@@ -21,10 +22,12 @@ class GenerationService:
         settings: Settings | None = None,
         prompt_generator: PromptGeneratorService | None = None,
         batch_repository: BatchRepository | None = None,
+        batik_repository: BatikRepository | None = None,
     ) -> None:
         self.settings = settings or get_settings()
         self.prompt_generator = prompt_generator or PromptGeneratorService()
         self.batch_repository = batch_repository or BatchRepository()
+        self.batik_repository = batik_repository or BatikRepository()
 
     async def create_batch(self, session: AsyncSession, request: GenerationBatchCreate) -> GenerationBatch:
         if request.amount > self.settings.max_batch_size:
@@ -132,8 +135,10 @@ class GenerationService:
         file_preview: str,
     ) -> Batik:
         meta = job.settings_json or {}
+        keyword = meta.get("keyword", "batik pattern")
         batik = Batik(
-            keyword=meta.get("keyword", "batik pattern"),
+            keyword=keyword,
+            slug=await self.batik_repository.next_slug(session, keyword),
             warna=meta.get("warna", ""),
             style=meta.get("style", ""),
             seed=job.seed or 0,

@@ -57,9 +57,9 @@ async def search_batiks(
     return ok(data.model_dump(mode="json"))
 
 
-@router.get("/{batik_id}")
-async def get_batik(batik_id: int, session: AsyncSession = Depends(get_session)):
-    item = await repository.get(session, batik_id)
+@router.get("/{slug}")
+async def get_batik(slug: str, session: AsyncSession = Depends(get_session)):
+    item = await repository.get_by_slug(session, slug)
     if not item or not item.is_published:
         raise NotFoundError("Batik not found")
     image_service.enrich_batik(item)

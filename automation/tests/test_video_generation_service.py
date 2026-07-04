@@ -21,6 +21,7 @@ async def create_combine_context(session):
     session.add(batch)
     batik = Batik(
         keyword="kawung",
+        slug="kawung",
         warna="indigo",
         style="traditional",
         seed=42,

@@ -63,6 +63,7 @@ async def seed_video_job(context):
         session.add(batch)
         batik = Batik(
             keyword="kawung",
+            slug="kawung",
             warna="indigo",
             style="traditional",
             seed=42,
@@ -202,6 +203,7 @@ async def seed_combine_job(context):
         session.add_all([batch, template])
         batik = Batik(
             keyword="kawung",
+            slug="kawung",
             warna="indigo",
             style="traditional",
             seed=42,

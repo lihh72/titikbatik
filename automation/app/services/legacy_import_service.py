@@ -8,14 +8,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.models import Batik, BatikCostumeFile
+from app.repositories.batik_repository import BatikRepository
 from app.services.storage_service import StorageService
 from app.utils.hashing import stable_hash
 
 
 class LegacyImportService:
-    def __init__(self, settings: Settings | None = None, storage: StorageService | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        storage: StorageService | None = None,
+        batik_repository: BatikRepository | None = None,
+    ) -> None:
         self.settings = settings or get_settings()
         self.storage = storage or StorageService(self.settings)
+        self.batik_repository = batik_repository or BatikRepository()
 
     async def import_pages(
         self,
@@ -52,12 +59,14 @@ class LegacyImportService:
                             await self._download_image(client, preview_name, "preview")
                             for costume in costume_names:
                                 await self._download_image(client, costume, "costume")
+                        keyword = item.get("keyword") or ""
                         batik = Batik(
-                            keyword=item.get("keyword") or "",
+                            keyword=keyword,
+                            slug=await self.batik_repository.next_slug(session, keyword),
                             warna=item.get("warna") or "",
                             style=item.get("style") or "",
                             seed=int(item.get("seed") or 0),
-                            positive_prompt=item.get("keyword") or "",
+                            positive_prompt=keyword,
                             negative_prompt="",
                             file_preview=preview_name,
                             file_video=item.get("file_video"),

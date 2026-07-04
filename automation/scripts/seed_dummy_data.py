@@ -229,13 +229,14 @@ def upsert_database() -> None:
         conn.execute(
             """
             INSERT INTO batiks (
-                keyword, warna, style, seed, positive_prompt, negative_prompt,
+                keyword, slug, warna, style, seed, positive_prompt, negative_prompt,
                 file_preview, file_video, prompt_hash, generation_job_id,
                 is_published, deleted_at, created_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, NULL, 1, NULL, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NULL, 1, NULL, ?, ?)
             ON CONFLICT(file_preview) DO UPDATE SET
                 keyword=excluded.keyword,
+                slug=excluded.slug,
                 warna=excluded.warna,
                 style=excluded.style,
                 seed=excluded.seed,
@@ -248,6 +249,7 @@ def upsert_database() -> None:
             """,
             (
                 item["keyword"],
+                item["slug"],
                 item["warna"],
                 item["style"],
                 item["seed"],

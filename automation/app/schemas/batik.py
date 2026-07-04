@@ -41,6 +41,7 @@ class BatikCostumeFileRead(OrmModel):
 
 class BatikRead(OrmModel):
     id: int
+    slug: str
     keyword: str
     warna: str
     style: str
