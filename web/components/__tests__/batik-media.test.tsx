@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { BatikMedia } from "@/components/batik-media";
@@ -34,12 +34,38 @@ const batik: Batik = {
 };
 
 describe("BatikMedia", () => {
-  it("renders actual preview, costume, and silent video URLs", () => {
+  it("uses uniform thumbnails to switch the main image and silent video", () => {
     const { container } = render(<BatikMedia batik={batik} />);
+    const thumbnails = screen.getAllByRole("button", { name: /Tampilkan/i });
 
-    expect(screen.getByAltText("Preview kawung")).toHaveAttribute("src", batik.preview_url);
-    expect(screen.getByAltText("Costume Model")).toHaveAttribute("src", batik.costume_urls[0]);
-    expect(container.querySelector("video")).toHaveAttribute("src", batik.costume_files[0].video_url);
-    expect(container.querySelector("video")).toHaveProperty("muted", true);
+    expect(thumbnails).toHaveLength(3);
+    thumbnails.forEach((thumbnail) => {
+      expect(thumbnail).toHaveClass("aspect-[4/5]");
+      expect(thumbnail).toHaveClass("w-20");
+    });
+    expect(screen.getByTestId("main-image")).toHaveAttribute("src", batik.preview_url);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tampilkan Costume Model" }));
+    expect(screen.getByTestId("main-image")).toHaveAttribute("src", batik.costume_urls[0]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tampilkan Video Model" }));
+    const video = container.querySelector("[data-testid='main-video']");
+    expect(video).toHaveAttribute("src", batik.costume_files[0].video_url);
+    expect(video).not.toHaveAttribute("autoplay");
+    expect(video).toHaveProperty("muted", true);
+  });
+
+  it("omits missing media and renders a clear empty state", () => {
+    const emptyBatik: Batik = {
+      ...batik,
+      preview_url: null,
+      costume_urls: [],
+      costume_files: batik.costume_files.map((costume) => ({ ...costume, video_url: null })),
+    };
+
+    render(<BatikMedia batik={emptyBatik} />);
+
+    expect(screen.queryAllByRole("button", { name: /Tampilkan/i })).toHaveLength(0);
+    expect(screen.getByText("Media belum tersedia")).toBeInTheDocument();
   });
 });
