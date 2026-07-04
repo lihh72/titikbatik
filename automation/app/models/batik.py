@@ -16,6 +16,7 @@ class Batik(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     keyword: Mapped[str] = mapped_column(Text, nullable=False)
+    slug: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     warna: Mapped[str] = mapped_column(String(255), nullable=False)
     style: Mapped[str] = mapped_column(String(255), nullable=False)
     seed: Mapped[int] = mapped_column(BigInteger, nullable=False)
