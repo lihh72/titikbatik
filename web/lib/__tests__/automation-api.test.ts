@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createGenerationBatch, listBatches, listPublicBatiks, uploadCostumeTemplate } from "@/lib/automation-api";
+import { createGenerationBatch, getPublicBatik, listBatches, listPublicBatiks, uploadCostumeTemplate } from "@/lib/automation-api";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -90,7 +90,7 @@ describe("automation API client", () => {
 
   it("maps relative backend media paths to the Next.js image proxy", async () => {
     const batik = {
-      id: 1, keyword: "kawung", warna: "biru", style: "modern", seed: 4,
+      id: 1, slug: "kawung-biru", keyword: "kawung", warna: "biru", style: "modern", seed: 4,
       positive_prompt: null, negative_prompt: null, file_preview: "preview.webp", file_video: null,
       prompt_hash: "hash", is_published: true, created_at: "2026-07-03T00:00:00Z", updated_at: "2026-07-03T00:00:00Z",
       preview_url: "/api/image/preview.webp", costume_urls: ["/api/image/costume.webp"],
@@ -103,5 +103,26 @@ describe("automation API client", () => {
     expect(result.items[0].preview_url).toBe("/api/automation/public/images/preview/preview.webp");
     expect(result.items[0].costume_urls[0]).toBe("/api/automation/public/images/costume/costume.webp");
     expect(result.items[0].costume_files[0].video_url).toBe("/api/automation/public/images/video/video.mp4");
+  });
+
+  it("loads a public batik by encoded slug", async () => {
+    const batik = {
+      id: 1, slug: "kawung-biru", keyword: "kawung", warna: "biru", style: "modern", seed: 4,
+      positive_prompt: null, negative_prompt: null, file_preview: "preview.webp", file_video: null,
+      prompt_hash: "hash", is_published: true, created_at: "2026-07-03T00:00:00Z", updated_at: "2026-07-03T00:00:00Z",
+      preview_url: null, costume_urls: [], costume_files: [],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ success: true, message: "ok", data: batik }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getPublicBatik("kawung biru");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/automation/public/batiks/kawung%20biru",
+      expect.objectContaining({ cache: "no-store" }),
+    );
   });
 });

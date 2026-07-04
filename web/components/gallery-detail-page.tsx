@@ -7,20 +7,19 @@ import { LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export function GalleryDetailPage({ id }: { id: string }) {
-  const numericId = Number(id);
+export function GalleryDetailPage({ slug }: { slug: string }) {
   const [batik, setBatik] = useState<Batik | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!Number.isInteger(numericId) || numericId < 1) return;
+    if (!slug.trim()) return;
     let active = true;
-    getPublicBatik(numericId).then((result) => { if (active) setBatik(result); }).catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Batik tidak tersedia."); }).finally(() => { if (active) setLoading(false); });
+    getPublicBatik(slug).then((result) => { if (active) setBatik(result); }).catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Batik tidak tersedia."); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [numericId]);
+  }, [slug]);
 
-  if (!Number.isInteger(numericId) || numericId < 1) return <NotFound message="ID batik tidak valid." />;
+  if (!slug.trim()) return <NotFound message="Slug batik tidak valid." />;
   if (loading) return <main className="mx-auto max-w-4xl px-4 py-20"><p className="flex items-center justify-center gap-2 text-sm text-white/45"><LoaderCircle size={17} className="animate-spin" />Memuat batik...</p></main>;
   if (!batik) return <NotFound message={error ?? "Batik tidak tersedia."} />;
   return <MotifDetail batik={batik} />;

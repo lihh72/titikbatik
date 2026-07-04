@@ -121,6 +121,7 @@ export type CostumeFile = {
 
 export type Batik = {
   id: number;
+  slug: string;
   keyword: string;
   warna: string;
   style: string;

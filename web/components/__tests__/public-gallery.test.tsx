@@ -2,11 +2,13 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GalleryPage } from "@/components/gallery-page";
+import { GalleryDetailPage } from "@/components/gallery-detail-page";
 
-const mocks = vi.hoisted(() => ({ listPublicBatiks: vi.fn() }));
+const mocks = vi.hoisted(() => ({ listPublicBatiks: vi.fn(), getPublicBatik: vi.fn() }));
 vi.mock("@/lib/automation-api", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/automation-api")>(),
   listPublicBatiks: mocks.listPublicBatiks,
+  getPublicBatik: mocks.getPublicBatik,
 }));
 vi.mock("@/components/app-provider", () => ({
   useApp: () => ({
@@ -24,6 +26,7 @@ describe("public gallery", () => {
     mocks.listPublicBatiks.mockResolvedValue({
       items: [{
         id: 12,
+        slug: "kawung-indigo",
         keyword: "Kawung Indigo",
         warna: "indigo",
         style: "modern",
@@ -50,5 +53,16 @@ describe("public gallery", () => {
     expect(await screen.findByText("Kawung Indigo")).toBeInTheDocument();
     expect(screen.getByAltText("Kawung Indigo")).toHaveAttribute("src", expect.stringContaining("kawung.webp"));
     expect(screen.queryByText("Ceplok Arunika")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Kawung Indigo/i })).toHaveAttribute("href", "/gallery/kawung-indigo");
+  });
+
+  it("loads a gallery detail by slug", async () => {
+    const batik = (await mocks.listPublicBatiks()).items[0];
+    mocks.getPublicBatik.mockResolvedValue(batik);
+
+    render(<GalleryDetailPage slug="kawung-indigo" />);
+
+    expect(await screen.findByRole("heading", { name: "Kawung Indigo" })).toBeInTheDocument();
+    expect(mocks.getPublicBatik).toHaveBeenCalledWith("kawung-indigo");
   });
 });

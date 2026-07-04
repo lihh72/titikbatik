@@ -143,4 +143,7 @@ export const listPublicBatiks = (options: { page?: number; perPage?: number; que
   ).then((result) => ({ ...result, items: result.items.map(normalizeBatikMedia) }));
 };
 
-export const getPublicBatik = async (id: number) => normalizeBatikMedia(await automationRequest<Batik>(`${PUBLIC_BASE}/batiks/${id}`));
+export const getPublicBatik = async (slug: string) =>
+  normalizeBatikMedia(
+    await automationRequest<Batik>(`${PUBLIC_BASE}/batiks/${encodeURIComponent(slug)}`),
+  );

@@ -6,6 +6,7 @@ import type { Batik } from "@/lib/automation-types";
 
 const batik: Batik = {
   id: 12,
+  slug: "kawung",
   keyword: "kawung",
   warna: "indigo",
   style: "modern",
