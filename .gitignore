@@ -34,3 +34,5 @@ automation/storage/templates/*
 !automation/storage/output/video/.gitkeep
 !automation/storage/output/temporary/.gitkeep
 !automation/storage/templates/.gitkeep
+
+.worktrees/
