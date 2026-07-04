@@ -1,8 +1,13 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Action } from "@/components/ui/action";
 import { LogoMark } from "@/components/logo";
+import { SiteShell } from "@/components/site-shell";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+}));
 
 describe("design system", () => {
   it("renders the brand mark and semantic action variants", () => {
@@ -33,5 +38,12 @@ describe("design system", () => {
     expect(mark).toHaveAttribute("aria-hidden", "true");
     expect(mark).not.toHaveAttribute("role");
     expect(mark).not.toHaveAttribute("aria-label");
+  });
+
+  it("announces a textual brand lockup exactly once", () => {
+    render(<SiteShell><main /></SiteShell>);
+
+    expect(screen.getByRole("link", { name: "TitikBatik AI" })).toHaveAttribute("href", "/");
+    expect(screen.queryByRole("img", { name: "TitikBatik AI" })).not.toBeInTheDocument();
   });
 });

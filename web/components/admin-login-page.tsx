@@ -50,7 +50,7 @@ export function AdminLoginPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_32%_26%,rgba(255,157,66,.22),transparent_25%),linear-gradient(145deg,rgba(20,55,52,.88),rgba(12,12,14,.75))]" />
             <div className="relative flex h-full flex-col justify-between">
               <div>
-                <div className="flex items-center gap-3"><LogoMark /><div><strong className="block">TitikBatik AI</strong><span className="text-xs text-white/38">Automation Admin</span></div></div>
+                <div className="flex items-center gap-3"><LogoMark decorative /><div><strong className="block">TitikBatik AI</strong><span className="text-xs text-white/38">Automation Admin</span></div></div>
                 <span className="mt-10 inline-flex items-center gap-2 rounded-full border border-[#ff9d42]/25 bg-[#ff9d42]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.18em] text-[#ffbd7e]"><ShieldCheck size={14} />Area terbatas</span>
                 <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">Automation Titik Batik hanya untuk administrator.</h1>
                 <p className="mt-5 max-w-lg leading-7 text-white/50">Kelola generation, batch, hasil batik, wordlist, template costume, dan settings dari satu panel internal.</p>

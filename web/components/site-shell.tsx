@@ -32,7 +32,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 
       <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 sm:pt-6">
         <nav className="glass-panel mx-auto flex max-w-7xl items-center justify-between rounded-full px-3 py-2.5 sm:px-4">
-          <Link href="/" className="flex items-center gap-2.5 pl-1" aria-label="TitikBatik AI Beranda"><LogoMark /><div className="leading-none"><span className="block text-sm font-semibold tracking-tight sm:text-base">TitikBatik AI</span><span className="mt-1 hidden text-[9px] uppercase tracking-[0.22em] text-white/38 sm:block">Galeri Batik Digital</span></div></Link>
+          <Link href="/" className="flex items-center gap-2.5 pl-1" aria-label="TitikBatik AI"><LogoMark decorative /><div className="leading-none"><span className="block text-sm font-semibold tracking-tight sm:text-base">TitikBatik AI</span><span className="mt-1 hidden text-[9px] uppercase tracking-[0.22em] text-white/38 sm:block">Galeri Batik Digital</span></div></Link>
 
           <div className="hidden items-center gap-1 rounded-full border border-white/10 bg-black/15 p-1 lg:flex">
             {navItems.map((item) => { const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href); return <Link key={item.href} href={item.href} className={`rounded-full px-4 py-2 text-sm transition ${active ? "bg-white/11 text-white" : "text-white/55 hover:bg-white/7 hover:text-white"}`}>{item.label}</Link>; })}
@@ -52,7 +52,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <footer className="relative z-10 mx-auto max-w-7xl px-4 pb-8 pt-12 sm:px-6 lg:px-8">
         <div className="glass-panel rounded-[32px] p-6 sm:p-8">
           <div className="flex flex-col gap-8 border-b border-white/10 pb-8 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3"><LogoMark /><div><strong className="block">TitikBatik AI</strong><span className="text-xs text-white/40">Galeri publik hasil eksplorasi batik digital terkurasi</span></div></div>
+            <div className="flex items-center gap-3"><LogoMark decorative /><div><strong className="block">TitikBatik AI</strong><span className="text-xs text-white/40">Galeri publik hasil eksplorasi batik digital terkurasi</span></div></div>
             <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/52"><Link href="/about" className="transition hover:text-[#ffb363]">Tentang Kami</Link><Link href="/gallery" className="transition hover:text-[#ffb363]">Galeri</Link><Link href="/help" className="transition hover:text-[#ffb363]">Pusat Bantuan</Link><a href="mailto:titikbatik@example.com" className="transition hover:text-[#ffb363]">Kontak</a></div>
           </div>
           <div className="flex flex-col gap-3 pt-6 text-xs text-white/34 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 TitikBatik AI. Mengubah tradisi ke inovasi digital.</p><div className="flex flex-wrap items-center gap-4"><p className="flex items-center gap-2"><Sparkles size={12} className="text-[#ff9d42]" />Karya dipublikasikan setelah proses kurasi.</p><Link href="/admin/login" className="text-white/24 transition hover:text-white/50">Akses Admin</Link></div></div>

@@ -38,7 +38,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 sm:pt-6">
         <nav className="glass-panel mx-auto flex max-w-[1480px] items-center justify-between rounded-full px-3 py-2.5 sm:px-4">
-          <Link href="/admin" className="flex items-center gap-2.5 pl-1"><LogoMark /><div className="leading-none"><span className="block text-sm font-semibold sm:text-base">TitikBatik AI</span><span className="mt-1 hidden text-[9px] uppercase text-[#ffb66c] sm:block">Automation Admin</span></div></Link>
+          <Link href="/admin" className="flex items-center gap-2.5 pl-1"><LogoMark decorative /><div className="leading-none"><span className="block text-sm font-semibold sm:text-base">TitikBatik AI</span><span className="mt-1 hidden text-[9px] uppercase text-[#ffb66c] sm:block">Automation Admin</span></div></Link>
 
           <div className="hidden items-center gap-1 rounded-full border border-white/10 bg-black/15 p-1 lg:flex">
             {navItems.map((item) => {
