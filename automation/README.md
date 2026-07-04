@@ -10,7 +10,7 @@ Backend FastAPI untuk katalog dan otomasi generasi Titik Batik memakai SQLite, d
   - `GET /api/image/{filename}`
 - API baru:
   - `GET /api/v1/batiks`
-  - `GET /api/v1/batiks/{id}`
+  - `GET /api/v1/batiks/{slug}`
   - `GET /api/v1/batiks/search?q=keyword`
 - Admin API dengan header `X-Admin-Key` untuk batch generation, jobs, batik, wordlist, template costume, dan dashboard.
 - Worker durable terpisah: `python -m app.worker`.
@@ -94,6 +94,8 @@ Edit `.env`, terutama:
 alembic upgrade head
 python scripts/seed_wordlists.py
 ```
+
+Setelah mengambil versi yang menambahkan slug galeri, jalankan `alembic upgrade head` sebelum API dan worker dimulai. Data batik lama akan memperoleh slug unik secara otomatis.
 
 SQLite disimpan di:
 
