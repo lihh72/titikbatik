@@ -19,11 +19,13 @@ const PUBLIC_BASE = "/api/automation/public";
 
 async function automationRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, { cache: "no-store", ...init });
-  const payload = (await response.json().catch(() => ({
-    success: false,
-    message: "Respons backend tidak valid.",
-    errors: {},
-  }))) as AutomationResponse<T> & { detail?: string };
+  let payload: AutomationResponse<T> & { detail?: string };
+  try {
+    payload = await response.json() as AutomationResponse<T> & { detail?: string };
+  } catch {
+    if (response.status === 404) throw new Error("Endpoint web tidak ditemukan (404).");
+    throw new Error(`Server mengembalikan respons non-JSON (${response.status}).`);
+  }
   if (!response.ok) {
     throw new Error(payload.message ?? payload.detail ?? `Server mengembalikan status ${response.status}`);
   }

@@ -82,6 +82,12 @@ describe("automation API client", () => {
     await expect(listBatches()).rejects.toThrow("At least one active costume template is required");
   });
 
+  it("reports a non-JSON route response with its HTTP status", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("Not Found", { status: 404 })));
+
+    await expect(listBatches()).rejects.toThrow("Endpoint web tidak ditemukan (404)");
+  });
+
   it("maps relative backend media paths to the Next.js image proxy", async () => {
     const batik = {
       id: 1, keyword: "kawung", warna: "biru", style: "modern", seed: 4,
