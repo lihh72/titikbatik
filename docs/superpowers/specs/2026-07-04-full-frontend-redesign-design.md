@@ -25,7 +25,7 @@ TitikBatik AI becomes a modern digital textile archive: culturally grounded, ima
 - No request or response contract changes.
 - No dark theme in the initial release.
 - No new public generation capability.
-- No decorative motion applied to product images in the gallery.
+- No unattended, random, or page-wide automatic cycling of product images in the gallery.
 - No fabricated documentary imagery or misleading AI attribution.
 
 ## Core Direction
@@ -109,8 +109,14 @@ The homepage is a narrative-to-collection sequence:
 
 - Every motif thumbnail uses a fixed 1:1 aspect ratio with `object-fit: cover`.
 - The gallery uses a consistent responsive square grid, not masonry.
-- Product images do not float, parallax, or autoplay.
-- The only product-image motion is a subtle hover or focus scale that does not impair comparison.
+- Product images do not float, parallax, or change without user interaction.
+- On pointer hover or keyboard focus, a tile waits approximately 350 milliseconds before crossfading from the motif to its available costume images.
+- When multiple costume images exist, only the active tile cycles through them approximately every 1.5 seconds.
+- Pointer leave or focus loss stops the cycle, cleans up its timer, and restores the motif.
+- Tiles without costume images remain on the motif.
+- Touch layouts keep the motif stable; visitors open the detail page to inspect costume images.
+- With reduced motion enabled, hover or focus may reveal the first costume immediately, but it must not run a timed cycle.
+- The changing preview layer is hidden from assistive technology so the card's accessible name remains stable.
 - Search continues to use the current backend-supported query behavior.
 - Pagination, loading, empty, and error states receive complete layouts.
 - Like and bookmark actions remain available and continue using local frontend state.
@@ -222,7 +228,7 @@ Motion has three levels:
    - Route entry, drawer, panel, status, progress, and success feedback.
    - Short, restrained, and tied to a state change.
 3. **Microinteraction**
-   - CSS hover, focus, press, and subtle image scaling.
+   - CSS hover, focus, press, subtle image scaling, and the deliberate gallery costume preview.
 
 `prefers-reduced-motion` is mandatory. When reduced motion is enabled, pinned sequences become normal document flow, reveals become immediate, and no content or meaning is lost.
 
@@ -260,6 +266,7 @@ Motion has three levels:
 
 - Prioritize only the hero image needed in the initial viewport.
 - Lazy-load below-the-fold documentary and product images.
+- Load a gallery tile's first costume preview only when hover or focus intent begins, then load later costumes only for that active tile.
 - Use responsive image sizing and avoid unnecessarily large originals.
 - Do not autoplay video.
 - Use CSS for simple transitions and reserve the motion library for narrative or stateful animation.
@@ -273,6 +280,7 @@ Required automated coverage includes:
 
 - Public navbar and mobile menu behavior
 - Gallery loading, search, empty, error, pagination, and 1:1 tile contract
+- Gallery hover and keyboard-focus delay, costume cycling, timer cleanup, motif restoration, no-costume fallback, touch behavior, and reduced-motion behavior
 - Detail media selection, thumbnail controls, likes, and bookmarks
 - Administrator sidebar and responsive navigation
 - Dashboard loading, error, refresh, and pipeline rendering
@@ -298,7 +306,8 @@ Verification before completion must run:
 - FastAPI and automation tests require no contract changes caused by the redesign.
 - Public pages use the approved modern archive direction and explicit navbar.
 - Documentary and conceptual imagery are clearly separated.
-- Product images remain stable and use 1:1 gallery tiles.
+- Every gallery tile defaults to its motif and retains a 1:1 frame throughout preview changes.
+- Costume previews run only on deliberate desktop hover or keyboard focus, never randomly or across inactive tiles.
 - Administrator pages use the approved grouped sidebar and modular workbench.
 - Motion is meaningful, responsive, and fully reduced-motion safe.
 - Light theme is complete and design tokens are ready for a future dark theme.
