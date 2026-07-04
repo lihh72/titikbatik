@@ -24,6 +24,31 @@ button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 ::selection { color: #15110c; background: rgba(255, 157, 66, 0.9); }
 
+.logo-mark {
+  position: relative;
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+}
+
+.logo-mark i:first-child {
+  width: 15px;
+  height: 15px;
+  border: 1px solid #ff9d42;
+  transform: rotate(45deg);
+}
+
+.logo-mark i:last-child {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ff9d42;
+}
+
 .glass-panel {
   border: 1px solid var(--glass-border);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.045));

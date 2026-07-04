@@ -42,7 +42,12 @@ export function Action({
   }
 
   return (
-    <button {...actionProps} className={classes} data-variant={variant}>
+    <button
+      {...actionProps}
+      className={classes}
+      data-variant={variant}
+      type={actionProps.type ?? "button"}
+    >
       {children}
     </button>
   );
