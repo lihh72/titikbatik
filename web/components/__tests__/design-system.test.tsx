@@ -2,6 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { Action } from "@/components/ui/action";
+import { Feedback } from "@/components/ui/feedback";
+import { PageHeading } from "@/components/ui/page-heading";
 import { LogoMark } from "@/components/logo";
 import { SiteShell } from "@/components/site-shell";
 
@@ -10,6 +12,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("design system", () => {
+  it("renders semantic page and feedback regions", () => {
+    render(<><PageHeading eyebrow="Koleksi" title="Jelajahi motif" /><Feedback kind="error">Galeri gagal dimuat.</Feedback></>);
+    expect(screen.getByRole("heading", { name: "Jelajahi motif" })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Galeri gagal dimuat.");
+  });
+
   it("renders the brand mark and semantic action variants", () => {
     render(<><LogoMark /><Action href="/gallery">Jelajahi koleksi</Action></>);
     expect(screen.getByLabelText("TitikBatik AI")).toHaveClass("logo-mark");
