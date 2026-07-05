@@ -54,6 +54,8 @@ describe("landing page", () => {
     render(<LandingPage />);
 
     expect(screen.getByRole("heading", { name: "Motif lama. Bahasa baru." })).toBeInTheDocument();
+    const hero = screen.getByRole("region", { name: "Pengantar arsip" });
+    expect(within(hero).getByAltText(/perajin batik menggambar malam/i)).toBeInTheDocument();
 
     const process = screen.getByRole("region", { name: "Proses batik" });
     expect(within(process).getByAltText(/perajin.*canting/i)).toBeInTheDocument();

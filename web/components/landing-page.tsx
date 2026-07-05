@@ -6,6 +6,7 @@ import { Action } from "@/components/ui/action";
 import { Feedback } from "@/components/ui/feedback";
 import { listPublicBatiks } from "@/lib/automation-api";
 import type { Batik } from "@/lib/automation-types";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export function LandingPage() {
@@ -23,14 +24,30 @@ export function LandingPage() {
 
   return (
     <main className="landing-page">
-      <section className="landing-hero">
+      <section className="landing-hero" aria-label="Pengantar arsip">
         <div className="landing-hero-inner">
-          <p className="landing-hero-kicker">Arsip Tekstil Nusantara</p>
-          <h1 className="serif">Motif lama. Bahasa baru.</h1>
-          <p className="landing-hero-copy">
-            Arsip batik yang menghubungkan kerja tangan, pengetahuan material, dan eksperimen generatif yang dikurasi manusia.
-          </p>
-          <Action href="/gallery" className="landing-hero-action">Jelajahi koleksi</Action>
+          <div className="landing-hero-copyblock">
+            <p className="landing-hero-kicker">Arsip Tekstil Nusantara</p>
+            <h1 className="serif">Motif lama. Bahasa baru.</h1>
+            <p className="landing-hero-copy">
+              Arsip batik yang menghubungkan kerja tangan, pengetahuan material, dan eksperimen generatif yang dikurasi manusia.
+            </p>
+            <Action href="/gallery" className="landing-hero-action">Jelajahi koleksi</Action>
+          </div>
+          <figure className="landing-hero-figure">
+            <div className="landing-hero-image">
+              <Image
+                src="/editorial/batik-artisan-canting.jpg"
+                alt="Perajin batik menggambar malam dengan canting di Trusmi, Cirebon"
+                fill
+                priority
+                sizes="(max-width: 900px) 100vw, 34vw"
+              />
+            </div>
+            <figcaption>
+              Proses mencanting di Trusmi, Cirebon. Foto Ahaetulla, CC BY-SA 4.0.
+            </figcaption>
+          </figure>
         </div>
       </section>
 
