@@ -1,10 +1,11 @@
 "use client";
 
+import { EditorialStory } from "@/components/editorial-story";
 import { MotifCard } from "@/components/motif-card";
+import { Action } from "@/components/ui/action";
+import { Feedback } from "@/components/ui/feedback";
 import { listPublicBatiks } from "@/lib/automation-api";
 import type { Batik } from "@/lib/automation-types";
-import { ArrowRight, LoaderCircle } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function LandingPage() {
@@ -20,13 +21,59 @@ export function LandingPage() {
     return () => { active = false; };
   }, []);
 
-  return <main className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-    <section className="flex min-h-[52vh] flex-col justify-center border-b border-white/10 py-14">
-      <p className="text-xs uppercase text-[#ffb66c]">Indonesian Generative Textile</p>
-      <h1 className="mt-4 max-w-5xl text-5xl font-semibold sm:text-7xl">TitikBatik AI</h1>
-      <p className="mt-5 max-w-2xl text-base leading-7 text-white/50">Galeri motif, costume, dan visualisasi video yang telah dikurasi dari pipeline automation Titik Batik.</p>
-      <Link href="/gallery" className="mt-8 flex w-fit items-center gap-2 bg-[#ff9d42] px-6 py-3.5 text-sm font-semibold text-[#201307]">Jelajahi galeri <ArrowRight size={16} /></Link>
-    </section>
-    <section className="py-10"><div className="flex items-end justify-between gap-4"><div><p className="text-xs uppercase text-[#ffb66c]">Terbaru</p><h2 className="mt-2 text-2xl font-semibold">Batik terpublikasi</h2></div><Link href="/gallery" className="text-sm text-[#ffb66c]">Lihat semua</Link></div>{loading ? <p className="mt-8 flex items-center gap-2 text-sm text-white/45"><LoaderCircle size={16} className="animate-spin" />Memuat karya...</p> : items.length ? <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{items.map((batik) => <MotifCard key={batik.id} batik={batik} />)}</div> : <p className="mt-8 text-sm text-white/40">Belum ada karya yang dipublikasikan.</p>}</section>
-  </main>;
+  return (
+    <main className="landing-page">
+      <section className="landing-hero">
+        <div className="landing-hero-inner">
+          <p className="landing-hero-kicker">Arsip Tekstil Nusantara</p>
+          <h1 className="serif">Motif lama. Bahasa baru.</h1>
+          <p className="landing-hero-copy">
+            Arsip batik yang menghubungkan kerja tangan, pengetahuan material, dan eksperimen generatif yang dikurasi manusia.
+          </p>
+          <Action href="/gallery" className="landing-hero-action">Jelajahi koleksi</Action>
+        </div>
+      </section>
+
+      <EditorialStory />
+
+      <section className="landing-latest" aria-label="Koleksi terbaru">
+        <header className="landing-section-heading">
+          <div>
+            <p>Koleksi terbaru</p>
+            <h2 className="serif">Motif yang baru masuk arsip.</h2>
+          </div>
+          <Action href="/gallery" variant="quiet">Lihat seluruh koleksi</Action>
+        </header>
+        {loading ? (
+          <Feedback>Memuat karya terbaru.</Feedback>
+        ) : items.length ? (
+          <div className="landing-motif-grid">
+            {items.slice(0, 3).map((batik) => <MotifCard key={batik.id} batik={batik} />)}
+          </div>
+        ) : (
+          <Feedback kind="empty">Belum ada karya yang dipublikasikan.</Feedback>
+        )}
+      </section>
+
+      <section className="landing-ethics">
+        <p className="landing-ethics-kicker">Prinsip arsip</p>
+        <h2 className="serif">Etika visual, bukan catatan kaki.</h2>
+        <div className="landing-ethics-copy">
+          <p>
+            Foto dokumenter diberi sumber dan lisensi. Visual buatan AI selalu ditandai,
+            agar pengunjung dapat membedakan rekaman proses dari interpretasi konseptual.
+          </p>
+          <p>
+            Hasil generatif diperlakukan sebagai eksperimen kuratorial, bukan klaim atas
+            tradisi, komunitas, atau makna sakral tertentu.
+          </p>
+        </div>
+      </section>
+
+      <section className="landing-collection-cta">
+        <h2 className="serif">Temukan bahasa visual yang tumbuh dari proses.</h2>
+        <Action href="/gallery">Buka koleksi motif</Action>
+      </section>
+    </main>
+  );
 }
