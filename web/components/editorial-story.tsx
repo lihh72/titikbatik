@@ -12,6 +12,10 @@ export function EditorialStory() {
     offset: ["start end", "end start"],
   });
   const imageY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [70, -45]);
+  const leftImageX = useTransform(scrollYProgress, [0.12, 0.36], reduceMotion ? [0, 0] : [-90, 0]);
+  const rightImageX = useTransform(scrollYProgress, [0.34, 0.62], reduceMotion ? [0, 0] : [90, 0]);
+  const leftTextX = useTransform(scrollYProgress, [0.12, 0.36], reduceMotion ? [0, 0] : [70, 0]);
+  const rightTextX = useTransform(scrollYProgress, [0.34, 0.62], reduceMotion ? [0, 0] : [-70, 0]);
   const textOpacity = useTransform(
     scrollYProgress,
     [0.08, 0.28, 0.72, 0.92],
@@ -39,7 +43,11 @@ export function EditorialStory() {
       </motion.header>
 
       <div className="editorial-chapter editorial-chapter-artisan">
-        <motion.figure className="editorial-figure editorial-figure-portrait" style={{ y: imageY }}>
+        <motion.figure
+          className="editorial-figure editorial-figure-portrait"
+          data-motion="image-from-left"
+          style={{ x: leftImageX, y: imageY }}
+        >
           <div className="editorial-image-mask">
             <Image
               src="/editorial/batik-artisan-canting.jpg"
@@ -53,7 +61,11 @@ export function EditorialStory() {
             Proses mencanting di Trusmi, Cirebon. Foto Ahaetulla, CC BY-SA 4.0.
           </figcaption>
         </motion.figure>
-        <motion.div className="editorial-copy" style={{ opacity: textOpacity }}>
+        <motion.div
+          className="editorial-copy"
+          data-motion="text-from-right"
+          style={{ opacity: textOpacity, x: leftTextX }}
+        >
           <p className="editorial-step">Garis yang menyimpan keputusan</p>
           <h3 className="serif">Canting menerjemahkan ingatan menjadi batas.</h3>
           <p>
@@ -64,7 +76,11 @@ export function EditorialStory() {
       </div>
 
       <div className="editorial-chapter editorial-chapter-tools">
-        <motion.div className="editorial-copy" style={{ opacity: textOpacity }}>
+        <motion.div
+          className="editorial-copy"
+          data-motion="text-from-left"
+          style={{ opacity: textOpacity, x: rightTextX }}
+        >
           <p className="editorial-step">Material ikut berbicara</p>
           <h3 className="serif">Panas dan malam menentukan ritme kerja.</h3>
           <p>
@@ -72,7 +88,11 @@ export function EditorialStory() {
             ketebalan garis, jeda, serta kemungkinan koreksi pada kain.
           </p>
         </motion.div>
-        <motion.figure className="editorial-figure editorial-figure-landscape" style={{ y: imageY }}>
+        <motion.figure
+          className="editorial-figure editorial-figure-landscape"
+          data-motion="image-from-right"
+          style={{ x: rightImageX, y: imageY }}
+        >
           <div className="editorial-image-mask">
             <Image
               src="/editorial/batik-malam-tools.jpg"

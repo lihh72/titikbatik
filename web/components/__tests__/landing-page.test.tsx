@@ -61,6 +61,10 @@ describe("landing page", () => {
     expect(within(process).getByAltText(/perajin.*canting/i)).toBeInTheDocument();
     expect(within(process).getByAltText(/^malam batik dipanaskan.*canting/i)).toBeInTheDocument();
     expect(within(process).getByText("Visual konseptual AI")).toBeInTheDocument();
+    expect(process.querySelector("[data-motion='image-from-left']")).toBeInTheDocument();
+    expect(process.querySelector("[data-motion='text-from-right']")).toBeInTheDocument();
+    expect(process.querySelector("[data-motion='text-from-left']")).toBeInTheDocument();
+    expect(process.querySelector("[data-motion='image-from-right']")).toBeInTheDocument();
 
     expect(screen.getByRole("heading", { name: /etika visual/i })).toBeInTheDocument();
 
