@@ -36,3 +36,10 @@ automation/storage/templates/*
 !automation/storage/templates/.gitkeep
 
 .worktrees/
+
+# Local agent and review artifacts
+/.codex-screenshots/
+/.superpowers/
+
+# Local test, server, and generated report output
+/output/
