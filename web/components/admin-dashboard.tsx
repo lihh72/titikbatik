@@ -2,9 +2,17 @@
 
 import { getDashboard } from "@/lib/automation-api";
 import type { DashboardData } from "@/lib/automation-types";
-import { Activity, AlertTriangle, Database, Eye, LoaderCircle, RefreshCw, Server, WandSparkles } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Clock3, Database, Eye, LoaderCircle, RefreshCw, Server, WandSparkles } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+
+function formatHeartbeat(value?: string | null) {
+  if (!value) return "Belum ada heartbeat";
+  return new Date(value).toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
 
 export function AdminDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -26,10 +34,18 @@ export function AdminDashboard() {
   useEffect(() => {
     let active = true;
     getDashboard()
-      .then((result) => { if (active) setData(result); })
-      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Dashboard gagal dimuat."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .then((result) => {
+        if (active) setData(result);
+      })
+      .catch((reason) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Dashboard gagal dimuat.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const metrics = data ? [
@@ -39,42 +55,116 @@ export function AdminDashboard() {
     { label: "Job gagal", value: data.job_failed, icon: AlertTriangle },
   ] : [];
 
+  const pipeline = data ? [
+    { label: "Prompt", value: data.active_batches, helper: "batch aktif", icon: WandSparkles },
+    { label: "Generate", value: data.job_queued, helper: "job antre", icon: Clock3 },
+    { label: "Combine", value: data.job_running, helper: "job berjalan", icon: Activity },
+    { label: "Video", value: data.job_failed, helper: "perlu cek", icon: AlertTriangle },
+  ] : [];
+
   return (
-    <main className="mx-auto max-w-[1480px] px-4 pb-10 sm:px-6 lg:px-8">
-      <section className="border-b border-white/10 pb-7">
-        <div className="flex flex-wrap items-end justify-between gap-5">
-          <div>
-            <p className="text-xs uppercase text-[#ffb66c]">Dashboard Automation</p>
-            <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">Status produksi Titik Batik</h1>
-            <p className="mt-3 text-sm text-white/45">Data langsung dari FastAPI, SQLite, worker, dan ComfyUI.</p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => void load()} disabled={loading} className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/6 text-white/65" title="Muat ulang"><RefreshCw size={17} className={loading ? "animate-spin" : ""} /></button>
-            <Link href="/admin/studio" className="flex items-center gap-2 rounded-full bg-[#ff9d42] px-5 py-3 text-sm font-semibold text-[#201307]"><WandSparkles size={16} />Buat batch</Link>
-          </div>
+    <section className="admin-dashboard" aria-labelledby="admin-dashboard-title">
+      <header className="admin-dashboard-hero">
+        <div>
+          <p className="admin-eyebrow">Pusat produksi</p>
+          <h1 id="admin-dashboard-title">Status produksi Titik Batik</h1>
+          <p>
+            Pantau pipeline dari prompt, generate, combine, sampai video tanpa kehilangan konteks kurasi.
+          </p>
         </div>
-      </section>
+        <div className="admin-dashboard-actions">
+          <button
+            type="button"
+            onClick={() => void load()}
+            disabled={loading}
+            className="admin-icon-action"
+            aria-label="Muat ulang dashboard"
+          >
+            <RefreshCw size={17} className={loading ? "animate-spin" : ""} aria-hidden="true" />
+          </button>
+          <Link href="/admin/studio" className="admin-primary-action">
+            <WandSparkles size={16} aria-hidden="true" />
+            Buat batch
+          </Link>
+        </div>
+      </header>
 
-      {loading && !data && <div className="flex items-center gap-2 py-16 text-sm text-white/45"><LoaderCircle size={17} className="animate-spin" />Memuat dashboard...</div>}
-      {error && <div className="mt-6 border border-red-400/20 bg-red-400/8 p-4 text-sm text-red-100/80">{error}</div>}
+      {loading && !data && (
+        <div className="admin-loading">
+          <LoaderCircle size={17} className="animate-spin" aria-hidden="true" />
+          Memuat dashboard...
+        </div>
+      )}
 
-      {data && <>
-        <section className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 xl:grid-cols-4">
-          {metrics.map(({ label, value, icon: Icon }) => <article key={label} className="bg-[#11110f] p-5"><Icon size={18} className="text-[#ffad5d]" /><p className="mt-5 text-xs uppercase text-white/35">{label}</p><p className="mt-2 text-3xl font-semibold">{value}</p></article>)}
-        </section>
+      {error && (
+        <div role="alert" className="admin-alert">
+          <AlertTriangle size={17} aria-hidden="true" />
+          {error}
+        </div>
+      )}
 
-        <section className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="border border-white/10 bg-white/4 p-5">
-            <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-sm font-medium"><Server size={17} className="text-[#ffad5d]" />ComfyUI</span><span className={data.comfyui === "connected" ? "text-emerald-300" : "text-red-300"}>{data.comfyui === "connected" ? "Terhubung" : "Terputus"}</span></div>
-            <div className="mt-5 grid grid-cols-2 gap-4 text-sm"><div><p className="text-white/35">Job antre</p><p className="mt-1 text-xl">{data.job_queued}</p></div><div><p className="text-white/35">Job berjalan</p><p className="mt-1 text-xl">{data.job_running}</p></div></div>
-          </div>
-          <div className="border border-white/10 bg-white/4 p-5">
-            <p className="flex items-center gap-2 text-sm font-medium"><Activity size={17} className="text-[#ffad5d]" />Heartbeat worker</p>
-            <p className="mt-5 text-sm text-white/60">{data.last_worker_heartbeat?.heartbeat_at ? new Date(data.last_worker_heartbeat.heartbeat_at).toLocaleString("id-ID") : "Belum ada heartbeat"}</p>
-            <p className="mt-1 text-xs text-white/30">{data.last_worker_heartbeat?.worker_id ?? "Worker belum teridentifikasi"}</p>
-          </div>
-        </section>
-      </>}
-    </main>
+      {data && (
+        <>
+          <section className="admin-pipeline-panel" aria-labelledby="admin-pipeline-title">
+            <div>
+              <p className="admin-eyebrow">Pipeline aktif</p>
+              <h2 id="admin-pipeline-title">Tahap produksi hari ini</h2>
+            </div>
+            <ul aria-label="Tahap produksi" className="admin-pipeline-list">
+              {pipeline.map(({ label, value, helper, icon: Icon }) => (
+                <li key={label} className="admin-pipeline-item">
+                  <span className="admin-pipeline-icon"><Icon size={17} aria-hidden="true" /></span>
+                  <span>
+                    <strong>{label}</strong>
+                    <small>{helper}</small>
+                  </span>
+                  <b>{value}</b>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="admin-metric-grid" aria-label="Ringkasan koleksi dan batch">
+            {metrics.map(({ label, value, icon: Icon }) => (
+              <article key={label} className="admin-metric-card">
+                <Icon size={18} aria-hidden="true" />
+                <p>{label}</p>
+                <strong>{value}</strong>
+              </article>
+            ))}
+          </section>
+
+          <section className="admin-system-grid" aria-label="Kesehatan sistem">
+            <article className="admin-system-card">
+              <div className="admin-system-card-heading">
+                <span><Server size={17} aria-hidden="true" />ComfyUI</span>
+                <strong data-state={data.comfyui === "connected" ? "good" : "bad"}>
+                  {data.comfyui === "connected" ? "Terhubung" : "Terputus"}
+                </strong>
+              </div>
+              <dl>
+                <div>
+                  <dt>Job antre</dt>
+                  <dd>{data.job_queued}</dd>
+                </div>
+                <div>
+                  <dt>Job berjalan</dt>
+                  <dd>{data.job_running}</dd>
+                </div>
+              </dl>
+            </article>
+
+            <article className="admin-system-card">
+              <div className="admin-system-card-heading">
+                <span><CheckCircle2 size={17} aria-hidden="true" />Heartbeat worker</span>
+                <strong>{data.last_worker_heartbeat?.worker_id ?? "Belum aktif"}</strong>
+              </div>
+              <p>{formatHeartbeat(data.last_worker_heartbeat?.heartbeat_at)}</p>
+              <small>Sinkronisasi worker terakhir yang tercatat di backend.</small>
+            </article>
+          </section>
+        </>
+      )}
+    </section>
   );
 }
