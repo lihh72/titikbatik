@@ -1,15 +1,22 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { GalleryPage } from "@/components/gallery-page";
 import { GalleryDetailPage } from "@/components/gallery-detail-page";
+import { GalleryPage } from "@/components/gallery-page";
+import type { Batik, PublicBatikList } from "@/lib/automation-types";
 
-const mocks = vi.hoisted(() => ({ listPublicBatiks: vi.fn(), getPublicBatik: vi.fn() }));
-vi.mock("@/lib/automation-api", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/automation-api")>(),
-  listPublicBatiks: mocks.listPublicBatiks,
-  getPublicBatik: mocks.getPublicBatik,
+const mocks = vi.hoisted(() => ({
+  getPublicBatik: vi.fn(),
+  listPublicBatiks: vi.fn(),
 }));
+
+vi.mock("@/lib/automation-api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/automation-api")>()),
+  getPublicBatik: mocks.getPublicBatik,
+  listPublicBatiks: mocks.listPublicBatiks,
+}));
+
 vi.mock("@/components/app-provider", () => ({
   useApp: () => ({
     history: [],
@@ -21,44 +28,131 @@ vi.mock("@/components/app-provider", () => ({
   }),
 }));
 
+function batik(id: number, keyword: string, slug = keyword.toLowerCase().replaceAll(" ", "-")): Batik {
+  return {
+    id,
+    slug,
+    keyword,
+    warna: "indigo",
+    style: "modern",
+    seed: id,
+    positive_prompt: keyword,
+    negative_prompt: null,
+    file_preview: `${slug}.webp`,
+    file_video: null,
+    prompt_hash: `hash-${id}`,
+    is_published: true,
+    created_at: "2026-07-03T00:00:00Z",
+    updated_at: "2026-07-03T00:00:00Z",
+    preview_url: `http://127.0.0.1:8000/api/v1/images/preview/${slug}.webp`,
+    costume_urls: [],
+    costume_files: [],
+  };
+}
+
+function response(items: Batik[], page = 1, totalPages = 1): PublicBatikList {
+  return {
+    items,
+    pagination: {
+      page,
+      per_page: 32,
+      total: items.length,
+      total_pages: totalPages,
+    },
+  };
+}
+
 describe("public gallery", () => {
+  const kawung = batik(12, "Kawung Indigo", "kawung-indigo");
+
   beforeEach(() => {
-    mocks.listPublicBatiks.mockResolvedValue({
-      items: [{
-        id: 12,
-        slug: "kawung-indigo",
-        keyword: "Kawung Indigo",
-        warna: "indigo",
-        style: "modern",
-        seed: 4,
-        positive_prompt: "kawung",
-        negative_prompt: null,
-        file_preview: "kawung.webp",
-        file_video: null,
-        prompt_hash: "hash",
-        is_published: true,
-        created_at: "2026-07-03T00:00:00Z",
-        updated_at: "2026-07-03T00:00:00Z",
-        preview_url: "http://127.0.0.1:8000/api/v1/images/preview/kawung.webp",
-        costume_urls: [],
-        costume_files: [],
-      }],
-      pagination: { page: 1, per_page: 32, total: 1, total_pages: 1 },
-    });
+    mocks.getPublicBatik.mockReset();
+    mocks.listPublicBatiks.mockReset();
+    mocks.listPublicBatiks.mockResolvedValue(response([kawung]));
   });
 
-  it("renders only batiks returned by the public API", async () => {
+  it("renders returned batiks as light square motif cards with slug detail links", async () => {
     render(<GalleryPage />);
 
+    expect(screen.getByRole("heading", { name: "Galeri motif terkurasi" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Cari motif, warna, atau style")).toBeInTheDocument();
     expect(await screen.findByText("Kawung Indigo")).toBeInTheDocument();
-    expect(screen.getByAltText("Motif Kawung Indigo")).toHaveAttribute("src", expect.stringContaining("kawung.webp"));
+    expect(screen.getByAltText("Motif Kawung Indigo")).toHaveAttribute(
+      "src",
+      expect.stringContaining("kawung-indigo.webp"),
+    );
     expect(screen.queryByText("Ceplok Arunika")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Kawung Indigo/i })).toHaveAttribute("href", "/gallery/kawung-indigo");
+    expect(screen.getByRole("link", { name: /Kawung Indigo/i })).toHaveAttribute(
+      "href",
+      "/gallery/kawung-indigo",
+    );
+    screen
+      .getAllByTestId("motif-frame")
+      .forEach((frame) => expect(frame).toHaveClass("aspect-square"));
+  });
+
+  it("submits the exact trimmed search query supported by the backend", async () => {
+    const user = userEvent.setup();
+    mocks.listPublicBatiks
+      .mockResolvedValueOnce(response([kawung]))
+      .mockResolvedValueOnce(response([batik(13, "Mega Mendung", "mega-mendung")]));
+
+    render(<GalleryPage />);
+    expect(await screen.findByText("Kawung Indigo")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Cari motif, warna, atau style"), "  mega mendung  ");
+    await user.click(screen.getByRole("button", { name: "Cari" }));
+
+    await waitFor(() => {
+      expect(mocks.listPublicBatiks).toHaveBeenLastCalledWith({
+        page: 1,
+        perPage: 32,
+        query: "mega mendung",
+      });
+    });
+    expect(await screen.findByText("Mega Mendung")).toBeInTheDocument();
+  });
+
+  it("renders backend errors as an alert", async () => {
+    mocks.listPublicBatiks.mockRejectedValueOnce(new Error("Galeri gagal dimuat."));
+
+    render(<GalleryPage />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Galeri gagal dimuat.");
+  });
+
+  it("renders a composed empty archive state", async () => {
+    mocks.listPublicBatiks.mockResolvedValueOnce(response([]));
+
+    render(<GalleryPage />);
+
+    expect(await screen.findByText("Belum ada batik terpublikasi.")).toBeInTheDocument();
+  });
+
+  it("loads the next page through existing pagination", async () => {
+    const user = userEvent.setup();
+    const parang = batik(14, "Parang Sore", "parang-sore");
+    mocks.listPublicBatiks
+      .mockResolvedValueOnce(response([kawung], 1, 2))
+      .mockResolvedValueOnce(response([parang], 2, 2));
+
+    render(<GalleryPage />);
+    expect(await screen.findByText("Kawung Indigo")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Berikutnya" }));
+
+    await waitFor(() => {
+      expect(mocks.listPublicBatiks).toHaveBeenLastCalledWith({
+        page: 2,
+        perPage: 32,
+        query: "",
+      });
+    });
+    expect(await screen.findByText("Parang Sore")).toBeInTheDocument();
   });
 
   it("loads a gallery detail by slug", async () => {
-    const batik = (await mocks.listPublicBatiks()).items[0];
-    mocks.getPublicBatik.mockResolvedValue(batik);
+    mocks.getPublicBatik.mockResolvedValue(kawung);
 
     render(<GalleryDetailPage slug="kawung-indigo" />);
 

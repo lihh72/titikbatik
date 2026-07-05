@@ -1,10 +1,14 @@
 "use client";
 
 import { MotifCard } from "@/components/motif-card";
+import { Feedback } from "@/components/ui/feedback";
+import { PageHeading } from "@/components/ui/page-heading";
 import { listPublicBatiks } from "@/lib/automation-api";
 import type { Batik, Pagination } from "@/lib/automation-types";
-import { AlertCircle, LoaderCircle, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+
+const pageButtonClass = "min-h-11 rounded-[var(--radius-sm)] border border-[color:var(--line)] px-4 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--terracotta-dark)] hover:text-[color:var(--terracotta-dark)] disabled:cursor-not-allowed disabled:opacity-40";
 
 export function GalleryPage() {
   const [items, setItems] = useState<Batik[]>([]);
@@ -18,17 +22,130 @@ export function GalleryPage() {
   useEffect(() => {
     let active = true;
     listPublicBatiks({ page, perPage: 32, query: activeQuery })
-      .then((result) => { if (active) { setItems(result.items); setPagination(result.pagination); } })
-      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Galeri gagal dimuat."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .then((result) => {
+        if (active) {
+          setItems(result.items);
+          setPagination(result.pagination);
+          setError(null);
+        }
+      })
+      .catch((reason) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Galeri gagal dimuat.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [activeQuery, page]);
 
-  function search(event: FormEvent) { event.preventDefault(); setLoading(true); setError(null); setPage(1); setActiveQuery(query.trim()); }
+  function search(event: FormEvent) {
+    event.preventDefault();
+    const nextQuery = query.trim();
+    if (nextQuery === activeQuery && page === 1) return;
+    setLoading(true);
+    setError(null);
+    setPage(1);
+    setActiveQuery(nextQuery);
+  }
 
-  return <main className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
-    <header className="border-b border-white/10 pb-7"><p className="text-xs uppercase text-[#ffb66c]">Galeri Publik</p><div className="mt-3 flex flex-wrap items-end justify-between gap-5"><div><h1 className="text-3xl font-semibold sm:text-4xl">Koleksi batik terpublikasi</h1><p className="mt-3 text-sm text-white/45">{pagination.total} karya tersedia dari server Titik Batik.</p></div><form onSubmit={search} className="flex min-w-[280px] border border-white/12 bg-white/5"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari keyword, warna, atau style" className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm outline-none" /><button className="grid w-12 place-items-center" title="Cari"><Search size={17} /></button></form></div></header>
-    {error && <div className="mt-5 flex gap-2 border border-red-400/20 bg-red-400/8 p-4 text-sm text-red-100/80"><AlertCircle size={17} />{error}</div>}
-    {loading ? <div className="flex items-center gap-2 py-20 text-sm text-white/45"><LoaderCircle size={17} className="animate-spin" />Memuat galeri...</div> : items.length ? <><section className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{items.map((batik) => <MotifCard key={batik.id} batik={batik} />)}</section><div className="mt-7 flex items-center justify-center gap-3"><button disabled={page <= 1} onClick={() => { setLoading(true); setPage((value) => value - 1); }} className="border border-white/12 px-4 py-2 text-sm disabled:opacity-30">Sebelumnya</button><span className="text-sm text-white/45">{pagination.page} / {Math.max(pagination.total_pages, 1)}</span><button disabled={page >= pagination.total_pages} onClick={() => { setLoading(true); setPage((value) => value + 1); }} className="border border-white/12 px-4 py-2 text-sm disabled:opacity-30">Berikutnya</button></div></> : <div className="py-20 text-center"><h2 className="text-xl font-medium">Belum ada batik terpublikasi.</h2><p className="mt-2 text-sm text-white/40">Admin dapat mempublikasikan hasil dari halaman Batik.</p></div>}
-  </main>;
+  return (
+    <main className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8" data-page-surface="archive-light">
+      <section className="rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-5 shadow-[0_24px_70px_rgba(88,70,49,0.10)] sm:p-8">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
+          <PageHeading
+            eyebrow="Arsip motif"
+            title="Galeri motif terkurasi"
+            description="Jelajahi motif yang sudah dipublikasikan. Preview kostum muncul saat kartu diarahkan, sementara motif tetap menjadi arsip utama."
+          />
+
+          <form
+            onSubmit={search}
+            className="rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
+            role="search"
+            aria-label="Pencarian koleksi"
+          >
+            <div className="flex min-h-14 items-center gap-2">
+              <label htmlFor="gallery-query" className="sr-only">Cari motif, warna, atau style</label>
+              <Search size={18} className="ml-3 text-[color:var(--ink-soft)]" aria-hidden="true" />
+              <input
+                id="gallery-query"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Cari motif, warna, atau style"
+                className="min-w-0 flex-1 bg-transparent px-2 text-sm text-[color:var(--ink)] outline-none placeholder:text-[color:var(--ink-soft)]"
+              />
+              <button
+                type="submit"
+                className="min-h-11 rounded-[var(--radius-sm)] bg-[color:var(--ink)] px-5 text-sm font-semibold text-[color:var(--paper-raised)] transition hover:bg-[color:var(--terracotta-dark)]"
+              >
+                Cari
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-3 text-sm text-[color:var(--ink-soft)]">
+          <span className="rounded-[var(--radius-sm)] border border-[color:var(--line)] px-4 py-2">{pagination.total} karya tersedia</span>
+          <span className="rounded-[var(--radius-sm)] border border-[color:var(--line)] px-4 py-2">Halaman {pagination.page} dari {Math.max(pagination.total_pages, 1)}</span>
+        </div>
+      </section>
+
+      {error && (
+        <div className="mt-6">
+          <Feedback kind="error">{error}</Feedback>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="py-20">
+          <Feedback>Menata motif dan metadata koleksi...</Feedback>
+        </div>
+      ) : error ? null : items.length ? (
+        <>
+          <section className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-label="Daftar motif">
+            {items.map((batik) => <MotifCard key={batik.id} batik={batik} />)}
+          </section>
+
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => {
+                setLoading(true);
+                setError(null);
+                setPage((value) => value - 1);
+              }}
+              className={pageButtonClass}
+            >
+              Sebelumnya
+            </button>
+            <span className="text-sm text-[color:var(--ink-soft)]">
+              {pagination.page} / {Math.max(pagination.total_pages, 1)}
+            </span>
+            <button
+              type="button"
+              disabled={page >= pagination.total_pages}
+              onClick={() => {
+                setLoading(true);
+                setError(null);
+                setPage((value) => value + 1);
+              }}
+              className={pageButtonClass}
+            >
+              Berikutnya
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="py-20">
+          <Feedback kind="empty">
+            <strong>Belum ada batik terpublikasi.</strong>
+            <span>Admin dapat mempublikasikan hasil dari halaman gallery internal.</span>
+          </Feedback>
+        </div>
+      )}
+    </main>
+  );
 }
