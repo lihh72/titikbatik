@@ -16,16 +16,26 @@ export function EditorialStory() {
   const rightImageX = useTransform(scrollYProgress, [0.34, 0.62], reduceMotion ? [0, 0] : [90, 0]);
   const leftTextX = useTransform(scrollYProgress, [0.12, 0.36], reduceMotion ? [0, 0] : [70, 0]);
   const rightTextX = useTransform(scrollYProgress, [0.34, 0.62], reduceMotion ? [0, 0] : [-70, 0]);
+  const introY = useTransform(scrollYProgress, [0.02, 0.22], reduceMotion ? [0, 0] : [42, 0]);
+  const imageScale = useTransform(
+    scrollYProgress,
+    [0.08, 0.28, 0.72, 0.9],
+    reduceMotion ? [1, 1, 1, 1] : [0.88, 1, 1, 0.96],
+  );
+  const leftImageRotate = useTransform(scrollYProgress, [0.12, 0.36], reduceMotion ? [0, 0] : [-2.5, 0]);
+  const rightImageRotate = useTransform(scrollYProgress, [0.34, 0.62], reduceMotion ? [0, 0] : [2.5, 0]);
   const textOpacity = useTransform(
     scrollYProgress,
     [0.08, 0.28, 0.72, 0.92],
     reduceMotion ? [1, 1, 1, 1] : [0.68, 1, 1, 0.78],
   );
+  const copyY = useTransform(scrollYProgress, [0.12, 0.36, 0.62], reduceMotion ? [0, 0, 0] : [36, 0, -12]);
   const transitionScale = useTransform(
     scrollYProgress,
     [0.35, 0.75],
     reduceMotion ? [1, 1] : [0.94, 1.04],
   );
+  const transitionY = useTransform(scrollYProgress, [0.42, 0.78], reduceMotion ? [0, 0] : [54, -28]);
 
   return (
     <section
@@ -33,7 +43,7 @@ export function EditorialStory() {
       aria-label="Proses batik"
       className={`editorial-story${reduceMotion ? " editorial-story-reduced" : ""}`}
     >
-      <motion.header className="editorial-story-intro" style={{ opacity: textOpacity }}>
+      <motion.header className="editorial-story-intro" style={{ opacity: textOpacity, y: introY }}>
         <p className="editorial-kicker">Dari tangan ke arsip</p>
         <h2 className="serif">Sebuah motif dimulai jauh sebelum layar menyala.</h2>
         <p>
@@ -46,7 +56,7 @@ export function EditorialStory() {
         <motion.figure
           className="editorial-figure editorial-figure-portrait"
           data-motion="image-from-left"
-          style={{ x: leftImageX, y: imageY }}
+          style={{ rotate: leftImageRotate, scale: imageScale, x: leftImageX, y: imageY }}
         >
           <div className="editorial-image-mask">
             <Image
@@ -64,7 +74,7 @@ export function EditorialStory() {
         <motion.div
           className="editorial-copy"
           data-motion="text-from-right"
-          style={{ opacity: textOpacity, x: leftTextX }}
+          style={{ opacity: textOpacity, x: leftTextX, y: copyY }}
         >
           <p className="editorial-step">Garis yang menyimpan keputusan</p>
           <h3 className="serif">Canting menerjemahkan ingatan menjadi batas.</h3>
@@ -79,7 +89,7 @@ export function EditorialStory() {
         <motion.div
           className="editorial-copy"
           data-motion="text-from-left"
-          style={{ opacity: textOpacity, x: rightTextX }}
+          style={{ opacity: textOpacity, x: rightTextX, y: copyY }}
         >
           <p className="editorial-step">Material ikut berbicara</p>
           <h3 className="serif">Panas dan malam menentukan ritme kerja.</h3>
@@ -91,7 +101,7 @@ export function EditorialStory() {
         <motion.figure
           className="editorial-figure editorial-figure-landscape"
           data-motion="image-from-right"
-          style={{ x: rightImageX, y: imageY }}
+          style={{ rotate: rightImageRotate, scale: imageScale, x: rightImageX, y: imageY }}
         >
           <div className="editorial-image-mask">
             <Image
@@ -110,7 +120,7 @@ export function EditorialStory() {
 
       <motion.figure
         className="editorial-transition"
-        style={{ scale: transitionScale, opacity: textOpacity }}
+        style={{ scale: transitionScale, opacity: textOpacity, y: transitionY }}
       >
         <div className="editorial-transition-image">
           <Image

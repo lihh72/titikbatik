@@ -6,12 +6,25 @@ import { Action } from "@/components/ui/action";
 import { Feedback } from "@/components/ui/feedback";
 import { listPublicBatiks } from "@/lib/automation-api";
 import type { Batik } from "@/lib/automation-types";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function LandingPage() {
   const [items, setItems] = useState<Batik[]>([]);
   const [loading, setLoading] = useState(true);
+  const heroRef = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroTextX = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -54]);
+  const heroTextY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -18]);
+  const heroTextOpacity = useTransform(scrollYProgress, [0, 0.82], reduceMotion ? [1, 1] : [1, 0.64]);
+  const heroImageX = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, 48]);
+  const heroImageY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -34]);
+  const heroImageScale = useTransform(scrollYProgress, [0, 1], reduceMotion ? [1, 1] : [1, 0.94]);
 
   useEffect(() => {
     let active = true;
@@ -24,17 +37,23 @@ export function LandingPage() {
 
   return (
     <main className="landing-page">
-      <section className="landing-hero" aria-label="Pengantar arsip">
+      <section className="landing-hero" aria-label="Pengantar arsip" ref={heroRef}>
         <div className="landing-hero-inner">
-          <div className="landing-hero-copyblock">
+          <motion.div
+            className="landing-hero-copyblock"
+            style={{ opacity: heroTextOpacity, x: heroTextX, y: heroTextY }}
+          >
             <p className="landing-hero-kicker">Arsip Tekstil Nusantara</p>
             <h1 className="serif">Motif lama. Bahasa baru.</h1>
             <p className="landing-hero-copy">
               Arsip batik yang menghubungkan kerja tangan, pengetahuan material, dan eksperimen generatif yang dikurasi manusia.
             </p>
             <Action href="/gallery" className="landing-hero-action">Jelajahi koleksi</Action>
-          </div>
-          <figure className="landing-hero-figure">
+          </motion.div>
+          <motion.figure
+            className="landing-hero-figure"
+            style={{ scale: heroImageScale, x: heroImageX, y: heroImageY }}
+          >
             <div className="landing-hero-image">
               <Image
                 src="/editorial/batik-artisan-canting.jpg"
@@ -47,7 +66,7 @@ export function LandingPage() {
             <figcaption>
               Proses mencanting di Trusmi, Cirebon. Foto Ahaetulla, CC BY-SA 4.0.
             </figcaption>
-          </figure>
+          </motion.figure>
         </div>
       </section>
 
