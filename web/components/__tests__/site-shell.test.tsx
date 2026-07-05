@@ -125,6 +125,32 @@ describe("public site shell", () => {
     expect(main).toHaveAttribute("inert");
   });
 
+  it("isolates every focusable element outside the dialog and restores the skip link inert state", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<SiteShell><p>Isi halaman</p></SiteShell>);
+    const skipLink = screen.getByRole("link", { name: "Lewati ke konten" });
+
+    await user.click(screen.getByRole("button", { name: "Buka navigasi" }));
+    const dialog = screen.getByRole("dialog", { name: "Navigasi utama" });
+    const outsideFocusable = [...document.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+      .filter((element) => !dialog.contains(element));
+
+    expect(skipLink).toHaveAttribute("inert");
+    outsideFocusable.forEach((element) => expect(element.closest("[inert]")).not.toBeNull());
+
+    await user.keyboard("{Escape}");
+    expect(skipLink).not.toHaveAttribute("inert");
+
+    unmount();
+    const secondRender = render(<SiteShell><p>Isi halaman</p></SiteShell>);
+    const preInertSkipLink = screen.getByRole("link", { name: "Lewati ke konten", hidden: true });
+    preInertSkipLink.setAttribute("inert", "");
+    await user.click(screen.getByRole("button", { name: "Buka navigasi" }));
+    await user.keyboard("{Escape}");
+    expect(preInertSkipLink).toHaveAttribute("inert");
+    secondRender.unmount();
+  });
+
   it("keeps a rendered drawer visible outside the mobile breakpoint", () => {
     const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
     const drawerRules = [...css.matchAll(/\.public-mobile-nav\s*\{([^}]*)\}/g)].map((match) => match[1]);

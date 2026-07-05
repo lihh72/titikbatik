@@ -30,10 +30,11 @@ export function PublicNavbar() {
     if (!open) return;
 
     const dialog = document.querySelector<HTMLElement>("#public-mobile-nav");
+    const skipLink = document.querySelector<HTMLElement>(".skip-link");
     const controls = document.querySelector<HTMLElement>(".public-navbar-controls");
     const main = document.querySelector<HTMLElement>("#main-content");
     const footer = document.querySelector<HTMLElement>(".public-footer");
-    const inertTargets = [controls, main, footer].filter((target): target is HTMLElement => Boolean(target)).map((target) => ({
+    const inertTargets = [skipLink, controls, main, footer].filter((target): target is HTMLElement => Boolean(target)).map((target) => ({
       target,
       wasInert: target.hasAttribute("inert"),
     }));
