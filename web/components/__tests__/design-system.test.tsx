@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { Action } from "@/components/ui/action";
@@ -15,17 +15,33 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("design system", () => {
+  it("contains no legacy glass surface class tokens in TSX", () => {
+    const legacyTokens = new RegExp(`\\b(?:${["glass", "panel"].join("-")}|${["glass", "soft"].join("-")}|${["ambient", "noise"].join("-")})\\b`);
+    const findLegacyConsumers = (directory: string): string[] => readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      if (entry.name === "node_modules" || entry.name === ".next") return [];
+
+      const path = resolve(directory, entry.name);
+      if (entry.isDirectory()) return findLegacyConsumers(path);
+      if (!entry.name.endsWith(".tsx")) return [];
+
+      return legacyTokens.test(readFileSync(path, "utf8")) ? [path] : [];
+    });
+
+    expect(findLegacyConsumers(process.cwd())).toEqual([]);
+  });
+
   it("keeps pressed action feedback after variant hover transforms in the CSS cascade", () => {
     const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
-    const activeSelector = '.action:not(:disabled):not([aria-disabled="true"]):active';
-    const activeIndex = css.lastIndexOf(activeSelector);
+    const activeRule = css.match(/\.action:active:not\(:disabled\):not\(\[aria-disabled="true"\]\)\s*\{([^}]*)\}/);
     const hoverTransformIndices = Array.from(
       css.matchAll(/\.action-[\w-]+:not\(:disabled\):not\(\[aria-disabled="true"\]\):hover\s*\{[^}]*\btransform\s*:/g),
       ({ index }) => index,
     );
 
+    expect(activeRule).not.toBeNull();
+    expect(activeRule?.[1]).toMatch(/\btransform\s*:\s*translateY\(1px\)\s+scale\(0\.98\)\s*;/);
     expect(hoverTransformIndices.length).toBeGreaterThan(0);
-    expect(activeIndex).toBeGreaterThan(Math.max(...hoverTransformIndices));
+    expect(activeRule?.index).toBeGreaterThan(Math.max(...hoverTransformIndices));
   });
 
   it("renders semantic page and feedback regions", () => {
@@ -39,6 +55,17 @@ describe("design system", () => {
     expect(screen.getByLabelText("TitikBatik AI")).toHaveClass("logo-mark");
     expect(screen.getByRole("link", { name: "Jelajahi koleksi" })).toHaveAttribute("href", "/gallery");
     expect(screen.getByRole("link", { name: "Jelajahi koleksi" })).toHaveAttribute("data-variant", "primary");
+  });
+
+  it("makes aria-disabled link actions inert", () => {
+    const onClick = vi.fn();
+    render(<Action href="/gallery" aria-disabled="true" onClick={onClick}>Jelajahi koleksi</Action>);
+    const link = screen.getByRole("link", { name: "Jelajahi koleksi" });
+
+    expect(link).toHaveAttribute("aria-disabled", "true");
+    expect(link).toHaveAttribute("tabindex", "-1");
+    expect(fireEvent.click(link)).toBe(false);
+    expect(onClick).not.toHaveBeenCalled();
   });
 
   it("renders button actions with safe defaults and forwarded presentation", () => {

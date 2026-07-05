@@ -42,10 +42,10 @@ export function AdminLoginPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#090a0b] px-4 py-8 text-white sm:px-6">
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_68%_12%,rgba(255,157,66,.18),transparent_28%),radial-gradient(circle_at_15%_48%,rgba(53,90,74,.24),transparent_33%),linear-gradient(135deg,#080a0b,#171411_50%,#090a0b)]" />
-      <div className="ambient-noise" />
+      <div className="ambient-texture" />
 
       <main className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center justify-center">
-        <section className="glass-panel grid w-full overflow-hidden rounded-[36px] lg:grid-cols-[1.05fr_.95fr]">
+        <section className="archive-panel grid w-full overflow-hidden rounded-[36px] lg:grid-cols-[1.05fr_.95fr]">
           <div className="relative min-h-[360px] overflow-hidden border-b border-white/10 p-8 lg:min-h-[650px] lg:border-b-0 lg:border-r sm:p-12">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_32%_26%,rgba(255,157,66,.22),transparent_25%),linear-gradient(145deg,rgba(20,55,52,.88),rgba(12,12,14,.75))]" />
             <div className="relative flex h-full flex-col justify-between">
@@ -66,8 +66,8 @@ export function AdminLoginPage() {
               <p className="mt-3 text-sm leading-6 text-white/42">Gunakan akun admin yang ditentukan pada file <code className="text-white/65">.env.local</code>.</p>
 
               <form onSubmit={submit} className="mt-8 space-y-4">
-                <label className="glass-soft flex items-center gap-3 rounded-2xl px-4 py-3.5"><Mail size={17} className="text-white/35" /><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email administrator" autoComplete="username" className="w-full bg-transparent text-sm outline-none placeholder:text-white/28" /></label>
-                <label className="glass-soft flex items-center gap-3 rounded-2xl px-4 py-3.5"><LockKeyhole size={17} className="text-white/35" /><input required type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password administrator" autoComplete="current-password" className="w-full bg-transparent text-sm outline-none placeholder:text-white/28" /><button type="button" onClick={() => setShowPassword((value) => !value)} className="text-white/35 hover:text-white" aria-label="Tampilkan password">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></label>
+                <label className="archive-soft flex items-center gap-3 rounded-2xl px-4 py-3.5"><Mail size={17} className="text-white/35" /><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email administrator" autoComplete="username" className="w-full bg-transparent text-sm outline-none placeholder:text-white/28" /></label>
+                <label className="archive-soft flex items-center gap-3 rounded-2xl px-4 py-3.5"><LockKeyhole size={17} className="text-white/35" /><input required type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password administrator" autoComplete="current-password" className="w-full bg-transparent text-sm outline-none placeholder:text-white/28" /><button type="button" onClick={() => setShowPassword((value) => !value)} className="text-white/35 hover:text-white" aria-label="Tampilkan password">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></label>
                 {error && <div className="rounded-2xl border border-red-300/20 bg-red-400/8 px-4 py-3 text-sm text-red-100">{error}</div>}
                 <button disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ff9d42] px-5 py-3.5 text-sm font-semibold text-[#201307] transition hover:scale-[1.02] hover:bg-[#ffb363] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Memeriksa akun..." : "Masuk sebagai Admin"}</button>
               </form>

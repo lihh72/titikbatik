@@ -32,10 +32,25 @@ export function Action({
   const classes = cn("action", `action-${variant}`, className);
 
   if ("href" in actionProps && actionProps.href !== undefined) {
-    const { href, ...linkProps } = actionProps;
+    const { href, onClick, tabIndex, ...linkProps } = actionProps;
+    const disabled = linkProps["aria-disabled"] === true || linkProps["aria-disabled"] === "true";
 
     return (
-      <Link {...linkProps} className={classes} data-variant={variant} href={href}>
+      <Link
+        {...linkProps}
+        className={classes}
+        data-variant={variant}
+        href={href}
+        onClick={(event) => {
+          if (disabled) {
+            event.preventDefault();
+            return;
+          }
+
+          onClick?.(event);
+        }}
+        tabIndex={disabled ? -1 : tabIndex}
+      >
         {children}
       </Link>
     );

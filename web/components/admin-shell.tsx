@@ -34,10 +34,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="absolute right-[5%] top-[7%] h-44 w-44 rounded-full bg-[#ffb05c]/15 blur-[55px]" />
         <div className="absolute inset-0 bg-black/28 backdrop-blur-[3px]" />
       </div>
-      <div className="ambient-noise" />
+      <div className="ambient-texture" />
 
       <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 sm:pt-6">
-        <nav className="glass-panel mx-auto flex max-w-[1480px] items-center justify-between rounded-full px-3 py-2.5 sm:px-4">
+        <nav className="archive-panel mx-auto flex max-w-[1480px] items-center justify-between rounded-full px-3 py-2.5 sm:px-4">
           <Link href="/admin" className="flex items-center gap-2.5 pl-1"><LogoMark decorative /><div className="leading-none"><span className="block text-sm font-semibold sm:text-base">TitikBatik AI</span><span className="mt-1 hidden text-[9px] uppercase text-[#ffb66c] sm:block">Automation Admin</span></div></Link>
 
           <div className="hidden items-center gap-1 rounded-full border border-white/10 bg-black/15 p-1 lg:flex">
@@ -54,7 +54,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
 
-        {open && <div className="glass-panel mx-auto mt-3 max-w-sm rounded-[26px] p-3 lg:hidden">{navItems.map((item) => { const Icon = item.icon; return <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/70 hover:bg-white/8 hover:text-white"><Icon size={16} />{item.label}</Link>; })}<Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/70 hover:bg-white/8 hover:text-white"><Home size={16} />Galeri publik</Link><button onClick={logout} className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ff9d42] px-4 py-3 text-sm font-semibold text-[#201307]"><LogOut size={16} />Keluar</button></div>}
+        {open && <div className="archive-panel mx-auto mt-3 max-w-sm rounded-[26px] p-3 lg:hidden">{navItems.map((item) => { const Icon = item.icon; return <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/70 hover:bg-white/8 hover:text-white"><Icon size={16} />{item.label}</Link>; })}<Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/70 hover:bg-white/8 hover:text-white"><Home size={16} />Galeri publik</Link><button onClick={logout} className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ff9d42] px-4 py-3 text-sm font-semibold text-[#201307]"><LogOut size={16} />Keluar</button></div>}
       </header>
 
       <div className="relative z-10 min-h-screen pt-24 sm:pt-28">

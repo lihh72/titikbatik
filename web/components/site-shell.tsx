@@ -28,10 +28,10 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         {[0, 1, 2, 3, 4].map((i) => <span key={i} className="absolute right-[2.5rem] top-[22%] h-40 w-14 origin-bottom rounded-[100%_0_100%_0] bg-[#526c4d]/25 blur-[2px]" style={{ transform: `rotate(${i * 25 - 48}deg) translateY(${i * 12}px)` }} />)}
         <div className="absolute inset-0 bg-black/28 backdrop-blur-[3px]" />
       </div>
-      <div className="ambient-noise" />
+      <div className="ambient-texture" />
 
       <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 sm:pt-6">
-        <nav className="glass-panel mx-auto flex max-w-7xl items-center justify-between rounded-full px-3 py-2.5 sm:px-4">
+        <nav className="archive-panel mx-auto flex max-w-7xl items-center justify-between rounded-full px-3 py-2.5 sm:px-4">
           <Link href="/" className="flex items-center gap-2.5 pl-1" aria-label="TitikBatik AI"><LogoMark decorative /><div className="leading-none"><span className="block text-sm font-semibold tracking-tight sm:text-base">TitikBatik AI</span><span className="mt-1 hidden text-[9px] uppercase tracking-[0.22em] text-white/38 sm:block">Galeri Batik Digital</span></div></Link>
 
           <div className="hidden items-center gap-1 rounded-full border border-white/10 bg-black/15 p-1 lg:flex">
@@ -44,13 +44,13 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
 
-        {open && <div className="glass-panel mx-auto mt-3 max-w-sm rounded-[26px] p-3 lg:hidden">{navItems.map((item) => { const Icon = item.icon; return <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/70 hover:bg-white/8 hover:text-white"><Icon size={16} />{item.label}</Link>; })}</div>}
+        {open && <div className="archive-panel mx-auto mt-3 max-w-sm rounded-[26px] p-3 lg:hidden">{navItems.map((item) => { const Icon = item.icon; return <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/70 hover:bg-white/8 hover:text-white"><Icon size={16} />{item.label}</Link>; })}</div>}
       </header>
 
       <div className="relative z-10 min-h-screen pt-24 sm:pt-28">{children}</div>
 
       <footer className="relative z-10 mx-auto max-w-7xl px-4 pb-8 pt-12 sm:px-6 lg:px-8">
-        <div className="glass-panel rounded-[32px] p-6 sm:p-8">
+        <div className="archive-panel rounded-[32px] p-6 sm:p-8">
           <div className="flex flex-col gap-8 border-b border-white/10 pb-8 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3"><LogoMark decorative /><div><strong className="block">TitikBatik AI</strong><span className="text-xs text-white/40">Galeri publik hasil eksplorasi batik digital terkurasi</span></div></div>
             <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/52"><Link href="/about" className="transition hover:text-[#ffb363]">Tentang Kami</Link><Link href="/gallery" className="transition hover:text-[#ffb363]">Galeri</Link><Link href="/help" className="transition hover:text-[#ffb363]">Pusat Bantuan</Link><a href="mailto:titikbatik@example.com" className="transition hover:text-[#ffb363]">Kontak</a></div>
