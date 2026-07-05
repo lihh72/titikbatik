@@ -25,23 +25,23 @@ export function BatikMedia({ batik }: { batik: Batik }) {
       const strip = thumbnailStrip.current;
       setHasOverflow(Boolean(strip && strip.scrollWidth > strip.clientWidth));
     };
-    const frame = window.requestAnimationFrame(updateOverflow);
+    const timer = window.setTimeout(updateOverflow, 0);
     window.addEventListener("resize", updateOverflow);
     return () => {
-      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
       window.removeEventListener("resize", updateOverflow);
     };
-  }, [mediaItems.length]);
+  }, [batik.id, mediaItems.length]);
 
   function scrollThumbnails(direction: -1 | 1) {
     thumbnailStrip.current?.scrollBy({ left: direction * 240, behavior: "smooth" });
   }
 
   return (
-    <div className="min-w-0 space-y-3">
-      <div className="relative aspect-[4/5] overflow-hidden bg-black/30">
+    <section className="batik-media" aria-label={`Media batik ${batik.keyword}`}>
+      <div className="batik-media-viewer">
         {!selected ? (
-          <div className="grid h-full place-items-center text-sm text-white/35">Media belum tersedia</div>
+          <div className="batik-media-empty" role="status">Media belum tersedia</div>
         ) : selected.kind === "image" ? (
           <Image
             unoptimized
@@ -50,7 +50,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
             sizes="(max-width: 1024px) 100vw, 760px"
             src={selected.url}
             alt={selected.label}
-            className="object-contain"
+            className="batik-media-main-image"
             data-testid="main-image"
           />
         ) : (
@@ -62,18 +62,18 @@ export function BatikMedia({ batik }: { batik: Batik }) {
             controls
             playsInline
             preload="metadata"
-            className="h-full w-full object-contain"
+            className="batik-media-main-video"
           />
         )}
       </div>
 
       {mediaItems.length > 0 && (
-        <div className="flex items-center gap-2">
+        <div className="batik-media-strip-row">
           {hasOverflow && (
             <button
               type="button"
               onClick={() => scrollThumbnails(-1)}
-              className="grid h-10 w-10 shrink-0 place-items-center border border-white/12 text-white/65 hover:border-white/30 hover:text-white"
+              className="batik-media-scroll-button"
               aria-label="Thumbnail sebelumnya"
               title="Thumbnail sebelumnya"
             >
@@ -81,16 +81,15 @@ export function BatikMedia({ batik }: { batik: Batik }) {
             </button>
           )}
 
-          <div ref={thumbnailStrip} className="flex min-w-0 flex-1 gap-2 overflow-x-auto scroll-smooth pb-1">
+          <div ref={thumbnailStrip} className="batik-media-thumbnails">
             {mediaItems.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 aria-label={`Tampilkan ${item.label}`}
                 aria-pressed={item.id === selected?.id}
-                className={`relative aspect-[4/5] w-20 shrink-0 overflow-hidden border bg-black/30 sm:w-24 ${
-                  item.id === selected?.id ? "border-[#ff9d42]" : "border-white/12 hover:border-white/35"
-                }`}
+                data-selected={item.id === selected?.id}
+                className="batik-media-thumbnail relative aspect-[4/5] w-20 sm:w-24"
                 onClick={() => setSelection({ batikId: batik.id, mediaId: item.id })}
               >
                 {item.kind === "image" ? (
@@ -100,7 +99,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
                     sizes="96px"
                     src={item.url}
                     alt={`Thumbnail ${item.label}`}
-                    className="object-cover"
+                    className="batik-media-thumbnail-image"
                   />
                 ) : (
                   <>
@@ -109,9 +108,9 @@ export function BatikMedia({ batik }: { batik: Batik }) {
                       muted
                       playsInline
                       preload="metadata"
-                      className="h-full w-full object-cover"
+                      className="batik-media-thumbnail-video"
                     />
-                    <span className="absolute inset-0 grid place-items-center bg-black/20" aria-hidden="true">
+                    <span className="batik-media-play-layer" aria-hidden="true">
                       <Play size={20} fill="currentColor" />
                     </span>
                   </>
@@ -124,7 +123,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
             <button
               type="button"
               onClick={() => scrollThumbnails(1)}
-              className="grid h-10 w-10 shrink-0 place-items-center border border-white/12 text-white/65 hover:border-white/30 hover:text-white"
+              className="batik-media-scroll-button"
               aria-label="Thumbnail berikutnya"
               title="Thumbnail berikutnya"
             >
@@ -133,7 +132,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

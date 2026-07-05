@@ -1,18 +1,60 @@
-import { Bookmark, CircleHelp, Heart, Search } from "lucide-react";
-import Link from "next/link";
+import { Action } from "@/components/ui/action";
+import { Bookmark, CircleHelp, Heart, Image, Search } from "lucide-react";
 
-export const metadata = { title: "Pusat Bantuan" };
+export const metadata = { title: "Bantuan" };
 
-const steps = [
-  { title: "Cari koleksi", text: "Gunakan kolom pencarian, kategori, dan pengurutan pada halaman galeri.", icon: Search },
-  { title: "Lihat detail", text: "Buka kartu motif untuk melihat komposisi, palet, inspirasi, dan status kurasi.", icon: CircleHelp },
-  { title: "Simpan favorit", text: "Gunakan tombol suka atau bookmark untuk menyimpan pilihan di perangkat Anda.", icon: Bookmark },
+const helpItems = [
+  {
+    title: "Cari koleksi",
+    text: "Gunakan kolom pencarian di galeri untuk mencari keyword, warna, atau style yang didukung backend.",
+    icon: Search,
+  },
+  {
+    title: "Baca kartu 1:1",
+    text: "Setiap kartu memakai motif sebagai arsip utama. Di desktop, preview costume muncul setelah hover singkat.",
+    icon: Image,
+  },
+  {
+    title: "Buka detail",
+    text: "Halaman detail menampilkan motif, costume, video, metadata, seed, tanggal, dan prompt bila tersedia.",
+    icon: CircleHelp,
+  },
+  {
+    title: "Simpan pilihan",
+    text: "Tombol suka dan bookmark menyimpan pilihan di perangkat Anda melalui state lokal browser.",
+    icon: Bookmark,
+  },
 ];
 
 export default function HelpPage() {
   return (
-    <main className="mx-auto max-w-5xl px-4 pb-8 sm:px-6 lg:px-8">
-      <section className="archive-panel rounded-[36px] p-6 sm:p-10"><CircleHelp size={28} className="text-[#ffad5d]" /><h1 className="mt-5 text-4xl font-semibold tracking-[-.04em]">Cara menggunakan galeri TitikBatik AI</h1><p className="mt-4 max-w-2xl text-sm leading-7 text-white/48">Area publik dibuat khusus untuk menjelajahi karya yang telah dikurasi. Fitur produksi AI tidak tersedia bagi pengunjung umum.</p><div className="mt-9 grid gap-4 md:grid-cols-3">{steps.map(({ title, text, icon: Icon }, index) => <article key={title} className="archive-soft rounded-[26px] p-5"><div className="flex items-center justify-between"><Icon size={20} className="text-[#ffad5d]" /><span className="text-xs text-white/25">0{index + 1}</span></div><h2 className="mt-5 font-semibold">{title}</h2><p className="mt-2 text-sm leading-6 text-white/42">{text}</p></article>)}</div><div className="mt-8 flex flex-wrap gap-3"><Link href="/gallery" className="inline-flex rounded-full bg-[#ff9d42] px-6 py-3 text-sm font-semibold text-[#201307] transition hover:scale-105 hover:bg-[#ffb363]">Buka Galeri</Link><span className="archive-soft inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm text-white/50"><Heart size={15} />Favorit tersimpan secara lokal</span></div></section>
+    <main className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+      <section className="rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-6 sm:p-10">
+        <CircleHelp size={30} className="text-[color:var(--terracotta-dark)]" aria-hidden="true" />
+        <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-none tracking-[-0.04em] text-[color:var(--ink)] sm:text-6xl">
+          Cara menggunakan galeri TitikBatik AI
+        </h1>
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-[color:var(--ink-soft)]">
+          Area publik dibuat untuk menjelajahi karya terkurasi. Fitur produksi AI tetap berada di panel administrator.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Action href="/gallery">Buka galeri</Action>
+          <span className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] border border-[color:var(--line)] px-4 text-sm text-[color:var(--ink-soft)]">
+            <Heart size={15} aria-hidden="true" />
+            Favorit tersimpan lokal
+          </span>
+        </div>
+      </section>
+
+      <section className="mt-8 grid gap-5 md:grid-cols-2" aria-label="Panduan galeri">
+        {helpItems.map(({ title, text, icon: Icon }) => (
+          <article key={title} className="rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-6">
+            <Icon size={22} className="text-[color:var(--terracotta-dark)]" aria-hidden="true" />
+            <h2 className="mt-5 text-2xl font-semibold tracking-[-0.025em] text-[color:var(--ink)]">{title}</h2>
+            <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">{text}</p>
+          </article>
+        ))}
+      </section>
     </main>
   );
 }

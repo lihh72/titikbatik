@@ -483,6 +483,104 @@ button:disabled,
   color: var(--success);
 }
 
+.batik-media {
+  min-width: 0;
+}
+
+.batik-media-viewer {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper-raised));
+}
+
+.batik-media-main-image,
+.batik-media-main-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.batik-media-empty {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+}
+
+.batik-media-strip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.batik-media-thumbnails {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  gap: 0.65rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  scroll-behavior: smooth;
+}
+
+.batik-media-thumbnail {
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--ink) 5%, var(--paper-raised));
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.batik-media-thumbnail:hover,
+.batik-media-thumbnail:focus-visible {
+  border-color: color-mix(in srgb, var(--terracotta) 55%, var(--line));
+}
+
+.batik-media-thumbnail[data-selected="true"] {
+  border-color: var(--terracotta-dark);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--terracotta) 16%, transparent);
+}
+
+.batik-media-thumbnail-image,
+.batik-media-thumbnail-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.batik-media-play-layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--paper-raised);
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+.batik-media-scroll-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink-soft);
+  background: var(--paper-raised);
+  transition: border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.batik-media-scroll-button:hover {
+  border-color: var(--terracotta-dark);
+  color: var(--terracotta-dark);
+}
+
 @media (max-width: 47.99rem) {
   .page-heading {
     align-items: stretch;
