@@ -65,4 +65,17 @@ describe("landing page", () => {
     const latest = screen.getByRole("region", { name: "Koleksi terbaru" });
     expect(await within(latest).findAllByRole("link", { name: /Motif (Satu|Dua|Tiga)/i })).toHaveLength(3);
   });
+
+  it("renders latest motif cards as readable light surfaces", async () => {
+    render(<LandingPage />);
+
+    const latest = screen.getByRole("region", { name: "Koleksi terbaru" });
+    const cards = await within(latest).findAllByRole("article");
+
+    expect(cards).toHaveLength(3);
+    cards.forEach((card) => expect(card).toHaveAttribute("data-surface", "light"));
+    expect(within(cards[0]).getByText("soga dan nila")).toHaveClass("motif-card-meta");
+    expect(within(cards[0]).getByRole("button", { name: "Sukai" })).toHaveClass("motif-card-icon-button");
+    expect(within(cards[0]).getByRole("button", { name: "Simpan" })).toHaveClass("motif-card-icon-button");
+  });
 });
