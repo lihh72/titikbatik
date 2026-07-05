@@ -219,6 +219,17 @@ button:disabled,
   display: none;
 }
 
+.public-dialog-close {
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  place-items: center;
+  color: var(--ink);
+  background: transparent;
+}
+
 .public-footer {
   border-top: 1px solid var(--line);
   padding: 3.5rem 1rem 2rem;
@@ -283,10 +294,18 @@ button:disabled,
   }
 
   .public-mobile-nav {
+    position: fixed;
+    inset: 64px 0 0;
     display: grid;
+    grid-auto-rows: min-content;
     border-top: 1px solid var(--line);
     padding: 0.5rem 1rem 1rem;
+    overflow-y: auto;
     background: var(--paper-raised);
+  }
+
+  .public-dialog-close {
+    display: grid;
   }
 
   .public-mobile-nav a {
