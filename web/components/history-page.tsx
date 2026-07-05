@@ -33,7 +33,10 @@ export function HistoryPage() {
       setBatches(data);
       const id = preferredId && data.some((item) => item.id === preferredId) ? preferredId : data[0]?.id;
       if (id) await loadDetails(id);
-      else { setSelected(null); setJobs([]); }
+      else {
+        setSelected(null);
+        setJobs([]);
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Riwayat batch gagal dimuat.");
     } finally {
@@ -51,9 +54,15 @@ export function HistoryPage() {
         const id = requested && data.some((item) => item.id === requested) ? requested : data[0]?.id;
         if (id) await loadDetails(id);
       })
-      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Riwayat batch gagal dimuat."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .catch((reason) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Riwayat batch gagal dimuat.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [loadDetails]);
 
   useEffect(() => {
@@ -80,29 +89,44 @@ export function HistoryPage() {
   }
 
   return (
-    <main className="mx-auto max-w-[1480px] px-4 pb-10 sm:px-6 lg:px-8">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
-        <div><p className="text-xs uppercase text-[#ffb66c]">Durable Worker</p><h1 className="mt-3 text-3xl font-semibold">Batch dan job</h1><p className="mt-3 text-sm text-white/45">Status nyata termasuk retry, error ComfyUI, dan output setiap tahap.</p></div>
-        <button onClick={() => void load(selected?.id)} disabled={loading} className="grid h-11 w-11 place-items-center rounded-full border border-white/12 bg-white/6" title="Muat ulang"><RefreshCw size={17} className={loading ? "animate-spin" : ""} /></button>
+    <section className="admin-resource" aria-labelledby="history-title">
+      <header className="admin-resource-hero">
+        <div>
+          <p className="admin-eyebrow">Durable worker</p>
+          <h1 id="history-title">Batch dan job</h1>
+          <p>Status nyata untuk antrean, retry, error ComfyUI, dan output setiap tahap.</p>
+        </div>
+        <button type="button" onClick={() => void load(selected?.id)} disabled={loading} className="admin-icon-action" aria-label="Muat ulang batch">
+          <RefreshCw size={17} className={loading ? "animate-spin" : ""} aria-hidden="true" />
+        </button>
       </header>
-      {error && <div className="mt-5 flex gap-2 border border-red-400/20 bg-red-400/8 p-4 text-sm text-red-100/80"><AlertCircle size={17} />{error}</div>}
-      {loading && !batches.length ? <div className="flex items-center gap-2 py-16 text-sm text-white/45"><LoaderCircle size={17} className="animate-spin" />Memuat batch...</div> :
-        <div className="mt-6 grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <section className="max-h-[720px] overflow-auto border border-white/10">
-            {batches.map((batch) => <button key={batch.id} onClick={() => void loadDetails(batch.id)} className={`block w-full border-b border-white/8 p-4 text-left ${selected?.id === batch.id ? "bg-[#ff9d42]/12" : "bg-black/15 hover:bg-white/5"}`}><div className="flex items-center justify-between gap-2"><span className="text-xs text-[#ffb66c]">{batch.status}</span><span className="text-xs text-white/35">{batch.progress_percent}%</span></div><p className="mt-2 truncate text-sm">{batch.id}</p><p className="mt-2 text-xs text-white/35">{date(batch.created_at)} · {batch.requested_count} motif</p></button>)}
-            {!batches.length && <p className="p-6 text-sm text-white/40">Belum ada batch.</p>}
+      {error && <div role="alert" className="admin-alert"><AlertCircle size={17} aria-hidden="true" />{error}</div>}
+      {loading && !batches.length ? <div className="admin-loading"><LoaderCircle size={17} className="animate-spin" aria-hidden="true" />Memuat batch...</div> :
+        <div className="admin-resource-layout">
+          <section className="admin-resource-list" aria-label="Daftar batch">
+            {batches.map((batch) => (
+              <button key={batch.id} type="button" onClick={() => void loadDetails(batch.id)} aria-pressed={selected?.id === batch.id} className="admin-resource-list-item" data-active={selected?.id === batch.id}>
+                <span className="admin-resource-list-meta"><b>{batch.status}</b><small>{batch.progress_percent}%</small></span>
+                <strong>{batch.id}</strong>
+                <small>{date(batch.created_at)} · {batch.requested_count} motif</small>
+              </button>
+            ))}
+            {!batches.length && <p className="admin-empty">Belum ada batch.</p>}
           </section>
 
-          <section className="min-w-0">
+          <section className="admin-resource-detail">
             {selected ? <>
-              <div className="border border-white/10 bg-white/4 p-5">
-                <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs uppercase text-[#ffb66c]">{selected.status}</p><h2 className="mt-2 break-all text-lg font-medium">{selected.id}</h2></div><div className="flex gap-2">{activeStatuses.has(selected.status) && <button disabled={busy} onClick={() => void action("cancel")} className="flex items-center gap-2 border border-red-300/20 px-3 py-2 text-xs text-red-200"><Ban size={14} />Batalkan</button>}{selected.failed_count > 0 && <button disabled={busy} onClick={() => void action("retry")} className="flex items-center gap-2 border border-white/12 px-3 py-2 text-xs"><RotateCcw size={14} />Retry gagal</button>}</div></div>
-                <div className="mt-5 grid grid-cols-3 gap-px bg-white/10 sm:grid-cols-5">{[["Antre", selected.queued_count], ["Berjalan", selected.running_count], ["Selesai", selected.completed_count], ["Gagal", selected.failed_count], ["Batal", selected.cancelled_count]].map(([label, value]) => <div key={String(label)} className="bg-[#11110f] p-3"><p className="text-xs text-white/35">{label}</p><p className="mt-1 text-xl">{value}</p></div>)}</div>
+              <div className="admin-detail-card">
+                <div className="admin-detail-head">
+                  <div><p className="admin-eyebrow">{selected.status}</p><h2>{selected.id}</h2></div>
+                  <div className="admin-action-row">{activeStatuses.has(selected.status) && <button type="button" disabled={busy} onClick={() => void action("cancel")} className="admin-danger-action"><Ban size={14} aria-hidden="true" />Batalkan batch</button>}{selected.failed_count > 0 && <button type="button" disabled={busy} onClick={() => void action("retry")} className="admin-secondary-action"><RotateCcw size={14} aria-hidden="true" />Retry gagal</button>}</div>
+                </div>
+                <div className="admin-stat-grid">{[["Antre", selected.queued_count], ["Berjalan", selected.running_count], ["Selesai", selected.completed_count], ["Gagal", selected.failed_count], ["Batal", selected.cancelled_count]].map(([label, value]) => <div key={String(label)}><p>{label}</p><strong>{value}</strong></div>)}</div>
               </div>
-              <div className="mt-4 overflow-x-auto border border-white/10"><table className="w-full min-w-[900px] text-left text-sm"><thead className="bg-white/6 text-xs text-white/40"><tr><th className="p-3">Urutan</th><th className="p-3">Tahap</th><th className="p-3">Status</th><th className="p-3">Percobaan</th><th className="p-3">Output</th><th className="p-3">ComfyUI</th><th className="p-3">Error</th></tr></thead><tbody>{jobs.map((job) => <tr key={job.id} className="border-t border-white/8"><td className="p-3">{job.sequence_number}</td><td className="p-3">{job.job_type}</td><td className="p-3 text-[#ffb66c]">{job.status}</td><td className="p-3">{job.attempt_count}/{job.max_attempts}</td><td className="max-w-48 truncate p-3">{job.output_filename ?? "-"}</td><td className="max-w-40 truncate p-3">{job.comfyui_prompt_id ?? "-"}</td><td className="max-w-72 p-3 text-red-200/75">{job.error_message ?? "-"}</td></tr>)}</tbody></table></div>
-            </> : <p className="py-16 text-center text-sm text-white/40">Pilih batch untuk melihat job.</p>}
+              <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Urutan</th><th>Tahap</th><th>Status</th><th>Percobaan</th><th>Output</th><th>ComfyUI</th><th>Error</th></tr></thead><tbody>{jobs.map((item) => <tr key={item.id}><td>{item.sequence_number}</td><td>{item.job_type}</td><td>{item.status}</td><td>{item.attempt_count}/{item.max_attempts}</td><td>{item.output_filename ?? "-"}</td><td>{item.comfyui_prompt_id ?? "-"}</td><td>{item.error_message ?? "-"}</td></tr>)}</tbody></table></div>
+            </> : <p className="admin-empty">Pilih batch untuk melihat job.</p>}
           </section>
         </div>}
-    </main>
+    </section>
   );
 }

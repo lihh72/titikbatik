@@ -13,10 +13,70 @@ export function SettingsAdmin() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function apply(data: Record<string, Record<string, unknown>>) { setSettings(data); const first = Object.keys(data)[0]; if (first) { setKey(first); setValue(JSON.stringify(data[first], null, 2)); } }
-  useEffect(() => { let active = true; listSettings().then((data) => { if (active) apply(data); }).catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Settings gagal dimuat."); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, []);
+  function apply(data: Record<string, Record<string, unknown>>) {
+    setSettings(data);
+    const first = Object.keys(data)[0];
+    if (first) {
+      setKey(first);
+      setValue(JSON.stringify(data[first], null, 2));
+    }
+  }
 
-  async function save() { if (!key.trim()) { setError("Key settings wajib diisi."); return; } setBusy(true); setError(null); try { await putSetting(key.trim(), parseSettingObject(value)); apply(await listSettings()); } catch (reason) { setError(reason instanceof Error ? reason.message : "Settings gagal disimpan."); } finally { setBusy(false); } }
+  useEffect(() => {
+    let active = true;
+    listSettings()
+      .then((data) => {
+        if (active) apply(data);
+      })
+      .catch((reason) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Settings gagal dimuat.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  return <main className="mx-auto max-w-[1100px] px-4 pb-10 sm:px-6 lg:px-8"><header className="border-b border-white/10 pb-6"><p className="text-xs uppercase text-[#ffb66c]">Application State</p><h1 className="mt-3 text-3xl font-semibold">Settings</h1><p className="mt-3 text-sm text-white/45">Nilai JSON yang disimpan oleh automation.</p></header>{error && <div className="mt-5 flex gap-2 border border-red-400/20 bg-red-400/8 p-4 text-sm text-red-100/80"><AlertCircle size={17} />{error}</div>}{loading ? <div className="flex items-center gap-2 py-16 text-sm text-white/45"><LoaderCircle className="animate-spin" size={17} />Memuat settings...</div> : <div className="mt-6 grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]"><section className="border border-white/10">{Object.keys(settings).map((item) => <button key={item} onClick={() => { setKey(item); setValue(JSON.stringify(settings[item], null, 2)); }} className={`block w-full border-b border-white/8 px-4 py-3 text-left text-sm ${key === item ? "bg-[#ff9d42]/12" : ""}`}>{item}</button>)}<button onClick={() => { setKey(""); setValue("{}"); }} className="flex w-full items-center gap-2 px-4 py-3 text-sm text-[#ffb66c]"><Plus size={14} />Setting baru</button></section><section className="border border-white/10 p-5"><label className="text-xs text-white/45">Key<input className="mt-2 w-full border border-white/12 bg-black/25 px-3 py-2 text-sm outline-none" value={key} onChange={(event) => setKey(event.target.value)} /></label><label className="mt-4 block text-xs text-white/45">JSON<textarea className="mt-2 min-h-80 w-full border border-white/12 bg-black/25 p-3 font-mono text-sm outline-none" value={value} onChange={(event) => setValue(event.target.value)} /></label><button disabled={busy} onClick={() => void save()} className="mt-4 flex items-center gap-2 bg-[#ff9d42] px-5 py-2.5 text-sm font-semibold text-[#201307]"><Save size={15} />Simpan</button></section></div>}</main>;
+  async function save() {
+    if (!key.trim()) {
+      setError("Key settings wajib diisi.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await putSetting(key.trim(), parseSettingObject(value));
+      apply(await listSettings());
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Settings gagal disimpan.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="admin-resource" aria-labelledby="settings-title">
+      <header className="admin-resource-hero">
+        <div><p className="admin-eyebrow">Application state</p><h1 id="settings-title">Pengaturan Sistem</h1><p>Nilai JSON yang disimpan oleh automation.</p></div>
+      </header>
+      {error && <div role="alert" className="admin-alert"><AlertCircle size={17} aria-hidden="true" />{error}</div>}
+      {loading ? <div className="admin-loading"><LoaderCircle className="animate-spin" size={17} aria-hidden="true" />Memuat settings...</div> : (
+        <div className="admin-resource-layout">
+          <section className="admin-resource-list" aria-label="Daftar settings">
+            {Object.keys(settings).map((item) => <button key={item} type="button" onClick={() => { setKey(item); setValue(JSON.stringify(settings[item], null, 2)); }} className="admin-resource-list-item" data-active={key === item}><strong>{item}</strong></button>)}
+            <button type="button" onClick={() => { setKey(""); setValue("{}"); }} className="admin-secondary-action"><Plus size={14} aria-hidden="true" />Setting baru</button>
+          </section>
+          <section className="admin-resource-detail">
+            <div className="admin-detail-card admin-form-stack">
+              <label>Key settings<input className="admin-field" value={key} onChange={(event) => setKey(event.target.value)} /></label>
+              <label>JSON settings<textarea className="admin-field admin-textarea admin-code-field" value={value} onChange={(event) => setValue(event.target.value)} /></label>
+              <button type="button" disabled={busy} onClick={() => void save()} className="admin-primary-action"><Save size={15} aria-hidden="true" />Simpan settings</button>
+            </div>
+          </section>
+        </div>
+      )}
+    </section>
+  );
 }
