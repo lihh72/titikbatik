@@ -626,11 +626,11 @@ button:disabled,
 }
 
 .landing-hero-inner {
-  width: min(100%, 72rem);
+  width: min(100%, 78rem);
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.68fr);
+  grid-template-columns: minmax(0, 1.36fr) minmax(18rem, 0.64fr);
   align-items: end;
-  gap: clamp(2.5rem, 6vw, 6rem);
+  gap: clamp(2.25rem, 5vw, 5rem);
 }
 
 .landing-hero-copyblock {
@@ -646,7 +646,7 @@ button:disabled,
   position: relative;
   overflow: hidden;
   min-height: clamp(22rem, 45vw, 34rem);
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--ink) 7%, var(--paper));
 }
@@ -679,11 +679,11 @@ button:disabled,
 .landing-hero h1 {
   max-width: 67rem;
   margin: 1.1rem 0 0;
-  font-size: clamp(3.5rem, 8.8vw, 8.2rem);
+  font-size: clamp(3.4rem, 6.6vw, 6.55rem);
   font-weight: 600;
   line-height: 0.91;
   letter-spacing: -0.065em;
-  text-wrap: balance;
+  text-wrap: normal;
 }
 
 .landing-hero-copy {

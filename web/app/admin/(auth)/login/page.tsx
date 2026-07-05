@@ -1,11 +1,12 @@
 import { AdminLoginPage } from "@/components/admin-login-page";
+import { Feedback } from "@/components/ui/feedback";
 import { Suspense } from "react";
 
-export const metadata = { title: "Login Admin" };
+export const metadata = { title: "Curator Workbench" };
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#090a0b] text-white grid place-items-center">Memuat halaman admin...</div>}>
+    <Suspense fallback={<Feedback>Memuat halaman admin.</Feedback>}>
       <AdminLoginPage />
     </Suspense>
   );

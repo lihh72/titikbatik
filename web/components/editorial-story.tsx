@@ -19,7 +19,7 @@ export function EditorialStory() {
   const textOpacity = useTransform(
     scrollYProgress,
     [0.08, 0.28, 0.72, 0.92],
-    reduceMotion ? [1, 1, 1, 1] : [0.35, 1, 1, 0.45],
+    reduceMotion ? [1, 1, 1, 1] : [0.68, 1, 1, 0.78],
   );
   const transitionScale = useTransform(
     scrollYProgress,

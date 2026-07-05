@@ -51,4 +51,25 @@ describe("AdminShell", () => {
     expect(navigation.replace).toHaveBeenCalledWith("/admin/login");
     expect(navigation.refresh).toHaveBeenCalled();
   });
+
+  it("manages mobile drawer focus and restores the trigger", async () => {
+    const user = userEvent.setup();
+    render(<AdminShell><p>Konten admin</p></AdminShell>);
+
+    const trigger = screen.getByRole("button", { name: "Buka menu admin" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(trigger);
+
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("dialog", { name: "Navigasi admin" })).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByRole("button", { name: "Tutup menu admin" })).toHaveFocus();
+    expect(document.body).toHaveStyle({ overflow: "hidden" });
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog", { name: "Navigasi admin" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    expect(document.body).not.toHaveStyle({ overflow: "hidden" });
+  });
 });
