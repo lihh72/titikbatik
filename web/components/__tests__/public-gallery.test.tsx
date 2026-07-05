@@ -51,7 +51,7 @@ describe("public gallery", () => {
     render(<GalleryPage />);
 
     expect(await screen.findByText("Kawung Indigo")).toBeInTheDocument();
-    expect(screen.getByAltText("Kawung Indigo")).toHaveAttribute("src", expect.stringContaining("kawung.webp"));
+    expect(screen.getByAltText("Motif Kawung Indigo")).toHaveAttribute("src", expect.stringContaining("kawung.webp"));
     expect(screen.queryByText("Ceplok Arunika")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Kawung Indigo/i })).toHaveAttribute("href", "/gallery/kawung-indigo");
   });

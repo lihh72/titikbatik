@@ -5,24 +5,38 @@ import type { Batik } from "@/lib/automation-types";
 import { Bookmark, Heart, ImageOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 export function MotifCard({ batik }: { batik: Batik }) {
   const { likedIds, bookmarkedIds, toggleLike, toggleBookmark } = useApp();
   const id = String(batik.id);
   const liked = likedIds.includes(id);
   const bookmarked = bookmarkedIds.includes(id);
+  const [showCostumePreview, setShowCostumePreview] = useState(false);
+  const costumePreviewUrl = batik.costume_urls[0] ?? null;
+  const activePreviewUrl = showCostumePreview && costumePreviewUrl ? costumePreviewUrl : batik.preview_url;
+  const activePreviewAlt = showCostumePreview && costumePreviewUrl
+    ? `Kostum ${batik.keyword}`
+    : `Motif ${batik.keyword}`;
 
   return (
     <article className="motif-card" data-surface="light">
-      <Link href={`/gallery/${batik.slug}`} className="motif-card-primary-link">
-        <div className="motif-card-media">
-          {batik.preview_url ? (
+      <Link
+        href={`/gallery/${batik.slug}`}
+        className="motif-card-primary-link"
+        onMouseEnter={() => setShowCostumePreview(Boolean(costumePreviewUrl))}
+        onMouseLeave={() => setShowCostumePreview(false)}
+        onFocus={() => setShowCostumePreview(Boolean(costumePreviewUrl))}
+        onBlur={() => setShowCostumePreview(false)}
+      >
+        <div className="motif-card-media" data-ratio="1:1" data-preview-mode={showCostumePreview && costumePreviewUrl ? "costume" : "motif"}>
+          {activePreviewUrl ? (
             <Image
               unoptimized
               fill
               sizes="(max-width: 768px) 100vw, 420px"
-              src={batik.preview_url}
-              alt={batik.keyword}
+              src={activePreviewUrl}
+              alt={activePreviewAlt}
               className="motif-card-image"
             />
           ) : (
