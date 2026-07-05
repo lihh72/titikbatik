@@ -15,6 +15,19 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("design system", () => {
+  it("keeps transitional archive surfaces opaque and readable for current light text", () => {
+    const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
+    const archivePanel = css.match(/\.archive-panel\s*\{([^}]*)\}/)?.[1];
+    const archiveSoft = css.match(/\.archive-soft\s*\{([^}]*)\}/)?.[1];
+
+    expect(archivePanel).toMatch(/\bbackground\s*:\s*var\(--ink\)\s*;/);
+    expect(archivePanel).toMatch(/\bcolor\s*:\s*var\(--paper\)\s*;/);
+    expect(archiveSoft).toMatch(/\bbackground\s*:\s*#26312b\s*;/i);
+    expect(archiveSoft).toMatch(/\bcolor\s*:\s*var\(--paper\)\s*;/);
+    expect(archivePanel).not.toMatch(/backdrop-filter/);
+    expect(archiveSoft).not.toMatch(/backdrop-filter/);
+  });
+
   it("contains no legacy glass surface class tokens in TSX", () => {
     const legacyTokens = new RegExp(`\\b(?:${["glass", "panel"].join("-")}|${["glass", "soft"].join("-")}|${["ambient", "noise"].join("-")})\\b`);
     const findLegacyConsumers = (directory: string): string[] => readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -60,12 +73,20 @@ describe("design system", () => {
   it("makes aria-disabled link actions inert", () => {
     const onClick = vi.fn();
     render(<Action href="/gallery" aria-disabled="true" onClick={onClick}>Jelajahi koleksi</Action>);
-    const link = screen.getByRole("link", { name: "Jelajahi koleksi" });
+    const action = screen.getByText("Jelajahi koleksi");
 
-    expect(link).toHaveAttribute("aria-disabled", "true");
-    expect(link).toHaveAttribute("tabindex", "-1");
-    expect(fireEvent.click(link)).toBe(false);
+    expect(screen.queryByRole("link", { name: "Jelajahi koleksi" })).not.toBeInTheDocument();
+    expect(action).not.toHaveAttribute("href");
+    expect(action).toHaveAttribute("aria-disabled", "true");
+    expect(action).toHaveAttribute("tabindex", "-1");
+    fireEvent.click(action);
     expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("keeps enabled link actions navigable", () => {
+    render(<Action href="/gallery">Jelajahi koleksi</Action>);
+
+    expect(screen.getByRole("link", { name: "Jelajahi koleksi" })).toHaveAttribute("href", "/gallery");
   });
 
   it("renders button actions with safe defaults and forwarded presentation", () => {

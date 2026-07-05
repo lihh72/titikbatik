@@ -75,14 +75,16 @@ button:disabled,
 }
 
 .archive-panel {
-  border: 1px solid var(--line);
-  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--paper) 24%, var(--ink));
+  color: var(--paper);
+  background: var(--ink);
   box-shadow: 0 18px 48px color-mix(in srgb, var(--terracotta) 10%, transparent);
 }
 
 .archive-soft {
-  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--paper-raised));
-  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--paper) 18%, #26312b);
+  color: var(--paper);
+  background: #26312b;
 }
 
 .ambient-texture {
