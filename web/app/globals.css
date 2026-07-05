@@ -99,10 +99,6 @@ button:disabled,
   transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
-.action:not(:disabled):not([aria-disabled="true"]):active {
-  transform: translateY(1px) scale(0.98);
-}
-
 .action-primary {
   color: var(--paper-raised);
   background: var(--terracotta-dark);
@@ -144,6 +140,10 @@ button:disabled,
 .action-danger:not(:disabled):not([aria-disabled="true"]):hover {
   background: #842b23;
   transform: translateY(-1px);
+}
+
+.action:not(:disabled):not([aria-disabled="true"]):active {
+  transform: translateY(1px) scale(0.98);
 }
 
 .logo-mark {

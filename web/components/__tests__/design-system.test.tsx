@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -12,6 +15,19 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("design system", () => {
+  it("keeps pressed action feedback after variant hover transforms in the CSS cascade", () => {
+    const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
+    const activeSelector = '.action:not(:disabled):not([aria-disabled="true"]):active';
+    const activeIndex = css.lastIndexOf(activeSelector);
+    const hoverTransformIndices = Array.from(
+      css.matchAll(/\.action-[\w-]+:not\(:disabled\):not\(\[aria-disabled="true"\]\):hover\s*\{[^}]*\btransform\s*:/g),
+      ({ index }) => index,
+    );
+
+    expect(hoverTransformIndices.length).toBeGreaterThan(0);
+    expect(activeIndex).toBeGreaterThan(Math.max(...hoverTransformIndices));
+  });
+
   it("renders semantic page and feedback regions", () => {
     render(<><PageHeading eyebrow="Koleksi" title="Jelajahi motif" /><Feedback kind="error">Galeri gagal dimuat.</Feedback></>);
     expect(screen.getByRole("heading", { name: "Jelajahi motif" })).toBeInTheDocument();
