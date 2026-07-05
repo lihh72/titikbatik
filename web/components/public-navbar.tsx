@@ -30,14 +30,18 @@ export function PublicNavbar() {
     if (!open) return;
 
     const dialog = document.querySelector<HTMLElement>("#public-mobile-nav");
+    const controls = document.querySelector<HTMLElement>(".public-navbar-controls");
     const main = document.querySelector<HTMLElement>("#main-content");
     const footer = document.querySelector<HTMLElement>(".public-footer");
+    const inertTargets = [controls, main, footer].filter((target): target is HTMLElement => Boolean(target)).map((target) => ({
+      target,
+      wasInert: target.hasAttribute("inert"),
+    }));
     const trigger = triggerRef.current;
     const previousOverflow = document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
-    main?.setAttribute("inert", "");
-    footer?.setAttribute("inert", "");
+    inertTargets.forEach(({ target }) => target.setAttribute("inert", ""));
     closeButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -66,15 +70,16 @@ export function PublicNavbar() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
-      main?.removeAttribute("inert");
-      footer?.removeAttribute("inert");
+      inertTargets.forEach(({ target, wasInert }) => {
+        if (!wasInert) target.removeAttribute("inert");
+      });
       if (restoreFocusRef.current && trigger?.isConnected) trigger.focus();
     };
   }, [open]);
 
   return (
     <header className="public-header">
-      <div className="public-navbar">
+      <div className="public-navbar public-navbar-controls">
         <Link className="public-brand" href="/" aria-label="TitikBatik AI">
           <LogoMark decorative />
           <span>TitikBatik AI</span>

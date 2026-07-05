@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import AboutPage from "@/app/(public)/about/page";
@@ -97,6 +99,42 @@ describe("public site shell", () => {
     await user.click(screen.getByRole("button", { name: "Buka navigasi" }));
     unmount();
     expect(document.body.style.overflow).toBe("");
+  });
+
+  it("makes every control outside the dialog inert while the drawer is open", async () => {
+    const user = userEvent.setup();
+    render(<SiteShell><p>Isi halaman</p></SiteShell>);
+
+    await user.click(screen.getByRole("button", { name: "Buka navigasi" }));
+    const controls = document.querySelector(".public-navbar-controls");
+    expect(controls).toHaveAttribute("inert");
+
+    await user.click(within(screen.getByRole("dialog", { name: "Navigasi utama" })).getByRole("button", { name: "Tutup dialog navigasi" }));
+    expect(controls).not.toHaveAttribute("inert");
+  });
+
+  it("preserves inert state that existed before the drawer opened", async () => {
+    const user = userEvent.setup();
+    render(<SiteShell><p>Isi halaman</p></SiteShell>);
+    const main = document.querySelector("#main-content");
+    main?.setAttribute("inert", "");
+
+    await user.click(screen.getByRole("button", { name: "Buka navigasi" }));
+    await user.keyboard("{Escape}");
+
+    expect(main).toHaveAttribute("inert");
+  });
+
+  it("keeps a rendered drawer visible outside the mobile breakpoint", () => {
+    const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
+    const drawerRules = [...css.matchAll(/\.public-mobile-nav\s*\{([^}]*)\}/g)].map((match) => match[1]);
+    const baseRule = drawerRules[0] ?? "";
+
+    expect(baseRule).toMatch(/position:\s*fixed/);
+    expect(baseRule).toMatch(/display:\s*grid/);
+    expect(baseRule).toMatch(/overflow-y:\s*auto/);
+    expect(drawerRules).not.toHaveLength(0);
+    drawerRules.forEach((rule) => expect(rule).not.toMatch(/display:\s*none/));
   });
 
   it("does not restore focus to the menu trigger when a navigation link closes the dialog", async () => {
