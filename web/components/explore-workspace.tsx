@@ -1,13 +1,33 @@
 "use client";
 
 import { createGenerationBatch, listCostumeTemplates, listWordlistCategories, listWordlistItems } from "@/lib/automation-api";
-import type { CostumeTemplate, CostumeTemplateMode, GenerationMode, WordlistCategory, WordlistItem } from "@/lib/automation-types";
+import type { CostumeTemplate, CostumeTemplateMode, GenerationBatchCreate, GenerationMode, WordlistCategory, WordlistItem } from "@/lib/automation-types";
 import { buildGenerationPayload } from "@/lib/generation-form";
-import { AlertCircle, CheckCircle2, LoaderCircle, Play, Workflow } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, LoaderCircle, Play, Workflow } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-const inputClass = "w-full border border-white/12 bg-black/25 px-3 py-2.5 text-sm text-white outline-none focus:border-[#ff9d42]/60";
+type StudioStage = "batch" | "prompt" | "media" | "review";
+
+const stages: { id: StudioStage; label: string }[] = [
+  { id: "batch", label: "Konfigurasi batch" },
+  { id: "prompt", label: "Aturan prompt" },
+  { id: "media", label: "Media output" },
+  { id: "review", label: "Review payload" },
+];
+
+function templateModeLabel(value: CostumeTemplateMode) {
+  if (value === "random_one") return "Pilih satu secara acak";
+  if (value === "selected") return "Pilih manual";
+  if (value === "all") return "Gunakan semua";
+  return "Tanpa costume";
+}
+
+function modeLabel(value: GenerationMode) {
+  if (value === "fixed") return "fixed";
+  if (value === "mixed") return "mixed";
+  return "random";
+}
 
 export function ExploreWorkspace() {
   const [templates, setTemplates] = useState<CostumeTemplate[]>([]);
@@ -22,6 +42,7 @@ export function ExploreWorkspace() {
   const [fixedSelections, setFixedSelections] = useState<Record<string, number>>({});
   const [randomSeed, setRandomSeed] = useState("");
   const [allowDuplicates, setAllowDuplicates] = useState(false);
+  const [stage, setStage] = useState<StudioStage>("batch");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,16 +57,75 @@ export function ExploreWorkspace() {
         setCategories(categoryData);
         setItems(itemData);
       })
-      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Data generation gagal dimuat."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .catch((reason) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Data generation gagal dimuat.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const activeTemplates = useMemo(() => templates.filter((item) => item.is_active), [templates]);
   const selectableCategories = useMemo(() => categories.filter((item) => item.is_active), [categories]);
+  const fixedWordlistItems = useMemo(
+    () => Object.fromEntries(
+      Object.entries(fixedSelections).filter(([, value]) => Number.isInteger(value) && value > 0),
+    ),
+    [fixedSelections],
+  );
+
+  const payloadPreview: GenerationBatchCreate | null = (() => {
+    try {
+      return buildPayload();
+    } catch {
+      return null;
+    }
+  })();
+
+  function buildPayload() {
+    return buildGenerationPayload({
+      amount,
+      mode,
+      combineEnabled,
+      videoEnabled,
+      templateMode,
+      selectedTemplateIds,
+      activeTemplateCount: activeTemplates.length,
+      randomSeed,
+      allowDuplicates,
+      fixedWordlistItems: mode === "random" ? {} : fixedWordlistItems,
+    });
+  }
+
+  function validatePromptStage() {
+    if (mode === "fixed" && selectableCategories.some((category) => category.is_required && !fixedWordlistItems[category.code])) {
+      throw new Error("Mode fixed membutuhkan pilihan pada seluruh kategori wajib.");
+    }
+  }
 
   function toggleTemplate(id: number) {
     setSelectedTemplateIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+  function goBack() {
+    setError(null);
+    const index = stages.findIndex((item) => item.id === stage);
+    setStage(stages[Math.max(0, index - 1)].id);
+  }
+
+  function goNext() {
+    setError(null);
+    try {
+      if (stage === "prompt") validatePromptStage();
+      if (stage === "media") buildPayload();
+      const index = stages.findIndex((item) => item.id === stage);
+      setStage(stages[Math.min(stages.length - 1, index + 1)].id);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Tahap ini belum lengkap.");
+    }
   }
 
   async function submit() {
@@ -53,24 +133,8 @@ export function ExploreWorkspace() {
     setError(null);
     setBatchId(null);
     try {
-      const fixedWordlistItems = Object.fromEntries(
-        Object.entries(fixedSelections).filter(([, value]) => Number.isInteger(value) && value > 0),
-      );
-      if (mode === "fixed" && selectableCategories.some((category) => category.is_required && !fixedWordlistItems[category.code])) {
-        throw new Error("Mode fixed membutuhkan pilihan pada seluruh kategori wajib.");
-      }
-      const request = buildGenerationPayload({
-        amount,
-        mode,
-        combineEnabled,
-        videoEnabled,
-        templateMode,
-        selectedTemplateIds,
-        activeTemplateCount: activeTemplates.length,
-        randomSeed,
-        allowDuplicates,
-        fixedWordlistItems: mode === "random" ? {} : fixedWordlistItems,
-      });
+      validatePromptStage();
+      const request = buildPayload();
       const queued = await createGenerationBatch(request);
       setBatchId(queued.batch_id);
     } catch (reason) {
@@ -81,58 +145,234 @@ export function ExploreWorkspace() {
   }
 
   return (
-    <main className="mx-auto max-w-[1180px] px-4 pb-10 sm:px-6 lg:px-8">
-      <header className="border-b border-white/10 pb-6">
-        <p className="text-xs uppercase text-[#ffb66c]">Generation Pipeline</p>
-        <h1 className="mt-3 text-3xl font-semibold">Buat batch automation</h1>
-        <p className="mt-3 text-sm text-white/45">Satu pipeline dapat menjalankan generate motif, combine costume, lalu video 720x1280 tanpa audio.</p>
+    <section className="studio-flow" aria-labelledby="studio-title">
+      <header className="studio-hero">
+        <div>
+          <p className="admin-eyebrow">Studio Produksi</p>
+          <h1 id="studio-title">Buat batch automation</h1>
+          <p>Rangkai jumlah motif, aturan prompt, costume, dan video dalam alur produksi yang lebih jelas.</p>
+        </div>
+        <Link href="/admin/history" className="admin-primary-action">Lihat batch</Link>
       </header>
 
-      {loading ? <div className="flex items-center gap-2 py-14 text-sm text-white/45"><LoaderCircle size={17} className="animate-spin" />Memuat konfigurasi backend...</div> :
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <section className="space-y-6 border border-white/10 bg-white/4 p-5 sm:p-6">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <label className="text-xs text-white/50">Jumlah<input className={`${inputClass} mt-2`} type="number" min={1} max={500} value={amount} onChange={(event) => setAmount(Number(event.target.value))} /></label>
-              <label className="text-xs text-white/50">Mode<select className={`${inputClass} mt-2`} value={mode} onChange={(event) => setMode(event.target.value as GenerationMode)}><option value="random">Random</option><option value="mixed">Mixed</option><option value="fixed">Fixed</option></select></label>
-              <label className="text-xs text-white/50">Random seed<input className={`${inputClass} mt-2`} inputMode="numeric" value={randomSeed} onChange={(event) => setRandomSeed(event.target.value)} placeholder="Opsional" /></label>
+      {loading ? (
+        <div className="admin-loading">
+          <LoaderCircle size={17} className="animate-spin" aria-hidden="true" />
+          Memuat konfigurasi backend...
+        </div>
+      ) : (
+        <div className="studio-layout">
+          <section className="studio-panel">
+            <div role="tablist" aria-label="Tahap studio" className="studio-tabs">
+              {stages.map((item, index) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-label={item.label}
+                  aria-selected={stage === item.id}
+                  className="studio-tab"
+                  data-active={stage === item.id}
+                  onClick={() => setStage(item.id)}
+                >
+                  <span>{index + 1}</span>
+                  {item.label}
+                </button>
+              ))}
             </div>
 
-            {mode !== "random" && <div>
-              <h2 className="text-sm font-medium">Pilihan wordlist</h2>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {selectableCategories.map((category) => <label key={category.id} className="text-xs text-white/50">{category.name}{category.is_required && mode === "fixed" ? " *" : ""}<select className={`${inputClass} mt-2`} value={fixedSelections[category.code] ?? ""} onChange={(event) => setFixedSelections((current) => ({ ...current, [category.code]: Number(event.target.value) }))}><option value="">Random</option>{items.filter((item) => item.category_id === category.id && item.is_active).map((item) => <option key={item.id} value={item.id}>{item.label || item.value}</option>)}</select></label>)}
+            {stage === "batch" && (
+              <div className="studio-stage">
+                <h2>Konfigurasi batch</h2>
+                <p>Mulai dari ukuran batch dan identitas run. Bagian ini tidak menyentuh aturan prompt.</p>
+                <div className="studio-field-grid">
+                  <label>
+                    Jumlah
+                    <input className="studio-input" type="number" min={1} max={500} value={amount} onChange={(event) => setAmount(Number(event.target.value))} />
+                  </label>
+                  <label>
+                    Random seed
+                    <input className="studio-input" inputMode="numeric" value={randomSeed} onChange={(event) => setRandomSeed(event.target.value)} placeholder="Opsional" />
+                  </label>
+                  <label className="studio-checkbox-card">
+                    <input type="checkbox" checked={allowDuplicates} onChange={(event) => setAllowDuplicates(event.target.checked)} />
+                    <span>
+                      Izinkan prompt duplikat
+                      <small>Biarkan worker membuat komposisi yang mungkin berulang.</small>
+                    </span>
+                  </label>
+                </div>
               </div>
-            </div>}
+            )}
 
-            <div className="border-t border-white/10 pt-5">
-              <h2 className="text-sm font-medium">Tahapan output</h2>
-              <div className="mt-3 flex flex-wrap gap-4 text-sm">
-                <label className="flex items-center gap-2"><input type="checkbox" checked readOnly />Generate motif</label>
-                <label className="flex items-center gap-2"><input type="checkbox" checked={combineEnabled} onChange={(event) => { setCombineEnabled(event.target.checked); if (!event.target.checked) setVideoEnabled(false); }} />Combine costume</label>
-                <label className="flex items-center gap-2"><input type="checkbox" checked={videoEnabled} onChange={(event) => { setVideoEnabled(event.target.checked); if (event.target.checked) { setCombineEnabled(true); setTemplateMode("random_one"); } }} />Video tanpa audio</label>
+            {stage === "prompt" && (
+              <div className="studio-stage">
+                <h2>Aturan prompt</h2>
+                <p>Pilih cara wordlist dipakai. Mode fixed wajib mengisi kategori bertanda wajib.</p>
+                <label>
+                  Mode
+                  <select className="studio-input" value={mode} onChange={(event) => setMode(event.target.value as GenerationMode)}>
+                    <option value="random">Random</option>
+                    <option value="mixed">Mixed</option>
+                    <option value="fixed">Fixed</option>
+                  </select>
+                </label>
+
+                {mode !== "random" && (
+                  <div className="studio-field-grid">
+                    {selectableCategories.map((category) => (
+                      <label key={category.id}>
+                        {category.name}{category.is_required && mode === "fixed" ? " wajib" : ""}
+                        <select
+                          className="studio-input"
+                          value={fixedSelections[category.code] ?? ""}
+                          onChange={(event) => setFixedSelections((current) => ({ ...current, [category.code]: Number(event.target.value) }))}
+                        >
+                          <option value="">Random</option>
+                          {items.filter((item) => item.category_id === category.id && item.is_active).map((item) => (
+                            <option key={item.id} value={item.id}>{item.label || item.value}</option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
+            )}
+
+            {stage === "media" && (
+              <div className="studio-stage">
+                <h2>Media output</h2>
+                <p>Generate motif selalu aktif. Combine dan video mengikuti template yang tersedia.</p>
+                <div className="studio-output-grid">
+                  <label className="studio-checkbox-card">
+                    <input type="checkbox" checked readOnly />
+                    <span>Generate motif<small>Output motif WebP.</small></span>
+                  </label>
+                  <label className="studio-checkbox-card">
+                    <input
+                      type="checkbox"
+                      checked={combineEnabled}
+                      onChange={(event) => {
+                        setCombineEnabled(event.target.checked);
+                        if (!event.target.checked) setVideoEnabled(false);
+                      }}
+                    />
+                    <span>Combine costume<small>Pasangkan motif ke template aktif.</small></span>
+                  </label>
+                  <label className="studio-checkbox-card">
+                    <input
+                      type="checkbox"
+                      checked={videoEnabled}
+                      onChange={(event) => {
+                        setVideoEnabled(event.target.checked);
+                        if (event.target.checked) {
+                          setCombineEnabled(true);
+                          setTemplateMode("random_one");
+                        }
+                      }}
+                    />
+                    <span>Video tanpa audio<small>Butuh tepat satu template costume.</small></span>
+                  </label>
+                </div>
+
+                {combineEnabled && (
+                  <div className="studio-template-panel">
+                    <div className="studio-template-heading">
+                      <h3>Template costume</h3>
+                      <Link href="/admin/templates">Kelola template</Link>
+                    </div>
+                    <label>
+                      Mode template
+                      <select className="studio-input" value={templateMode} onChange={(event) => setTemplateMode(event.target.value as CostumeTemplateMode)}>
+                        <option value="random_one">Pilih satu secara acak</option>
+                        <option value="selected">Pilih manual</option>
+                        <option value="all" disabled={videoEnabled}>Gunakan semua</option>
+                      </select>
+                    </label>
+                    {templateMode === "selected" && (
+                      <div className="studio-template-list">
+                        {activeTemplates.map((template) => (
+                          <label key={template.id} className="studio-checkbox-card">
+                            <input type="checkbox" checked={selectedTemplateIds.includes(template.id)} onChange={() => toggleTemplate(template.id)} />
+                            <span>{template.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    {!activeTemplates.length && (
+                      <p className="studio-warning">Belum ada template aktif. Upload template sebelum combine.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {stage === "review" && (
+              <div className="studio-stage">
+                <h2>Review payload</h2>
+                <p>Cek lagi sebelum batch masuk antrean worker.</p>
+                <section className="studio-review" aria-label="Ringkasan payload">
+                  <dl>
+                    <div><dt>Jumlah</dt><dd>{amount} motif</dd></div>
+                    <div><dt>Mode</dt><dd>{modeLabel(mode)}</dd></div>
+                    <div><dt>Pilihan kategori</dt><dd>{Object.keys(mode === "random" ? {} : fixedWordlistItems).length || "Random"}</dd></div>
+                    <div><dt>Template costume</dt><dd>{templateModeLabel(payloadPreview?.costume_template_mode ?? templateMode)}</dd></div>
+                    <div><dt>Combine</dt><dd>{payloadPreview?.combine_enabled ? "Aktif" : "Nonaktif"}</dd></div>
+                    <div><dt>Video</dt><dd>{payloadPreview?.video_enabled ? "Aktif" : "Nonaktif"}</dd></div>
+                    <div><dt>Seed</dt><dd>{payloadPreview?.random_seed ?? "Tanpa seed"}</dd></div>
+                    <div><dt>Izinkan duplikat</dt><dd>{allowDuplicates ? "Ya" : "Tidak"}</dd></div>
+                  </dl>
+                </section>
+              </div>
+            )}
+
+            <div className="studio-actions">
+              {stage !== "batch" && (
+                <button type="button" className="admin-logout-button" onClick={goBack}>
+                  <ChevronLeft size={16} aria-hidden="true" />
+                  Kembali
+                </button>
+              )}
+              {stage !== "review" ? (
+                <button type="button" className="admin-primary-action" onClick={goNext}>
+                  {stage === "batch" ? "Lanjut ke prompt" : stage === "prompt" ? "Lanjut ke media" : "Review batch"}
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+              ) : (
+                <button type="button" disabled={submitting} onClick={() => void submit()} className="admin-primary-action">
+                  {submitting ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}
+                  Jalankan batch
+                </button>
+              )}
             </div>
 
-            {combineEnabled && <div>
-              <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-medium">Template costume</h2><Link href="/admin/templates" className="text-xs text-[#ffb66c]">Kelola template</Link></div>
-              <select className={`${inputClass} mt-3`} value={templateMode} onChange={(event) => setTemplateMode(event.target.value as CostumeTemplateMode)}><option value="random_one">Pilih satu secara acak</option><option value="selected">Pilih manual</option><option value="all" disabled={videoEnabled}>Gunakan semua</option></select>
-              {templateMode === "selected" && <div className="mt-3 grid gap-2 sm:grid-cols-2">{activeTemplates.map((template) => <label key={template.id} className="flex items-center gap-2 border border-white/10 px-3 py-2 text-sm"><input type="checkbox" checked={selectedTemplateIds.includes(template.id)} onChange={() => toggleTemplate(template.id)} />{template.name}</label>)}</div>}
-              {!activeTemplates.length && <p className="mt-3 text-sm text-red-200/80">Belum ada template aktif. Upload template sebelum combine.</p>}
-            </div>}
-
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allowDuplicates} onChange={(event) => setAllowDuplicates(event.target.checked)} />Izinkan prompt duplikat</label>
-
-            <button disabled={submitting} onClick={() => void submit()} className="flex items-center gap-2 bg-[#ff9d42] px-5 py-3 text-sm font-semibold text-[#201307] disabled:opacity-50">{submitting ? <LoaderCircle size={17} className="animate-spin" /> : <Play size={17} />}Antrekan batch</button>
-            {error && <div className="flex gap-2 border border-red-400/20 bg-red-400/8 p-4 text-sm text-red-100/80"><AlertCircle size={17} className="shrink-0" />{error}</div>}
-            {batchId && <div className="flex items-center justify-between gap-4 border border-emerald-400/20 bg-emerald-400/8 p-4 text-sm text-emerald-100/80"><span className="flex items-center gap-2"><CheckCircle2 size={17} />Batch {batchId} sudah masuk antrean.</span><Link href={`/admin/history?batch=${encodeURIComponent(batchId)}`} className="font-medium text-emerald-200">Pantau</Link></div>}
+            {error && (
+              <div role="alert" className="admin-alert">
+                <AlertCircle size={17} className="shrink-0" aria-hidden="true" />
+                {error}
+              </div>
+            )}
+            {batchId && (
+              <div className="studio-success">
+                <span><CheckCircle2 size={17} aria-hidden="true" />Batch {batchId} sudah masuk antrean.</span>
+                <Link href={`/admin/history?batch=${encodeURIComponent(batchId)}`}>Pantau</Link>
+              </div>
+            )}
           </section>
 
-          <aside className="border border-white/10 bg-black/20 p-5">
-            <Workflow size={19} className="text-[#ffad5d]" />
-            <h2 className="mt-4 font-medium">Kontrak worker</h2>
-            <ol className="mt-4 space-y-3 text-sm text-white/50"><li>1. Generate motif WebP</li><li>2. Combine ke template aktif</li><li>3. Video potret 720x1280</li><li>4. Retry otomatis saat ComfyUI mati</li></ol>
+          <aside className="studio-contract">
+            <Workflow size={19} aria-hidden="true" />
+            <h2>Kontrak worker</h2>
+            <ol>
+              <li><span>01</span>Generate motif WebP</li>
+              <li><span>02</span>Combine ke template aktif</li>
+              <li><span>03</span>Video potret 720x1280</li>
+              <li><span>04</span>Retry otomatis saat ComfyUI mati</li>
+            </ol>
           </aside>
-        </div>}
-    </main>
+        </div>
+      )}
+    </section>
   );
 }
