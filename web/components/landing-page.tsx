@@ -43,12 +43,16 @@ export function LandingPage() {
             className="landing-hero-copyblock"
             style={{ opacity: heroTextOpacity, x: heroTextX, y: heroTextY }}
           >
-            <p className="landing-hero-kicker">Arsip Tekstil Nusantara</p>
-            <h1 className="serif">Motif lama. Bahasa baru.</h1>
-            <p className="landing-hero-copy">
-              Arsip batik yang menghubungkan kerja tangan, pengetahuan material, dan eksperimen generatif yang dikurasi manusia.
-            </p>
-            <Action href="/gallery" className="landing-hero-action">Jelajahi koleksi</Action>
+          <p className="landing-hero-kicker">Generative Batik AI</p>
+          <h1 className="serif">Motif batik baru, dibuat oleh AI.</h1>
+          <p className="landing-hero-copy">
+            TitikBatik AI membantu menghasilkan motif batik digital melalui proses generative AI,
+            mulai dari pemilihan warna, bentuk, gaya visual, hingga variasi motif yang dapat
+            dikurasi dan dipublikasikan.
+          </p>
+          <Action href="/gallery" className="landing-hero-action">
+            Lihat hasil generasi AI
+          </Action>
           </motion.div>
           <motion.figure
             className="landing-hero-figure"
@@ -72,13 +76,13 @@ export function LandingPage() {
 
       <EditorialStory />
 
-      <section className="landing-latest" aria-label="Koleksi terbaru">
+      <section className="landing-latest" aria-label="Hasil generasi terbaru">
         <header className="landing-section-heading">
           <div>
-            <p>Koleksi terbaru</p>
-            <h2 className="serif">Motif yang baru masuk arsip.</h2>
+            <p>Hasil generasi terbaru</p>
+            <h2 className="serif">Motif batik yang baru dibuat oleh AI.</h2>
           </div>
-          <Action href="/gallery" variant="quiet">Lihat seluruh koleksi</Action>
+          <Action href="/gallery" variant="quiet">Lihat semua hasil AI</Action>
         </header>
         {loading ? (
           <Feedback>Memuat karya terbaru.</Feedback>
@@ -92,23 +96,25 @@ export function LandingPage() {
       </section>
 
       <section className="landing-ethics">
-        <p className="landing-ethics-kicker">Prinsip arsip</p>
-        <h2 className="serif">Etika visual, bukan catatan kaki.</h2>
+        <p className="landing-ethics-kicker">Prinsip AI</p>
+        <h2 className="serif">AI sebagai alat eksplorasi, bukan pengganti tradisi.</h2>
         <div className="landing-ethics-copy">
           <p>
-            Foto dokumenter diberi sumber dan lisensi. Visual buatan AI selalu ditandai,
-            agar pengunjung dapat membedakan rekaman proses dari interpretasi konseptual.
+            Setiap motif yang dihasilkan TitikBatik AI berasal dari kombinasi parameter
+            visual seperti warna, bentuk, ornamen, dan gaya batik yang diproses melalui
+            alur generative AI.
           </p>
           <p>
-            Hasil generatif diperlakukan sebagai eksperimen kuratorial, bukan klaim atas
-            tradisi, komunitas, atau makna sakral tertentu.
+            Hasil AI tetap dikurasi manusia sebelum dipublikasikan, agar visual yang
+            ditampilkan tetap menghargai konteks budaya, estetika batik, dan etika
+            penggunaan teknologi.
           </p>
         </div>
       </section>
 
       <section className="landing-collection-cta">
-        <h2 className="serif">Temukan bahasa visual yang tumbuh dari proses.</h2>
-        <Action href="/gallery">Buka koleksi motif</Action>
+        <h2 className="serif">Jelajahi motif batik digital hasil generative AI.</h2>
+        <Action href="/gallery">Buka galeri AI</Action>
       </section>
     </main>
   );

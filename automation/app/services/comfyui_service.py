@@ -43,7 +43,7 @@ class ComfyUIService:
 
     async def queue_prompt(self, prompt: dict[str, Any]) -> str:
         try:
-            async with self._client() as client:
+            async with self._client(timeout=self.settings.comfyui_prompt_submit_timeout_seconds) as client:
                 response = await client.post(
                     "/prompt",
                     json={"prompt": prompt, "client_id": self.settings.comfyui_client_id},

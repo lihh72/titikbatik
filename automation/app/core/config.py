@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     worker_concurrency: int = 1
     worker_poll_interval_seconds: int = 2
     comfyui_request_timeout_seconds: int = 30
+    comfyui_prompt_submit_timeout_seconds: int = 120
     comfyui_generation_timeout_seconds: int = 900
     comfyui_max_retries: int = 3
 
