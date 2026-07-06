@@ -994,18 +994,16 @@ button:disabled,
 
 .landing-hero-image {
   position: relative;
+  width: 100%;
+  min-height: 520px;
   overflow: hidden;
-  height: clamp(18rem, 40vw, 31rem);
-  max-height: calc(100dvh - 13rem);
-  min-height: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  border-radius: 28px;
+  border: 1px solid rgba(120, 80, 40, 0.18);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
 }
 
 .landing-hero-image img {
   object-fit: cover;
-  filter: saturate(0.82) contrast(1.04);
 }
 
 .landing-hero-figure figcaption {
