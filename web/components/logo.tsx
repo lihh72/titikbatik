@@ -1,8 +1,11 @@
+import Image from "next/image";
+
 type LogoMarkProps = {
   decorative?: boolean;
+  size?: number;
 };
 
-export function LogoMark({ decorative = false }: LogoMarkProps) {
+export function LogoMark({ decorative = false, size = 36 }: LogoMarkProps) {
   return (
     <span
       className="logo-mark"
@@ -10,8 +13,13 @@ export function LogoMark({ decorative = false }: LogoMarkProps) {
       aria-label={decorative ? undefined : "TitikBatik AI"}
       aria-hidden={decorative || undefined}
     >
-      <i />
-      <i />
+      <Image
+        src="/logoo.png"
+        alt={decorative ? "" : "TitikBatik AI"}
+        width={size}
+        height={size}
+        priority
+      />
     </span>
   );
 }
