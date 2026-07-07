@@ -21,7 +21,7 @@ export function MotifDetail({ batik }: { batik: Batik }) {
         </Link>
       </div>
 
-      <section className="motif-detail-layout grid gap-4 lg:grid-cols-[minmax(0,0.82fr)_minmax(22rem,0.58fr)] lg:items-stretch xl:grid-cols-[minmax(0,0.72fr)_minmax(22rem,0.52fr)]">
+      <section className="motif-detail-layout grid gap-4 lg:grid-cols-2 lg:items-stretch">
         <BatikMedia batik={batik} />
 
         <aside className="motif-detail-aside rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-4 shadow-[0_24px_70px_rgba(88,70,49,0.09)] sm:p-5">

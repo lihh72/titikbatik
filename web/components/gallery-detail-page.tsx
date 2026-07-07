@@ -67,7 +67,7 @@ function DetailSkeleton() {
     <main className="mx-auto max-w-7xl px-4 pb-10 pt-3 sm:px-6 sm:pb-14 sm:pt-5 lg:px-8" aria-busy="true">
       <span className="sr-only">Memuat detail batik.</span>
       <div className="mb-3 h-5 w-32 rounded-full skeleton-surface sm:mb-4" />
-      <section className="detail-skeleton grid gap-4 lg:grid-cols-[minmax(0,0.82fr)_minmax(22rem,0.58fr)] xl:grid-cols-[minmax(0,0.72fr)_minmax(22rem,0.52fr)]">
+      <section className="detail-skeleton grid gap-4 lg:grid-cols-2">
         <div className="detail-skeleton-media">
           <div className="skeleton-block detail-skeleton-main" />
           <div className="detail-skeleton-strip">
