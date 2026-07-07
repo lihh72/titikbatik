@@ -9,6 +9,9 @@ import {
 import type { Batik } from "@/lib/automation-types";
 
 const motionState = vi.hoisted(() => ({ reduced: false }));
+const apiMocks = vi.hoisted(() => ({
+  prefetchPublicBatik: vi.fn(),
+}));
 
 vi.mock("motion/react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("motion/react")>()),
@@ -22,6 +25,10 @@ vi.mock("@/components/app-provider", () => ({
     toggleLike: vi.fn(),
     toggleBookmark: vi.fn(),
   }),
+}));
+
+vi.mock("@/lib/automation-api", () => ({
+  prefetchPublicBatik: apiMocks.prefetchPublicBatik,
 }));
 
 const batik: Batik = {
@@ -87,6 +94,7 @@ describe("motif card costume preview", () => {
     await act(async () => {
       fireEvent.mouseEnter(card);
     });
+    expect(apiMocks.prefetchPublicBatik).toHaveBeenCalledWith("kawung-indigo");
 
     act(() => {
       vi.advanceTimersByTime(HOVER_INTENT_MS - 1);

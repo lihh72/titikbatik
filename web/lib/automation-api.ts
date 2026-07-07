@@ -17,19 +17,84 @@ import {
 const ADMIN_BASE = "/api/automation/admin";
 const PUBLIC_BASE = "/api/automation/public";
 
+type CacheEntry<T> = {
+  value: T;
+};
+
+const memoryCache = new Map<string, CacheEntry<unknown>>();
+const pendingRequests = new Map<string, Promise<unknown>>();
+
+function getRequestMethod(init?: RequestInit) {
+  return (init?.method ?? "GET").toUpperCase();
+}
+
+function shouldUseClientCache(path: string, init?: RequestInit) {
+  return getRequestMethod(init) === "GET" && path.startsWith(PUBLIC_BASE);
+}
+
+function getCachedValue<T>(key: string): T | null {
+  const item = memoryCache.get(key);
+  if (!item) return null;
+
+  return item.value as T;
+}
+
+function setCachedValue<T>(key: string, value: T) {
+  memoryCache.set(key, {
+    value,
+  });
+}
+
+function publicBatikPath(slug: string) {
+  return `${PUBLIC_BASE}/batiks/${encodeURIComponent(slug)}`;
+}
+
+function publicBatikListPath(options: { page?: number; perPage?: number; query?: string } = {}) {
+  const path = options.query ? "batiks/search" : "batiks";
+  return `${PUBLIC_BASE}/${path}${queryString({
+    q: options.query,
+    page: options.page,
+    per_page: options.perPage,
+  })}`;
+}
+
 async function automationRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, { cache: "no-store", ...init });
-  let payload: AutomationResponse<T> & { detail?: string };
-  try {
-    payload = await response.json() as AutomationResponse<T> & { detail?: string };
-  } catch {
-    if (response.status === 404) throw new Error("Endpoint web tidak ditemukan (404).");
-    throw new Error(`Server mengembalikan respons non-JSON (${response.status}).`);
+  const useCache = shouldUseClientCache(path, init);
+
+  if (useCache) {
+    const cached = getCachedValue<T>(path);
+    if (cached) return cached;
+
+    const pending = pendingRequests.get(path);
+    if (pending) return pending as Promise<T>;
   }
-  if (!response.ok) {
-    throw new Error(payload.message ?? payload.detail ?? `Server mengembalikan status ${response.status}`);
+
+  const requestPromise = fetch(path, { cache: useCache ? "force-cache" : "no-store", ...init })
+    .then(async (response) => {
+      let payload: AutomationResponse<T> & { detail?: string };
+      try {
+        payload = await response.json() as AutomationResponse<T> & { detail?: string };
+      } catch {
+        if (response.status === 404) throw new Error("Endpoint web tidak ditemukan (404).");
+        throw new Error(`Server mengembalikan respons non-JSON (${response.status}).`);
+      }
+      if (!response.ok) {
+        throw new Error(payload.message ?? payload.detail ?? `Server mengembalikan status ${response.status}`);
+      }
+
+      const result = unwrapAutomationResponse(payload);
+      if (useCache) setCachedValue(path, result);
+      return result;
+    })
+    .finally(() => {
+      if (useCache) pendingRequests.delete(path);
+    });
+
+  if (useCache) {
+    pendingRequests.set(path, requestPromise);
   }
-  return unwrapAutomationResponse(payload);
+
+  return requestPromise;
 }
 
 function jsonRequest(method: string, body?: unknown): RequestInit {
@@ -66,6 +131,25 @@ export function normalizeBatikMedia(batik: Batik): Batik {
       : batik.costume_urls,
     costume_files: costumeFiles,
   };
+}
+
+export function clearPublicAutomationCache() {
+  memoryCache.clear();
+  pendingRequests.clear();
+}
+
+export function putPublicBatikCache(batik: Batik) {
+  const normalized = normalizeBatikMedia(batik);
+  setCachedValue(publicBatikPath(normalized.slug), normalized);
+}
+
+export function readPublicBatikCache(slug: string) {
+  if (!slug.trim()) return null;
+  return getCachedValue<Batik>(publicBatikPath(slug));
+}
+
+export function readPublicBatiksCache(options: { page?: number; perPage?: number; query?: string } = {}) {
+  return getCachedValue<PublicBatikList>(publicBatikListPath(options));
 }
 
 export const getDashboard = () => automationRequest<DashboardData>(`${ADMIN_BASE}/dashboard`);
@@ -137,13 +221,29 @@ export const putSetting = (key: string, value: Record<string, unknown>) =>
   automationRequest<{ key: string; value: Record<string, unknown> }>(`${ADMIN_BASE}/settings/${encodeURIComponent(key)}`, jsonRequest("PUT", value));
 
 export const listPublicBatiks = (options: { page?: number; perPage?: number; query?: string } = {}) => {
-  const path = options.query ? "batiks/search" : "batiks";
-  return automationRequest<PublicBatikList>(
-    `${PUBLIC_BASE}/${path}${queryString({ q: options.query, page: options.page, per_page: options.perPage })}`,
-  ).then((result) => ({ ...result, items: result.items.map(normalizeBatikMedia) }));
+  const cachePath = publicBatikListPath(options);
+  return automationRequest<PublicBatikList>(cachePath).then((result) => {
+    const items = result.items.map(normalizeBatikMedia);
+    const normalized = { ...result, items };
+    setCachedValue(cachePath, normalized);
+    items.forEach(putPublicBatikCache);
+    return normalized;
+  });
 };
 
-export const getPublicBatik = async (slug: string) =>
-  normalizeBatikMedia(
-    await automationRequest<Batik>(`${PUBLIC_BASE}/batiks/${encodeURIComponent(slug)}`),
-  );
+export const getPublicBatik = async (slug: string) => {
+  const cached = readPublicBatikCache(slug);
+  if (cached) return cached;
+
+  const normalized = normalizeBatikMedia(await automationRequest<Batik>(publicBatikPath(slug)));
+  putPublicBatikCache(normalized);
+  return normalized;
+};
+
+export const prefetchPublicBatik = (slug: string) => {
+  if (!slug.trim()) return;
+
+  void getPublicBatik(slug).catch(() => {
+    // Prefetch bersifat opsional. Error tetap ditangani saat halaman detail dibuka.
+  });
+};

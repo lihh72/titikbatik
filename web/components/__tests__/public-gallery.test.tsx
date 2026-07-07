@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GalleryDetailPage } from "@/components/gallery-detail-page";
 import { GalleryPage } from "@/components/gallery-page";
+import { clearPublicAutomationCache } from "@/lib/automation-api";
 import type { Batik, PublicBatikList } from "@/lib/automation-types";
 
 const mocks = vi.hoisted(() => ({
@@ -55,7 +56,7 @@ function response(items: Batik[], page = 1, totalPages = 1): PublicBatikList {
     items,
     pagination: {
       page,
-      per_page: 32,
+      per_page: 9,
       total: items.length,
       total_pages: totalPages,
     },
@@ -66,6 +67,7 @@ describe("public gallery", () => {
   const kawung = batik(12, "Kawung Indigo", "kawung-indigo");
 
   beforeEach(() => {
+    clearPublicAutomationCache();
     mocks.getPublicBatik.mockReset();
     mocks.listPublicBatiks.mockReset();
     mocks.listPublicBatiks.mockResolvedValue(response([kawung]));
@@ -106,7 +108,7 @@ describe("public gallery", () => {
     await waitFor(() => {
       expect(mocks.listPublicBatiks).toHaveBeenLastCalledWith({
         page: 1,
-        perPage: 32,
+        perPage: 9,
         query: "mega mendung",
       });
     });
@@ -119,6 +121,15 @@ describe("public gallery", () => {
     render(<GalleryPage />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Galeri gagal dimuat.");
+  });
+
+  it("shows gallery skeletons while public results are loading", () => {
+    mocks.listPublicBatiks.mockReturnValueOnce(new Promise(() => undefined));
+
+    render(<GalleryPage />);
+
+    expect(screen.getByRole("region", { name: "Memuat koleksi" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Menata motif dan metadata koleksi.")).toHaveClass("sr-only");
   });
 
   it("renders a composed empty archive state", async () => {
@@ -144,7 +155,7 @@ describe("public gallery", () => {
     await waitFor(() => {
       expect(mocks.listPublicBatiks).toHaveBeenLastCalledWith({
         page: 2,
-        perPage: 32,
+        perPage: 9,
         query: "",
       });
     });
@@ -158,5 +169,13 @@ describe("public gallery", () => {
 
     expect(await screen.findByRole("heading", { name: "Kawung Indigo" })).toBeInTheDocument();
     expect(mocks.getPublicBatik).toHaveBeenCalledWith("kawung-indigo");
+  });
+
+  it("shows a detail skeleton while the selected batik is loading", () => {
+    mocks.getPublicBatik.mockReturnValueOnce(new Promise(() => undefined));
+
+    render(<GalleryDetailPage slug="kawung-indigo" />);
+
+    expect(screen.getByText("Memuat detail batik.")).toHaveClass("sr-only");
   });
 });

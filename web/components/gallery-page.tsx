@@ -3,25 +3,46 @@
 import { MotifCard } from "@/components/motif-card";
 import { Feedback } from "@/components/ui/feedback";
 import { PageHeading } from "@/components/ui/page-heading";
-import { listPublicBatiks } from "@/lib/automation-api";
+import { listPublicBatiks, readPublicBatiksCache } from "@/lib/automation-api";
 import type { Batik, Pagination } from "@/lib/automation-types";
 import { Search } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 const pageButtonClass = "min-h-11 rounded-[var(--radius-sm)] border border-[color:var(--line)] px-4 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--terracotta-dark)] hover:text-[color:var(--terracotta-dark)] disabled:cursor-not-allowed disabled:opacity-40";
+const GALLERY_PAGE_SIZE = 9;
 
 export function GalleryPage() {
-  const [items, setItems] = useState<Batik[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({ page: 1, per_page: 32, total: 0, total_pages: 0 });
+  const initialResult = readPublicBatiksCache({ page: 1, perPage: GALLERY_PAGE_SIZE, query: "" });
+  const [items, setItems] = useState<Batik[]>(() => initialResult?.items ?? []);
+  const [pagination, setPagination] = useState<Pagination>(() => initialResult?.pagination ?? { page: 1, per_page: GALLERY_PAGE_SIZE, total: 0, total_pages: 0 });
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !initialResult);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    listPublicBatiks({ page, perPage: 32, query: activeQuery })
+    const cached = readPublicBatiksCache({ page, perPage: GALLERY_PAGE_SIZE, query: activeQuery });
+
+    if (cached) {
+      queueMicrotask(() => {
+        if (!active) return;
+        setItems(cached.items);
+        setPagination(cached.pagination);
+        setError(null);
+        setLoading(false);
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    queueMicrotask(() => {
+      if (!active) return;
+      setLoading(true);
+    });
+    listPublicBatiks({ page, perPage: GALLERY_PAGE_SIZE, query: activeQuery })
       .then((result) => {
         if (active) {
           setItems(result.items);
@@ -99,12 +120,10 @@ export function GalleryPage() {
       )}
 
       {loading ? (
-        <div className="py-20">
-          <Feedback>Menata motif dan metadata koleksi...</Feedback>
-        </div>
+        <GallerySkeleton />
       ) : error ? null : items.length ? (
         <>
-          <section className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-label="Daftar motif">
+          <section className="gallery-motion-grid mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Daftar motif">
             {items.map((batik) => <MotifCard key={batik.id} batik={batik} />)}
           </section>
 
@@ -147,5 +166,29 @@ export function GalleryPage() {
         </div>
       )}
     </main>
+  );
+}
+
+function GallerySkeleton() {
+  return (
+    <section className="gallery-skeleton mt-8" aria-label="Memuat koleksi" aria-busy="true">
+      <span className="sr-only">Menata motif dan metadata koleksi.</span>
+      {Array.from({ length: GALLERY_PAGE_SIZE }, (_, index) => (
+        <article className="gallery-skeleton-card" key={index}>
+          <div className="skeleton-block skeleton-media" />
+          <div className="skeleton-copy">
+            <div className="skeleton-line skeleton-line-short" />
+            <div className="skeleton-line skeleton-line-title" />
+            <div className="skeleton-line" />
+            <div className="skeleton-line skeleton-line-tiny" />
+          </div>
+          <div className="skeleton-actions">
+            <div className="skeleton-button" />
+            <div className="skeleton-button" />
+            <div className="skeleton-link" />
+          </div>
+        </article>
+      ))}
+    </section>
   );
 }

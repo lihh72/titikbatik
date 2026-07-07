@@ -1,8 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createGenerationBatch, getPublicBatik, listBatches, listPublicBatiks, uploadCostumeTemplate } from "@/lib/automation-api";
+import {
+  clearPublicAutomationCache,
+  createGenerationBatch,
+  getPublicBatik,
+  listBatches,
+  listPublicBatiks,
+  uploadCostumeTemplate,
+} from "@/lib/automation-api";
 
 afterEach(() => {
+  clearPublicAutomationCache();
   vi.unstubAllGlobals();
 });
 
@@ -122,7 +130,26 @@ describe("automation API client", () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/automation/public/batiks/kawung%20biru",
-      expect.objectContaining({ cache: "no-store" }),
+      expect.objectContaining({ cache: "force-cache" }),
     );
+  });
+
+  it("serves repeated public detail requests from memory cache", async () => {
+    const batik = {
+      id: 1, slug: "kawung-biru", keyword: "kawung", warna: "biru", style: "modern", seed: 4,
+      positive_prompt: null, negative_prompt: null, file_preview: "preview.webp", file_video: null,
+      prompt_hash: "hash", is_published: true, created_at: "2026-07-03T00:00:00Z", updated_at: "2026-07-03T00:00:00Z",
+      preview_url: null, costume_urls: [], costume_files: [],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ success: true, message: "ok", data: batik }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getPublicBatik("kawung-biru");
+    await getPublicBatik("kawung-biru");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

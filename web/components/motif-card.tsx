@@ -1,6 +1,7 @@
 "use client";
 
 import { useApp } from "@/components/app-provider";
+import { prefetchPublicBatik } from "@/lib/automation-api";
 import type { Batik } from "@/lib/automation-types";
 import { Bookmark, Heart, ImageOff } from "lucide-react";
 import { useReducedMotion } from "motion/react";
@@ -57,10 +58,12 @@ export function MotifCard({ batik }: { batik: Batik }) {
   }
 
   function handlePointerEnter() {
+    prefetchPublicBatik(batik.slug);
     if (hasFinePointer()) startPreview();
   }
 
   function handleFocus() {
+    prefetchPublicBatik(batik.slug);
     startPreview();
   }
 
@@ -82,7 +85,10 @@ export function MotifCard({ batik }: { batik: Batik }) {
     >
       <Link
         href={`/gallery/${batik.slug}`}
+        prefetch
         className="motif-card-primary-link"
+        onPointerEnter={() => prefetchPublicBatik(batik.slug)}
+        onFocus={() => prefetchPublicBatik(batik.slug)}
       >
         <div
           className="motif-card-media aspect-square"
@@ -148,7 +154,13 @@ export function MotifCard({ batik }: { batik: Batik }) {
         >
           <Bookmark size={16} fill={bookmarked ? "currentColor" : "none"} aria-hidden="true" />
         </button>
-        <Link href={`/gallery/${batik.slug}`} className="motif-card-detail-link">
+        <Link
+          href={`/gallery/${batik.slug}`}
+          prefetch
+          className="motif-card-detail-link"
+          onPointerEnter={() => prefetchPublicBatik(batik.slug)}
+          onFocus={() => prefetchPublicBatik(batik.slug)}
+        >
           Lihat detail
         </Link>
       </div>
