@@ -14,10 +14,15 @@ export function LandingPage() {
   const [items, setItems] = useState<Batik[]>([]);
   const [loading, setLoading] = useState(true);
   const heroRef = useRef<HTMLElement>(null);
+  const ethicsRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"],
+  });
+  const { scrollYProgress: ethicsProgress } = useScroll({
+    target: ethicsRef,
+    offset: ["start end", "end start"],
   });
   const heroTextX = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -84]);
   const heroTextY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -30]);
@@ -27,6 +32,12 @@ export function LandingPage() {
   const heroImageScale = useTransform(scrollYProgress, [0, 1], reduceMotion ? [1, 1] : [1, 0.9]);
   const heroOrbX = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -120]);
   const heroOrbY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, 80]);
+  const ethicsKickerY = useTransform(ethicsProgress, [0.1, 0.48], reduceMotion ? [0, 0] : [34, -26]);
+  const ethicsTitleY = useTransform(ethicsProgress, [0.08, 0.52], reduceMotion ? [0, 0] : [72, -18]);
+  const ethicsCopyY = useTransform(ethicsProgress, [0.18, 0.66], reduceMotion ? [0, 0] : [56, -34]);
+  const ethicsProofX = useTransform(ethicsProgress, [0.14, 0.78], reduceMotion ? [0, 0] : [72, -42]);
+  const ethicsProofY = useTransform(ethicsProgress, [0.14, 0.78], reduceMotion ? [0, 0] : [82, -44]);
+  const ethicsProofOpacity = useTransform(ethicsProgress, [0.12, 0.34, 0.84], reduceMotion ? [1, 1, 1] : [0.36, 1, 0.72]);
 
   useEffect(() => {
     let active = true;
@@ -47,13 +58,13 @@ export function LandingPage() {
             className="landing-hero-copyblock"
             style={{ opacity: heroTextOpacity, x: heroTextX, y: heroTextY }}
           >
-          <p className="landing-hero-kicker">Generative AI motif engine</p>
-          <h1 className="serif">Motif batik dari generative AI.</h1>
+          <p className="landing-hero-kicker">Generative AI output gallery</p>
+          <h1 className="serif">Galeri motif AI yang siap dipamerkan.</h1>
           <p className="landing-hero-copy">
-            Bangun variasi motif, costume preview, dan kurasi publik dari satu alur produksi AI.
+            Lihat motif, costume preview, video, dan metadata dari output generative AI yang sudah dikurasi.
           </p>
           <Action href="/gallery" className="landing-hero-action">
-            Lihat hasil generasi AI
+            Lihat output AI
           </Action>
           </motion.div>
           <motion.figure
@@ -62,27 +73,27 @@ export function LandingPage() {
           >
             <div className="landing-hero-image">
               <Image
-                src="/editorial/batik-artisan-canting.jpg"
-                alt="Perajin batik menggambar malam dengan canting di Trusmi, Cirebon"
+                src="/editorial/generative-transition.webp"
+                alt="Visual tekstil generatif dengan garis organik di atas kain"
                 fill
                 priority
                 sizes="(max-width: 900px) 100vw, 34vw"
               />
             </div>
             <figcaption>
-              Proses mencanting di Trusmi, Cirebon. Foto Ahaetulla, CC BY-SA 4.0.
+              Visual generatif untuk menegaskan arah koleksi AI, bukan dokumentasi proses manual.
             </figcaption>
           </motion.figure>
         </div>
       </section>
 
-      <EditorialStory />
+      <EditorialStory items={items} />
 
       <section className="landing-latest" aria-label="Koleksi AI terbaru">
         <header className="landing-section-heading">
           <div>
-            <p>Kandidat generatif</p>
-            <h2 className="serif">Motif yang lahir dari pipeline AI.</h2>
+            <p>Output terkurasi</p>
+            <h2 className="serif">Hasil AI yang sudah layak masuk galeri.</h2>
           </div>
           <Action href="/gallery" variant="quiet">Lihat semua hasil AI</Action>
         </header>
@@ -97,24 +108,43 @@ export function LandingPage() {
         )}
       </section>
 
-      <section className="landing-ethics">
-        <p className="landing-ethics-kicker">Prinsip AI</p>
-        <h2 className="serif">AI generatif memperluas eksplorasi, kurasi manusia menjaga arah.</h2>
-        <div className="landing-ethics-copy">
+      <section className="landing-ethics" aria-label="Prinsip AI" ref={ethicsRef}>
+        <motion.p className="landing-ethics-kicker" style={{ y: ethicsKickerY }}>Prinsip AI</motion.p>
+        <motion.h2 className="serif" style={{ y: ethicsTitleY }}>
+          AI dipakai untuk menghasilkan visual yang kuat, bukan menjelaskan proses.
+        </motion.h2>
+        <motion.div className="landing-ethics-copy" style={{ y: ethicsCopyY }}>
           <p>
-            Setiap motif dibuat dari kombinasi parameter warna, bentuk, ornamen, dan gaya
-            yang diproses melalui pipeline generative AI.
+            Halaman publik harus menjual hasilnya: motif yang jelas, variasi yang terasa hidup,
+            dan preview yang membuat output AI mudah dibayangkan sebagai koleksi.
           </p>
           <p>
-            Hasil AI tetap dikurasi manusia sebelum dipublikasikan, agar visual yang
-            ditampilkan tetap menghargai konteks budaya, estetika batik, dan etika
-            penggunaan teknologi.
+            Kurasi tetap menjaga standar. Output yang tampil dipilih karena komposisi,
+            warna, dan detailnya kuat saat dilihat sebagai motif, costume, atau video.
           </p>
-        </div>
+        </motion.div>
+        <motion.div
+          className="landing-ethics-proof"
+          style={{ opacity: ethicsProofOpacity, x: ethicsProofX, y: ethicsProofY }}
+          aria-label="Bukti kualitas output AI"
+        >
+          <article>
+            <span>Motif</span>
+            <strong>Pola utama terbaca dalam satu lihat.</strong>
+          </article>
+          <article>
+            <span>Costume</span>
+            <strong>Preview menunjukkan motif hidup di media.</strong>
+          </article>
+          <article>
+            <span>Detail</span>
+            <strong>Metadata membantu menilai karakter generasi.</strong>
+          </article>
+        </motion.div>
       </section>
 
       <section className="landing-collection-cta">
-        <h2 className="serif">Jelajahi output visual dari mesin generative AI.</h2>
+        <h2 className="serif">Buka koleksi dan nilai langsung hasil visual AI.</h2>
         <Action href="/gallery">Buka galeri AI</Action>
       </section>
     </main>

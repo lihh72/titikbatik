@@ -6,23 +6,23 @@ export const metadata = { title: "Bantuan" };
 
 const helpItems = [
   {
-    title: "Cari output AI berdasarkan bahasa visual",
-    text: "Gunakan keyword, warna, atau style. Hasil yang muncul berasal dari pipeline automation yang sudah dipublikasikan.",
+    title: "Mulai dari visual yang paling kuat",
+    text: "Cari keyword, warna, atau style untuk menemukan motif AI yang langsung cocok dengan arah visual yang dicari.",
     icon: Search,
   },
   {
-    title: "Arahkan kartu untuk preview costume",
-    text: "Motif AI tetap menjadi gambar utama. Di desktop, costume muncul saat kartu diarahkan.",
+    title: "Arahkan kartu untuk melihat preview",
+    text: "Motif tetap menjadi pusat. Costume preview muncul untuk menunjukkan bagaimana output terasa saat masuk ke media lain.",
     icon: Image,
   },
   {
-    title: "Baca detail generasi sebelum menyimpan",
-    text: "Halaman detail memuat metadata, media, seed, tanggal, dan prompt generatif jika data tersedia.",
+    title: "Buka detail untuk membandingkan karakter",
+    text: "Halaman detail memperlihatkan media, seed, tanggal, dan prompt agar tiap output bisa dinilai lebih tajam.",
     icon: CircleHelp,
   },
   {
-    title: "Simpan pilihan di perangkat",
-    text: "Tombol suka dan bookmark menyimpan referensi di browser yang sedang dipakai.",
+    title: "Simpan output yang paling menarik",
+    text: "Tombol suka dan bookmark membantu menandai motif yang pantas dilihat lagi.",
     icon: Bookmark,
   },
 ];
@@ -33,10 +33,10 @@ export default function HelpPage() {
       <section className="help-hero">
         <MotionDiv>
           <p className="public-kicker">Panduan output AI</p>
-          <h1>Mulai dari motif AI, lalu lihat bagaimana ia bergerak ke costume.</h1>
+          <h1>Lihat motif AI seperti katalog visual, bukan dokumentasi proses.</h1>
           <p>
-            Galeri publik dibuat untuk membaca hasil generative AI yang sudah dikurasi.
-            Produksi batch dan pengaturan model tetap berada di panel administrator.
+            Fokus halaman ini sederhana: temukan motif yang paling kuat, cek preview costume,
+            lalu buka detail jika ingin membandingkan karakter generasinya.
           </p>
           <div className="public-narrative-actions">
             <Action href="/gallery">Buka galeri</Action>
@@ -47,10 +47,10 @@ export default function HelpPage() {
           </div>
         </MotionDiv>
         <MotionDiv className="help-visual-card help-guide-card" delay={0.08} role="img" aria-label="Alur membaca motif AI dari galeri sampai detail">
-          <span>Motif AI</span>
-          <span>Hover costume</span>
-          <span>Detail generasi</span>
-          <span>Simpan lokal</span>
+          <span>Lihat motif</span>
+          <span>Cek costume</span>
+          <span>Bandingkan detail</span>
+          <span>Simpan favorit</span>
         </MotionDiv>
       </section>
 
@@ -69,11 +69,11 @@ export default function HelpPage() {
       <MotionSection className="help-admin-note">
         <div>
           <p className="public-kicker">Untuk kurator</p>
-          <h2>Panel admin mengatur produksi AI dari jalur terpisah.</h2>
+          <h2>Kurator memilih output yang pantas tampil di galeri.</h2>
         </div>
         <p>
-          Masuk hanya jika Anda mengelola batch generatif, publikasi hasil,
-          template costume, wordlist, atau pengaturan sistem.
+          Masuk hanya jika Anda menyeleksi hasil, memperbarui publikasi,
+          atau menyiapkan koleksi baru untuk ditampilkan.
         </p>
         <Action href="/admin/login" variant="secondary">Masuk admin</Action>
       </MotionSection>

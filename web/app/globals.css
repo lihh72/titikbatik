@@ -1326,6 +1326,16 @@ button:disabled,
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
 }
 
+.landing-hero-image::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(180deg, transparent 45%, rgba(20, 18, 14, 0.22)),
+    radial-gradient(circle at 78% 16%, rgba(255, 255, 255, 0.28), transparent 36%);
+  pointer-events: none;
+}
+
 .landing-hero-image img {
   object-fit: cover;
 }
@@ -1873,11 +1883,13 @@ button:disabled,
 
 .landing-ethics-kicker {
   grid-column: 1 / span 3;
+  will-change: transform;
 }
 
 .landing-ethics h2 {
   grid-column: 4 / span 9;
   margin-top: 0;
+  will-change: transform;
 }
 
 .landing-ethics-copy {
@@ -1887,10 +1899,60 @@ button:disabled,
   gap: 2rem;
   color: var(--ink-soft);
   line-height: 1.75;
+  will-change: transform;
 }
 
 .landing-ethics-copy p {
   margin: 1rem 0 0;
+}
+
+.landing-ethics-proof {
+  display: grid;
+  grid-column: 4 / span 9;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  will-change: transform, opacity;
+}
+
+.landing-ethics-proof article {
+  min-height: clamp(8rem, 13vw, 11rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: var(--radius-md);
+  padding: clamp(1rem, 1.8vw, 1.35rem);
+  background:
+    radial-gradient(circle at 84% 12%, color-mix(in srgb, var(--terracotta) 12%, transparent), transparent 12rem),
+    color-mix(in srgb, var(--paper-raised) 88%, white);
+  box-shadow: 0 26px 80px rgba(49, 37, 25, 0.08);
+}
+
+.landing-ethics-proof article:nth-child(2) {
+  transform: translateY(clamp(0.8rem, 2vw, 1.65rem));
+}
+
+.landing-ethics-proof article:nth-child(3) {
+  transform: translateY(clamp(-0.4rem, -1vw, -0.75rem));
+}
+
+.landing-ethics-proof span {
+  color: var(--terracotta-dark);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-ethics-proof strong {
+  max-width: 16rem;
+  color: var(--ink);
+  font-size: clamp(1.05rem, 1.75vw, 1.45rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
 }
 
 .landing-collection-cta {
@@ -2007,13 +2069,23 @@ button:disabled,
 
   .landing-ethics-kicker,
   .landing-ethics h2,
-  .landing-ethics-copy {
+  .landing-ethics-copy,
+  .landing-ethics-proof {
     grid-column: 1;
   }
 
   .landing-ethics-copy {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .landing-ethics-proof {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-ethics-proof article:nth-child(2),
+  .landing-ethics-proof article:nth-child(3) {
+    transform: none;
   }
 
   .landing-collection-cta,

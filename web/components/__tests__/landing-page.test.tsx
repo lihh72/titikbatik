@@ -50,28 +50,29 @@ describe("landing page", () => {
     });
   });
 
-  it("presents the documentary process before the latest collection", async () => {
+  it("presents the AI output showcase before the latest collection", async () => {
     render(<LandingPage />);
 
-    expect(screen.getByRole("heading", { name: "Motif batik dari generative AI." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Galeri motif AI yang siap dipamerkan." })).toBeInTheDocument();
     const hero = screen.getByRole("region", { name: "Pengantar AI generatif" });
-    expect(within(hero).getByAltText(/perajin batik menggambar malam/i)).toBeInTheDocument();
+    expect(within(hero).getByAltText(/visual tekstil generatif/i)).toBeInTheDocument();
 
-    const process = screen.getByRole("region", { name: "Proses batik" });
-    expect(within(process).getByAltText(/perajin.*canting/i)).toBeInTheDocument();
-    expect(within(process).getByAltText(/^malam batik dipanaskan.*canting/i)).toBeInTheDocument();
-    expect(within(process).getByRole("heading", { name: "Scroll story ini mengikuti perubahan keputusan, bukan dekorasi." })).toBeInTheDocument();
+    const process = screen.getByRole("region", { name: "Showcase output AI" });
+    expect(await within(process).findByAltText(/output AI Motif Satu/i)).toBeInTheDocument();
+    expect(await within(process).findByAltText(/output AI Motif Dua/i)).toBeInTheDocument();
+    expect(within(process).getByRole("heading", { name: "Scroll story ini menyorot kualitas hasil, bukan dekorasi." })).toBeInTheDocument();
     expect(process.querySelector("[data-motion='image-from-left']")).toBeInTheDocument();
     expect(process.querySelector("[data-motion='text-from-right']")).toBeInTheDocument();
     expect(process.querySelector("[data-motion='text-from-left']")).toBeInTheDocument();
     expect(process.querySelector("[data-motion='image-from-right']")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Pipeline generative AI" })).toBeInTheDocument();
-    expect(within(process).getByText("Input visual")).toBeInTheDocument();
-    expect(within(process).getByText("Model membuat kandidat")).toBeInTheDocument();
-    expect(within(process).getByText("Kurasi ke galeri")).toBeInTheDocument();
+    expect(within(process).getAllByText("Motif utama")).toHaveLength(2);
+    expect(within(process).getByText("Costume preview")).toBeInTheDocument();
+    expect(within(process).getByText("Detail generasi")).toBeInTheDocument();
     expect(process.querySelectorAll("[data-motion='generative-stage']")).toHaveLength(3);
 
-    expect(screen.getByRole("heading", { name: "AI generatif memperluas eksplorasi, kurasi manusia menjaga arah." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "AI dipakai untuk menghasilkan visual yang kuat, bukan menjelaskan proses." })).toBeInTheDocument();
+    expect(screen.getByLabelText("Bukti kualitas output AI")).toBeInTheDocument();
 
     const latest = screen.getByRole("region", { name: "Koleksi AI terbaru" });
     expect(await within(latest).findAllByRole("link", { name: /Motif (Satu|Dua|Tiga)/i })).toHaveLength(3);
