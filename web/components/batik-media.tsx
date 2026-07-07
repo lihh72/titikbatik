@@ -61,7 +61,9 @@ export function BatikMedia({ batik }: { batik: Batik }) {
               muted
               controls
               playsInline
+              poster={batik.preview_url ?? undefined}
               preload="metadata"
+              aria-label={selected.label}
               className="batik-media-main-video"
             />
           )}
@@ -112,6 +114,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
                           src={item.url}
                           muted
                           playsInline
+                          poster={batik.preview_url ?? undefined}
                           preload="metadata"
                           className="batik-media-thumbnail-video"
                         />

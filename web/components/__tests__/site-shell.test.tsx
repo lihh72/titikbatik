@@ -17,6 +17,8 @@ describe("public site shell", () => {
   beforeEach(() => {
     navigationMock.pathname = "/gallery";
     document.body.style.overflow = "";
+    document.body.classList.remove("public-menu-open");
+    document.documentElement.classList.remove("public-menu-open");
   });
 
   it("renders the public routes, active route, CTA, brand, and skip link", () => {
@@ -76,8 +78,10 @@ describe("public site shell", () => {
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(closeButton).toHaveFocus();
     expect(document.body).toHaveStyle({ overflow: "hidden" });
-    expect(document.querySelector("#main-content")).toHaveAttribute("inert");
-    expect(screen.getByRole("contentinfo", { hidden: true })).toHaveAttribute("inert");
+    expect(document.body).toHaveClass("public-menu-open");
+    expect(document.documentElement).toHaveClass("public-menu-open");
+    expect(document.querySelector("#main-content")).not.toHaveAttribute("inert");
+    expect(screen.getByRole("contentinfo")).not.toHaveAttribute("inert");
 
     closeButton.focus();
     await user.tab({ shift: true });
@@ -93,6 +97,8 @@ describe("public site shell", () => {
     expect(screen.queryByRole("dialog", { name: "Navigasi utama" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Buka navigasi" })).toHaveFocus();
     expect(document.body.style.overflow).toBe("");
+    expect(document.body).not.toHaveClass("public-menu-open");
+    expect(document.documentElement).not.toHaveClass("public-menu-open");
     expect(document.querySelector("#main-content")).not.toHaveAttribute("inert");
     expect(screen.getByRole("contentinfo")).not.toHaveAttribute("inert");
 
@@ -101,14 +107,14 @@ describe("public site shell", () => {
     expect(document.body.style.overflow).toBe("");
   });
 
-  it("keeps the hamburger usable while page content is inert during the drawer", async () => {
+  it("keeps the hamburger usable without making page content inert during the drawer", async () => {
     const user = userEvent.setup();
     render(<SiteShell><p>Isi halaman</p></SiteShell>);
 
     await user.click(screen.getByRole("button", { name: "Buka navigasi" }));
     const controls = document.querySelector(".public-navbar-controls");
     expect(controls).not.toHaveAttribute("inert");
-    expect(document.querySelector("#main-content")).toHaveAttribute("inert");
+    expect(document.querySelector("#main-content")).not.toHaveAttribute("inert");
     expect(screen.getByRole("button", { name: "Tutup navigasi" })).toHaveAttribute("aria-expanded", "true");
 
     await user.click(within(screen.getByRole("dialog", { name: "Navigasi utama" })).getByRole("button", { name: "Tutup dialog navigasi" }));
@@ -127,7 +133,7 @@ describe("public site shell", () => {
     expect(main).toHaveAttribute("inert");
   });
 
-  it("isolates every focusable element outside the dialog and restores the skip link inert state", async () => {
+  it("keeps outside content interactive after the drawer closes and does not add inert traps", async () => {
     const user = userEvent.setup();
     const { unmount } = render(<SiteShell><p>Isi halaman</p></SiteShell>);
     const skipLink = screen.getByRole("link", { name: "Lewati ke konten" });
@@ -137,10 +143,10 @@ describe("public site shell", () => {
     const outsideFocusable = [...document.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')]
       .filter((element) => !dialog.contains(element));
 
-    expect(skipLink).toHaveAttribute("inert");
+    expect(skipLink).not.toHaveAttribute("inert");
     outsideFocusable
       .filter((element) => !element.closest(".public-navbar-controls"))
-      .forEach((element) => expect(element.closest("[inert]")).not.toBeNull());
+      .forEach((element) => expect(element.closest("[inert]")).toBeNull());
     expect(screen.getByRole("button", { name: "Tutup navigasi" })).not.toHaveAttribute("inert");
 
     await user.keyboard("{Escape}");

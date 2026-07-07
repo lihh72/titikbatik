@@ -27,29 +27,24 @@ export function PublicNavbar() {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    const closeTimer = window.setTimeout(() => setOpen(false), 0);
+    document.documentElement.classList.remove("public-menu-open");
+    document.body.classList.remove("public-menu-open");
     document.body.style.overflow = "";
-    [".skip-link", "#main-content", ".public-footer"].forEach((selector) => {
-      document.querySelector<HTMLElement>(selector)?.removeAttribute("inert");
-    });
+    return () => window.clearTimeout(closeTimer);
   }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
 
     const dialog = document.querySelector<HTMLElement>("#public-mobile-nav");
-    const skipLink = document.querySelector<HTMLElement>(".skip-link");
-    const main = document.querySelector<HTMLElement>("#main-content");
-    const footer = document.querySelector<HTMLElement>(".public-footer");
-    const inertTargets = [skipLink, main, footer].filter((target): target is HTMLElement => Boolean(target)).map((target) => ({
-      target,
-      wasInert: target.hasAttribute("inert"),
-    }));
     const trigger = triggerRef.current;
     const previousOverflow = document.body.style.overflow;
 
+    document.documentElement.classList.add("public-menu-open");
+    document.body.classList.add("public-menu-open");
     document.body.style.overflow = "hidden";
-    inertTargets.forEach(({ target }) => target.setAttribute("inert", ""));
-    closeButtonRef.current?.focus();
+    closeButtonRef.current?.focus({ preventScroll: true });
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -76,10 +71,9 @@ export function PublicNavbar() {
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.documentElement.classList.remove("public-menu-open");
+      document.body.classList.remove("public-menu-open");
       document.body.style.overflow = previousOverflow;
-      inertTargets.forEach(({ target, wasInert }) => {
-        if (!wasInert) target.removeAttribute("inert");
-      });
       if (restoreFocusRef.current && trigger?.isConnected) trigger.focus();
     };
   }, [open]);
@@ -87,7 +81,7 @@ export function PublicNavbar() {
   return (
     <header className="public-header">
       <div className="public-navbar public-navbar-controls">
-        <Link className="public-brand" href="/" aria-label="TitikBatik AI">
+        <Link className="public-brand" href="/" aria-label="TitikBatik AI" onClick={() => setOpen(false)}>
           <LogoMark decorative />
           <span>TitikBatik AI</span>
         </Link>

@@ -56,6 +56,8 @@ describe("BatikMedia", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tampilkan Video Model" }));
     const video = container.querySelector("[data-testid='main-video']");
     expect(video).toHaveAttribute("src", batik.costume_files[0].video_url);
+    expect(video).toHaveAttribute("poster", batik.preview_url);
+    expect(video).toHaveAttribute("aria-label", "Video Model");
     expect(video).not.toHaveAttribute("autoplay");
     expect(video).toHaveProperty("muted", true);
   });
