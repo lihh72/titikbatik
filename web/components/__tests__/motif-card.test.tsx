@@ -62,6 +62,11 @@ function setPointerCapability(finePointer: boolean) {
   }));
 }
 
+function expectOptimizedImage(testId: string, source: string | null) {
+  if (!source) throw new Error("Expected test image source.");
+  expect(screen.getByTestId(testId).getAttribute("src")).toContain(encodeURIComponent(source));
+}
+
 describe("motif card costume preview", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -86,33 +91,21 @@ describe("motif card costume preview", () => {
     act(() => {
       vi.advanceTimersByTime(HOVER_INTENT_MS - 1);
     });
-    expect(screen.getByTestId("motif-preview")).toHaveAttribute(
-      "src",
-      batik.preview_url,
-    );
+    expectOptimizedImage("motif-preview", batik.preview_url);
     expect(screen.queryByTestId("costume-preview")).not.toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(1);
     });
-    expect(screen.getByTestId("costume-preview")).toHaveAttribute(
-      "src",
-      batik.costume_urls[0],
-    );
+    expectOptimizedImage("costume-preview", batik.costume_urls[0]);
 
     act(() => {
       vi.advanceTimersByTime(COSTUME_CYCLE_MS);
     });
-    expect(screen.getByTestId("costume-preview")).toHaveAttribute(
-      "src",
-      batik.costume_urls[1],
-    );
+    expectOptimizedImage("costume-preview", batik.costume_urls[1]);
 
     fireEvent.mouseLeave(card);
-    expect(screen.getByTestId("motif-preview")).toHaveAttribute(
-      "src",
-      batik.preview_url,
-    );
+    expectOptimizedImage("motif-preview", batik.preview_url);
     expect(screen.queryByTestId("costume-preview")).not.toBeInTheDocument();
   });
 
@@ -127,10 +120,7 @@ describe("motif card costume preview", () => {
       vi.advanceTimersByTime(HOVER_INTENT_MS);
     });
 
-    expect(screen.getByTestId("costume-preview")).toHaveAttribute(
-      "src",
-      batik.costume_urls[0],
-    );
+    expectOptimizedImage("costume-preview", batik.costume_urls[0]);
 
     fireEvent.blur(card, { relatedTarget: document.body });
     expect(screen.queryByTestId("costume-preview")).not.toBeInTheDocument();
@@ -144,10 +134,7 @@ describe("motif card costume preview", () => {
       vi.advanceTimersByTime(HOVER_INTENT_MS + COSTUME_CYCLE_MS);
     });
 
-    expect(screen.getByTestId("motif-preview")).toHaveAttribute(
-      "src",
-      batik.preview_url,
-    );
+    expectOptimizedImage("motif-preview", batik.preview_url);
     expect(screen.queryByTestId("costume-preview")).not.toBeInTheDocument();
   });
 
@@ -173,18 +160,12 @@ describe("motif card costume preview", () => {
       vi.advanceTimersByTime(0);
     });
 
-    expect(screen.getByTestId("costume-preview")).toHaveAttribute(
-      "src",
-      batik.costume_urls[0],
-    );
+    expectOptimizedImage("costume-preview", batik.costume_urls[0]);
 
     act(() => {
       vi.advanceTimersByTime(COSTUME_CYCLE_MS * 2);
     });
-    expect(screen.getByTestId("costume-preview")).toHaveAttribute(
-      "src",
-      batik.costume_urls[0],
-    );
+    expectOptimizedImage("costume-preview", batik.costume_urls[0]);
   });
 
   it("cleans preview timers when the active tile unmounts", async () => {

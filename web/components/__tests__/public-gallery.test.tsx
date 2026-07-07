@@ -74,7 +74,7 @@ describe("public gallery", () => {
   it("renders returned batiks as light square motif cards with slug detail links", async () => {
     render(<GalleryPage />);
 
-    expect(screen.getByRole("heading", { name: "Galeri motif terkurasi" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Galeri hasil generative AI" })).toBeInTheDocument();
     expect(screen.getByLabelText("Cari motif, warna, atau style")).toBeInTheDocument();
     expect(await screen.findByText("Kawung Indigo")).toBeInTheDocument();
     expect(screen.getByAltText("Motif Kawung Indigo")).toHaveAttribute(

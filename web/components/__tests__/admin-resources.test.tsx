@@ -207,7 +207,7 @@ describe("admin resource workflows", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<AdminGalleryPage />);
 
-    expect(await screen.findByRole("heading", { name: "Kurasi koleksi batik" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Kurasi hasil AI" })).toBeInTheDocument();
     expect(screen.getByTestId("admin-gallery-tile-12")).toHaveClass("admin-square-preview");
 
     await user.click(screen.getByRole("button", { name: "Publikasikan" }));

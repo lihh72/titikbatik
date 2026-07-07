@@ -92,7 +92,6 @@ export function MotifCard({ batik }: { batik: Batik }) {
         >
           {batik.preview_url ? (
             <Image
-              unoptimized
               fill
               sizes="(max-width: 768px) 100vw, 420px"
               src={batik.preview_url}
@@ -109,7 +108,6 @@ export function MotifCard({ batik }: { batik: Batik }) {
           {costumePreviewUrl && (
             <div className="motif-card-costume-layer" aria-hidden="true">
               <Image
-                unoptimized
                 fill
                 sizes="(max-width: 768px) 100vw, 420px"
                 src={costumePreviewUrl}

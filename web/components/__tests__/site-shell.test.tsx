@@ -39,7 +39,7 @@ describe("public site shell", () => {
       expect(within(navigation).getByRole("link", { name: label })).not.toHaveAttribute("aria-current");
     }
 
-    expect(screen.getByRole("link", { name: "Jelajahi koleksi" })).toHaveAttribute("href", "/gallery");
+    expect(screen.getByRole("link", { name: "Lihat output AI" })).toHaveAttribute("href", "/gallery");
     const brand = screen.getByRole("link", { name: "TitikBatik AI" });
     expect(brand).toHaveAttribute("href", "/");
     expect(brand.querySelector(".logo-mark")).toHaveAttribute("aria-hidden", "true");
@@ -101,13 +101,15 @@ describe("public site shell", () => {
     expect(document.body.style.overflow).toBe("");
   });
 
-  it("makes every control outside the dialog inert while the drawer is open", async () => {
+  it("keeps the hamburger usable while page content is inert during the drawer", async () => {
     const user = userEvent.setup();
     render(<SiteShell><p>Isi halaman</p></SiteShell>);
 
     await user.click(screen.getByRole("button", { name: "Buka navigasi" }));
     const controls = document.querySelector(".public-navbar-controls");
-    expect(controls).toHaveAttribute("inert");
+    expect(controls).not.toHaveAttribute("inert");
+    expect(document.querySelector("#main-content")).toHaveAttribute("inert");
+    expect(screen.getByRole("button", { name: "Tutup navigasi" })).toHaveAttribute("aria-expanded", "true");
 
     await user.click(within(screen.getByRole("dialog", { name: "Navigasi utama" })).getByRole("button", { name: "Tutup dialog navigasi" }));
     expect(controls).not.toHaveAttribute("inert");
@@ -136,7 +138,10 @@ describe("public site shell", () => {
       .filter((element) => !dialog.contains(element));
 
     expect(skipLink).toHaveAttribute("inert");
-    outsideFocusable.forEach((element) => expect(element.closest("[inert]")).not.toBeNull());
+    outsideFocusable
+      .filter((element) => !element.closest(".public-navbar-controls"))
+      .forEach((element) => expect(element.closest("[inert]")).not.toBeNull());
+    expect(screen.getByRole("button", { name: "Tutup navigasi" })).not.toHaveAttribute("inert");
 
     await user.keyboard("{Escape}");
     expect(skipLink).not.toHaveAttribute("inert");
@@ -203,7 +208,7 @@ describe("public site shell", () => {
     }
 
     expect(within(footer).getByRole("link", { name: "Akses Admin" })).toHaveAttribute("href", "/admin/login");
-    expect(within(footer).getByText(/kurasi manusia dan etika AI/i)).toBeInTheDocument();
+    expect(within(footer).getByText(/output generative AI/i)).toBeInTheDocument();
     expect(within(footer).getByRole("link", { name: "Sumber visual" })).toHaveAttribute("href", "/about#sumber-visual");
   });
 

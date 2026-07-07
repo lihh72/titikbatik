@@ -14,26 +14,26 @@ export function MotifDetail({ batik }: { batik: Batik }) {
   const bookmarked = bookmarkedIds.includes(id);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
+    <main className="mx-auto max-w-7xl px-4 pb-10 pt-3 sm:px-6 sm:pb-14 sm:pt-5 lg:px-8">
+      <div className="mb-3 sm:mb-4">
         <Link href="/gallery" className="text-sm font-semibold text-[color:var(--terracotta-dark)] underline-offset-4 hover:underline">
           Kembali ke galeri
         </Link>
       </div>
 
-      <section className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.62fr)] lg:items-start">
+      <section className="motif-detail-layout grid gap-4 lg:grid-cols-[minmax(0,0.82fr)_minmax(22rem,0.58fr)] lg:items-stretch xl:grid-cols-[minmax(0,0.72fr)_minmax(22rem,0.52fr)]">
         <BatikMedia batik={batik} />
 
-        <aside className="rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-6 shadow-[0_24px_70px_rgba(88,70,49,0.09)] sm:p-8">
+        <aside className="motif-detail-aside rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-4 shadow-[0_24px_70px_rgba(88,70,49,0.09)] sm:p-5">
           <p className="text-sm font-semibold text-[color:var(--terracotta-dark)]">Batik #{batik.id}</p>
-          <h1 className="mt-4 text-4xl font-semibold leading-none tracking-[-0.045em] text-[color:var(--ink)] sm:text-5xl">
+          <h1 className="motif-detail-title mt-2 text-2xl font-semibold leading-none tracking-[-0.045em] text-[color:var(--ink)] sm:text-3xl">
             {batik.keyword}
           </h1>
-          <p className="mt-5 text-base leading-7 text-[color:var(--ink-soft)]">
+          <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)]">
             {batik.style || "Batik digital"} dengan palet {batik.warna || "warna belum tercatat"}.
           </p>
 
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => toggleLike(id)}
@@ -54,7 +54,7 @@ export function MotifDetail({ batik }: { batik: Batik }) {
             </button>
           </div>
 
-          <dl className="mt-8 grid gap-4 border-t border-[color:var(--line)] pt-6 text-sm sm:grid-cols-2">
+          <dl className="mt-4 grid gap-2 border-t border-[color:var(--line)] pt-4 text-sm sm:grid-cols-2">
             <div>
               <dt className="font-semibold text-[color:var(--ink)]">Seed</dt>
               <dd className="mt-1 text-[color:var(--ink-soft)]">{batik.seed}</dd>
@@ -74,13 +74,13 @@ export function MotifDetail({ batik }: { batik: Batik }) {
           </dl>
 
           {batik.positive_prompt && (
-            <details className="mt-7 rounded-[var(--radius-sm)] border border-[color:var(--line)] bg-[color:var(--paper)] p-4">
+            <details className="mt-4 rounded-[var(--radius-sm)] border border-[color:var(--line)] bg-[color:var(--paper)] p-3">
               <summary className="cursor-pointer text-sm font-semibold text-[color:var(--ink)]">Prompt sumber</summary>
               <p className="mt-3 text-sm leading-7 text-[color:var(--ink-soft)]">{batik.positive_prompt}</p>
             </details>
           )}
 
-          <div className="mt-7">
+          <div className="mt-4">
             <Action href="/gallery" variant="secondary">Lihat koleksi lain</Action>
           </div>
         </aside>

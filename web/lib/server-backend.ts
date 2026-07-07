@@ -52,8 +52,15 @@ export async function proxyBackendRequest(request: Request, path: string, admin:
     const responseHeaders = new Headers();
     const responseContentType = response.headers.get("Content-Type");
     const disposition = response.headers.get("Content-Disposition");
+    const etag = response.headers.get("ETag");
+    const lastModified = response.headers.get("Last-Modified");
     if (responseContentType) responseHeaders.set("Content-Type", responseContentType);
     if (disposition) responseHeaders.set("Content-Disposition", disposition);
+    if (etag) responseHeaders.set("ETag", etag);
+    if (lastModified) responseHeaders.set("Last-Modified", lastModified);
+    if (method === "GET" && path.includes("/images/")) {
+      responseHeaders.set("Cache-Control", "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800");
+    }
     return new Response(await response.arrayBuffer(), {
       status: response.status,
       headers: responseHeaders,

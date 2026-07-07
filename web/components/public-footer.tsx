@@ -15,7 +15,7 @@ export function PublicFooter() {
       <div className="public-footer-inner">
         <div className="public-footer-intro">
           <div className="public-footer-brand"><LogoMark decorative /><strong>TitikBatik AI</strong></div>
-          <p>Koleksi batik digital dipublikasikan melalui kurasi manusia dan etika AI yang bertanggung jawab.</p>
+          <p>Output generative AI dipublikasikan melalui kurasi manusia dan etika visual yang bertanggung jawab.</p>
         </div>
         <nav className="public-footer-nav" aria-label="Navigasi footer">
           {FOOTER_NAV_ITEMS.map((item) => <Link href={item.href} key={item.href}>{item.label}</Link>)}

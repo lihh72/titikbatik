@@ -139,7 +139,7 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
         <div className="admin-sidebar-bottom">
           <Link href="/" className="admin-nav-link">
             <Home size={17} aria-hidden="true" />
-            Arsip publik
+            Galeri AI publik
           </Link>
           <button type="button" onClick={onLogout} className="admin-logout-button" aria-label="Keluar dari admin">
             <LogOut size={17} aria-hidden="true" />
@@ -188,7 +188,7 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
                 setOpen(false);
               }}>
                 <GalleryHorizontalEnd size={17} aria-hidden="true" />
-                Arsip publik
+                Galeri AI publik
               </Link>
               <button type="button" onClick={onLogout} className="admin-logout-button">
                 <LogOut size={17} aria-hidden="true" />

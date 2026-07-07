@@ -67,7 +67,7 @@ export function AdminLoginPage() {
           <div className="mt-10">
             <Action href="/" variant="secondary">
               <ArrowLeft size={15} aria-hidden="true" />
-              Kembali ke arsip publik
+              Kembali ke galeri AI publik
             </Action>
           </div>
         </div>

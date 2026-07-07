@@ -55,9 +55,9 @@ export function GalleryPage() {
       <section className="rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-5 shadow-[0_24px_70px_rgba(88,70,49,0.10)] sm:p-8">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
           <PageHeading
-            eyebrow="Arsip motif"
-            title="Galeri motif terkurasi"
-            description="Jelajahi motif yang sudah dipublikasikan. Preview kostum muncul saat kartu diarahkan, sementara motif tetap menjadi arsip utama."
+            eyebrow="Output AI"
+            title="Galeri hasil generative AI"
+            description="Jelajahi motif yang dipublikasikan setelah kurasi. Preview costume muncul saat kartu diarahkan, motif tetap menjadi gambar utama."
           />
 
           <form

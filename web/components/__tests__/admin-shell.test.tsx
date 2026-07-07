@@ -33,7 +33,7 @@ describe("AdminShell", () => {
     expect(screen.getByText("Kurasi")).toBeInTheDocument();
     expect(screen.getByText("Sistem")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Batch dan job" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Arsip publik" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Galeri AI publik" })).toHaveAttribute("href", "/");
     expect(screen.getByText("Konten admin")).toBeInTheDocument();
   });
 

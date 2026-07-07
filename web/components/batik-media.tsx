@@ -39,99 +39,106 @@ export function BatikMedia({ batik }: { batik: Batik }) {
 
   return (
     <section className="batik-media" aria-label={`Media batik ${batik.keyword}`}>
-      <div className="batik-media-viewer">
-        {!selected ? (
-          <div className="batik-media-empty" role="status">Media belum tersedia</div>
-        ) : selected.kind === "image" ? (
-          <Image
-            unoptimized
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 760px"
-            src={selected.url}
-            alt={selected.label}
-            className="batik-media-main-image"
-            data-testid="main-image"
-          />
-        ) : (
-          <video
-            key={selected.url}
-            data-testid="main-video"
-            src={selected.url}
-            muted
-            controls
-            playsInline
-            preload="metadata"
-            className="batik-media-main-video"
-          />
-        )}
-      </div>
-
-      {mediaItems.length > 0 && (
-        <div className="batik-media-strip-row">
-          {hasOverflow && (
-            <button
-              type="button"
-              onClick={() => scrollThumbnails(-1)}
-              className="batik-media-scroll-button"
-              aria-label="Thumbnail sebelumnya"
-              title="Thumbnail sebelumnya"
-            >
-              <ChevronLeft size={18} />
-            </button>
-          )}
-
-          <div ref={thumbnailStrip} className="batik-media-thumbnails">
-            {mediaItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                aria-label={`Tampilkan ${item.label}`}
-                aria-pressed={item.id === selected?.id}
-                data-selected={item.id === selected?.id}
-                className="batik-media-thumbnail relative aspect-[4/5] w-20 sm:w-24"
-                onClick={() => setSelection({ batikId: batik.id, mediaId: item.id })}
-              >
-                {item.kind === "image" ? (
-                  <Image
-                    unoptimized
-                    fill
-                    sizes="96px"
-                    src={item.url}
-                    alt={`Thumbnail ${item.label}`}
-                    className="batik-media-thumbnail-image"
-                  />
-                ) : (
-                  <>
-                    <video
-                      src={item.url}
-                      muted
-                      playsInline
-                      preload="metadata"
-                      className="batik-media-thumbnail-video"
-                    />
-                    <span className="batik-media-play-layer" aria-hidden="true">
-                      <Play size={20} fill="currentColor" />
-                    </span>
-                  </>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {hasOverflow && (
-            <button
-              type="button"
-              onClick={() => scrollThumbnails(1)}
-              className="batik-media-scroll-button"
-              aria-label="Thumbnail berikutnya"
-              title="Thumbnail berikutnya"
-            >
-              <ChevronRight size={18} />
-            </button>
+      <div className="batik-media-panel">
+        <div className="batik-media-viewer">
+          {!selected ? (
+            <div className="batik-media-empty" role="status">Media belum tersedia</div>
+          ) : selected.kind === "image" ? (
+            <Image
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 640px"
+              src={selected.url}
+              alt={selected.label}
+              className="batik-media-main-image"
+              data-testid="main-image"
+            />
+          ) : (
+            <video
+              key={selected.url}
+              data-testid="main-video"
+              src={selected.url}
+              muted
+              controls
+              playsInline
+              preload="metadata"
+              className="batik-media-main-video"
+            />
           )}
         </div>
-      )}
+
+        {mediaItems.length > 0 && (
+          <div className="batik-media-rail" aria-label="Media koleksi">
+            <div className="batik-media-rail-head">
+              <span>Media koleksi</span>
+              <small>{mediaItems.length} aset</small>
+            </div>
+
+            <div className="batik-media-strip-row">
+              {hasOverflow && (
+                <button
+                  type="button"
+                  onClick={() => scrollThumbnails(-1)}
+                  className="batik-media-scroll-button"
+                  aria-label="Thumbnail sebelumnya"
+                  title="Thumbnail sebelumnya"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+              )}
+
+              <div ref={thumbnailStrip} className="batik-media-thumbnails">
+                {mediaItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-label={`Tampilkan ${item.label}`}
+                    aria-pressed={item.id === selected?.id}
+                    data-selected={item.id === selected?.id}
+                    className="batik-media-thumbnail relative aspect-[4/5] w-20 sm:w-24"
+                    onClick={() => setSelection({ batikId: batik.id, mediaId: item.id })}
+                  >
+                    {item.kind === "image" ? (
+                      <Image
+                        fill
+                        sizes="96px"
+                        src={item.url}
+                        alt={`Thumbnail ${item.label}`}
+                        className="batik-media-thumbnail-image"
+                      />
+                    ) : (
+                      <>
+                        <video
+                          src={item.url}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          className="batik-media-thumbnail-video"
+                        />
+                        <span className="batik-media-play-layer" aria-hidden="true">
+                          <Play size={20} fill="currentColor" />
+                        </span>
+                      </>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {hasOverflow && (
+                <button
+                  type="button"
+                  onClick={() => scrollThumbnails(1)}
+                  className="batik-media-scroll-button"
+                  aria-label="Thumbnail berikutnya"
+                  title="Thumbnail berikutnya"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </section>
   );
 }

@@ -27,14 +27,20 @@ export function PublicNavbar() {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    document.body.style.overflow = "";
+    [".skip-link", "#main-content", ".public-footer"].forEach((selector) => {
+      document.querySelector<HTMLElement>(selector)?.removeAttribute("inert");
+    });
+  }, [pathname]);
+
+  useEffect(() => {
     if (!open) return;
 
     const dialog = document.querySelector<HTMLElement>("#public-mobile-nav");
     const skipLink = document.querySelector<HTMLElement>(".skip-link");
-    const controls = document.querySelector<HTMLElement>(".public-navbar-controls");
     const main = document.querySelector<HTMLElement>("#main-content");
     const footer = document.querySelector<HTMLElement>(".public-footer");
-    const inertTargets = [skipLink, controls, main, footer].filter((target): target is HTMLElement => Boolean(target)).map((target) => ({
+    const inertTargets = [skipLink, main, footer].filter((target): target is HTMLElement => Boolean(target)).map((target) => ({
       target,
       wasInert: target.hasAttribute("inert"),
     }));
@@ -103,7 +109,7 @@ export function PublicNavbar() {
         </nav>
 
         <div className="public-navbar-actions">
-          <Action className="public-navbar-cta" href="/gallery">Jelajahi koleksi</Action>
+          <Action className="public-navbar-cta" href="/gallery">Lihat output AI</Action>
           <button
             aria-controls="public-mobile-nav"
             aria-expanded={open}

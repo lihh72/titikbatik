@@ -53,29 +53,34 @@ describe("landing page", () => {
   it("presents the documentary process before the latest collection", async () => {
     render(<LandingPage />);
 
-    expect(screen.getByRole("heading", { name: "Motif lama. Bahasa baru." })).toBeInTheDocument();
-    const hero = screen.getByRole("region", { name: "Pengantar arsip" });
+    expect(screen.getByRole("heading", { name: "Motif batik dari generative AI." })).toBeInTheDocument();
+    const hero = screen.getByRole("region", { name: "Pengantar AI generatif" });
     expect(within(hero).getByAltText(/perajin batik menggambar malam/i)).toBeInTheDocument();
 
     const process = screen.getByRole("region", { name: "Proses batik" });
     expect(within(process).getByAltText(/perajin.*canting/i)).toBeInTheDocument();
     expect(within(process).getByAltText(/^malam batik dipanaskan.*canting/i)).toBeInTheDocument();
-    expect(within(process).getByText("Visual konseptual AI")).toBeInTheDocument();
+    expect(within(process).getByRole("heading", { name: "Scroll story ini mengikuti perubahan keputusan, bukan dekorasi." })).toBeInTheDocument();
     expect(process.querySelector("[data-motion='image-from-left']")).toBeInTheDocument();
     expect(process.querySelector("[data-motion='text-from-right']")).toBeInTheDocument();
     expect(process.querySelector("[data-motion='text-from-left']")).toBeInTheDocument();
     expect(process.querySelector("[data-motion='image-from-right']")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Pipeline generative AI" })).toBeInTheDocument();
+    expect(within(process).getByText("Input visual")).toBeInTheDocument();
+    expect(within(process).getByText("Model membuat kandidat")).toBeInTheDocument();
+    expect(within(process).getByText("Kurasi ke galeri")).toBeInTheDocument();
+    expect(process.querySelectorAll("[data-motion='generative-stage']")).toHaveLength(3);
 
-    expect(screen.getByRole("heading", { name: /etika visual/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "AI generatif memperluas eksplorasi, kurasi manusia menjaga arah." })).toBeInTheDocument();
 
-    const latest = screen.getByRole("region", { name: "Koleksi terbaru" });
+    const latest = screen.getByRole("region", { name: "Koleksi AI terbaru" });
     expect(await within(latest).findAllByRole("link", { name: /Motif (Satu|Dua|Tiga)/i })).toHaveLength(3);
   });
 
   it("renders latest motif cards as readable light surfaces", async () => {
     render(<LandingPage />);
 
-    const latest = screen.getByRole("region", { name: "Koleksi terbaru" });
+    const latest = screen.getByRole("region", { name: "Koleksi AI terbaru" });
     const cards = await within(latest).findAllByRole("article");
 
     expect(cards).toHaveLength(3);

@@ -1,23 +1,23 @@
 import { Action } from "@/components/ui/action";
+import { MotionArticle, MotionDiv, MotionSection } from "@/components/public-motion";
 import { Bookmark, CircleHelp, Heart, Image, Search } from "lucide-react";
-import ImageFrame from "next/image";
 
 export const metadata = { title: "Bantuan" };
 
 const helpItems = [
   {
-    title: "Cari berdasarkan bahasa visual",
-    text: "Gunakan keyword, warna, atau style. Hasil yang muncul berasal dari data automation yang sudah dipublikasikan.",
+    title: "Cari output AI berdasarkan bahasa visual",
+    text: "Gunakan keyword, warna, atau style. Hasil yang muncul berasal dari pipeline automation yang sudah dipublikasikan.",
     icon: Search,
   },
   {
     title: "Arahkan kartu untuk preview costume",
-    text: "Motif tetap menjadi gambar utama. Di desktop, costume muncul saat kartu diarahkan.",
+    text: "Motif AI tetap menjadi gambar utama. Di desktop, costume muncul saat kartu diarahkan.",
     icon: Image,
   },
   {
-    title: "Baca detail sebelum menyimpan",
-    text: "Halaman detail memuat metadata, media, seed, tanggal, dan prompt jika data tersedia.",
+    title: "Baca detail generasi sebelum menyimpan",
+    text: "Halaman detail memuat metadata, media, seed, tanggal, dan prompt generatif jika data tersedia.",
     icon: CircleHelp,
   },
   {
@@ -30,13 +30,13 @@ const helpItems = [
 export default function HelpPage() {
   return (
     <main className="public-narrative-page help-page">
-      <section className="help-hero motion-reveal">
-        <div>
-          <p className="public-kicker">Panduan galeri</p>
-          <h1>Mulai dari motif, lalu lihat bagaimana ia bergerak ke costume.</h1>
+      <section className="help-hero">
+        <MotionDiv>
+          <p className="public-kicker">Panduan output AI</p>
+          <h1>Mulai dari motif AI, lalu lihat bagaimana ia bergerak ke costume.</h1>
           <p>
-            Galeri publik dibuat untuk membaca karya terkurasi. Produksi batch dan pengaturan
-            sistem tetap berada di panel administrator.
+            Galeri publik dibuat untuk membaca hasil generative AI yang sudah dikurasi.
+            Produksi batch dan pengaturan model tetap berada di panel administrator.
           </p>
           <div className="public-narrative-actions">
             <Action href="/gallery">Buka galeri</Action>
@@ -45,40 +45,38 @@ export default function HelpPage() {
               Favorit tersimpan lokal
             </span>
           </div>
-        </div>
-        <figure className="help-visual-card">
-          <ImageFrame
-            src="/editorial/generative-transition.webp"
-            alt="Interpretasi konseptual lapisan kain dan garis malam berwarna hijau tinta"
-            fill
-            sizes="(max-width: 900px) 100vw, 34vw"
-          />
-        </figure>
+        </MotionDiv>
+        <MotionDiv className="help-visual-card help-guide-card" delay={0.08} role="img" aria-label="Alur membaca motif AI dari galeri sampai detail">
+          <span>Motif AI</span>
+          <span>Hover costume</span>
+          <span>Detail generasi</span>
+          <span>Simpan lokal</span>
+        </MotionDiv>
       </section>
 
       <section className="help-flow" aria-label="Panduan membaca koleksi">
-        {helpItems.map(({ title, text, icon: Icon }) => (
-          <article className="help-flow-item motion-reveal" key={title}>
+        {helpItems.map(({ title, text, icon: Icon }, index) => (
+          <MotionArticle className="help-flow-item" delay={index * 0.06} key={title}>
             <Icon size={22} aria-hidden="true" />
             <div>
               <h2>{title}</h2>
               <p>{text}</p>
             </div>
-          </article>
+          </MotionArticle>
         ))}
       </section>
 
-      <section className="help-admin-note motion-reveal">
+      <MotionSection className="help-admin-note">
         <div>
           <p className="public-kicker">Untuk kurator</p>
-          <h2>Panel admin berada di jalur terpisah.</h2>
+          <h2>Panel admin mengatur produksi AI dari jalur terpisah.</h2>
         </div>
         <p>
-          Masuk hanya jika Anda mengelola batch, publikasi hasil, template costume,
-          wordlist, atau pengaturan sistem.
+          Masuk hanya jika Anda mengelola batch generatif, publikasi hasil,
+          template costume, wordlist, atau pengaturan sistem.
         </p>
         <Action href="/admin/login" variant="secondary">Masuk admin</Action>
-      </section>
+      </MotionSection>
     </main>
   );
 }

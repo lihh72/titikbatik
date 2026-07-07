@@ -47,10 +47,10 @@ describe("BatikMedia", () => {
     });
     expect(thumbnails[0]).toHaveAttribute("aria-pressed", "true");
     expect(thumbnails[0]).toHaveAttribute("data-selected", "true");
-    expect(screen.getByTestId("main-image")).toHaveAttribute("src", batik.preview_url);
+    expect(screen.getByTestId("main-image").getAttribute("src")).toContain(encodeURIComponent(batik.preview_url!));
 
     fireEvent.click(screen.getByRole("button", { name: "Tampilkan Costume Model" }));
-    expect(screen.getByTestId("main-image")).toHaveAttribute("src", batik.costume_urls[0]);
+    expect(screen.getByTestId("main-image").getAttribute("src")).toContain(encodeURIComponent(batik.costume_urls[0]));
     expect(screen.getByRole("button", { name: "Tampilkan Costume Model" })).toHaveAttribute("data-selected", "true");
 
     fireEvent.click(screen.getByRole("button", { name: "Tampilkan Video Model" }));

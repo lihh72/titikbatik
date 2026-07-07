@@ -82,10 +82,10 @@ export function AdminGalleryPage() {
     <section className="admin-resource" aria-labelledby="admin-gallery-title">
       <header className="admin-resource-hero">
         <div>
-          <p className="admin-eyebrow">Koleksi batik</p>
-          <h1 id="admin-gallery-title">Kurasi koleksi batik</h1>
+          <p className="admin-eyebrow">Output generative AI</p>
+          <h1 id="admin-gallery-title">Kurasi hasil AI</h1>
           <h2 className="sr-only">Kurasi visual dan publikasi</h2>
-          <p>Pilih hasil, cek motif serta costume, lalu tentukan mana yang siap tampil di arsip publik.</p>
+          <p>Pilih hasil, cek motif serta costume, lalu tentukan mana yang siap tampil di galeri publik.</p>
         </div>
         <button type="button" onClick={() => void load(selected?.id)} disabled={loading} className="admin-secondary-action" aria-label="Muat ulang hasil batik">
           <RefreshCw size={17} className={loading ? "animate-spin" : ""} aria-hidden="true" />
@@ -109,7 +109,7 @@ export function AdminGalleryPage() {
             {items.map((batik) => (
               <button key={batik.id} type="button" onClick={() => select(batik)} aria-pressed={selected?.id === batik.id} className="admin-resource-list-item admin-gallery-item" data-active={selected?.id === batik.id}>
                 <span data-testid={`admin-gallery-tile-${batik.id}`} className="admin-square-preview">
-                  {batik.preview_url ? <Image unoptimized fill sizes="76px" src={batik.preview_url} alt="" /> : null}
+                  {batik.preview_url ? <Image fill sizes="76px" src={batik.preview_url} alt="" /> : null}
                 </span>
                 <span><strong>#{batik.id} {batik.keyword}</strong><small>{batik.style} / {batik.warna}</small></span>
                 <b>{batik.is_published ? "Publik" : "Draft"}</b>

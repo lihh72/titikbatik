@@ -77,7 +77,7 @@ export function CostumeTemplateAdmin() {
           {items.map((item) => (
             <article key={item.id} className="admin-template-card">
               <div data-testid={`template-preview-${item.id}`} className="admin-portrait-preview">
-                <Image unoptimized fill sizes="(max-width: 768px) 100vw, 360px" src={`/api/automation/public/images/template/${encodeURIComponent(item.filename)}`} alt={item.name} className="object-cover" />
+                <Image fill sizes="(max-width: 768px) 100vw, 360px" src={`/api/automation/public/images/template/${encodeURIComponent(item.filename)}`} alt={item.name} className="object-cover" />
               </div>
               <div className="admin-template-body">
                 <div className="admin-detail-head"><div><h2>{item.name}</h2><p>Urutan {item.sort_order}</p></div><span className="admin-status-pill">{item.is_active ? "Aktif" : "Nonaktif"}</span></div>

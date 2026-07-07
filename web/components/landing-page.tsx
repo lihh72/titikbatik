@@ -19,12 +19,14 @@ export function LandingPage() {
     target: heroRef,
     offset: ["start start", "end start"],
   });
-  const heroTextX = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -54]);
-  const heroTextY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -18]);
-  const heroTextOpacity = useTransform(scrollYProgress, [0, 0.82], reduceMotion ? [1, 1] : [1, 0.64]);
-  const heroImageX = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, 48]);
-  const heroImageY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -34]);
-  const heroImageScale = useTransform(scrollYProgress, [0, 1], reduceMotion ? [1, 1] : [1, 0.94]);
+  const heroTextX = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -84]);
+  const heroTextY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -30]);
+  const heroTextOpacity = useTransform(scrollYProgress, [0, 0.82], reduceMotion ? [1, 1] : [1, 0.54]);
+  const heroImageX = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, 76]);
+  const heroImageY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -58]);
+  const heroImageScale = useTransform(scrollYProgress, [0, 1], reduceMotion ? [1, 1] : [1, 0.9]);
+  const heroOrbX = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, -120]);
+  const heroOrbY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, 80]);
 
   useEffect(() => {
     let active = true;
@@ -37,18 +39,18 @@ export function LandingPage() {
 
   return (
     <main className="landing-page">
-      <section className="landing-hero" aria-label="Pengantar arsip" ref={heroRef}>
+      <section className="landing-hero" aria-label="Pengantar AI generatif" ref={heroRef}>
+        <motion.div className="landing-hero-orb landing-hero-orb-a" aria-hidden="true" style={{ x: heroOrbX, y: heroOrbY }} />
+        <motion.div className="landing-hero-orb landing-hero-orb-b" aria-hidden="true" style={{ x: heroImageX, y: heroImageY }} />
         <div className="landing-hero-inner">
           <motion.div
             className="landing-hero-copyblock"
             style={{ opacity: heroTextOpacity, x: heroTextX, y: heroTextY }}
           >
-          <p className="landing-hero-kicker">Generative Batik AI</p>
-          <h1 className="serif">Motif batik baru, dibuat oleh AI.</h1>
+          <p className="landing-hero-kicker">Generative AI motif engine</p>
+          <h1 className="serif">Motif batik dari generative AI.</h1>
           <p className="landing-hero-copy">
-            TitikBatik AI membantu menghasilkan motif batik digital melalui proses generative AI,
-            mulai dari pemilihan warna, bentuk, gaya visual, hingga variasi motif yang dapat
-            dikurasi dan dipublikasikan.
+            Bangun variasi motif, costume preview, dan kurasi publik dari satu alur produksi AI.
           </p>
           <Action href="/gallery" className="landing-hero-action">
             Lihat hasil generasi AI
@@ -76,11 +78,11 @@ export function LandingPage() {
 
       <EditorialStory />
 
-      <section className="landing-latest" aria-label="Hasil generasi terbaru">
+      <section className="landing-latest" aria-label="Koleksi AI terbaru">
         <header className="landing-section-heading">
           <div>
-            <p>Hasil generasi terbaru</p>
-            <h2 className="serif">Motif batik yang baru dibuat oleh AI.</h2>
+            <p>Kandidat generatif</p>
+            <h2 className="serif">Motif yang lahir dari pipeline AI.</h2>
           </div>
           <Action href="/gallery" variant="quiet">Lihat semua hasil AI</Action>
         </header>
@@ -97,12 +99,11 @@ export function LandingPage() {
 
       <section className="landing-ethics">
         <p className="landing-ethics-kicker">Prinsip AI</p>
-        <h2 className="serif">AI sebagai alat eksplorasi, bukan pengganti tradisi.</h2>
+        <h2 className="serif">AI generatif memperluas eksplorasi, kurasi manusia menjaga arah.</h2>
         <div className="landing-ethics-copy">
           <p>
-            Setiap motif yang dihasilkan TitikBatik AI berasal dari kombinasi parameter
-            visual seperti warna, bentuk, ornamen, dan gaya batik yang diproses melalui
-            alur generative AI.
+            Setiap motif dibuat dari kombinasi parameter warna, bentuk, ornamen, dan gaya
+            yang diproses melalui pipeline generative AI.
           </p>
           <p>
             Hasil AI tetap dikurasi manusia sebelum dipublikasikan, agar visual yang
@@ -113,7 +114,7 @@ export function LandingPage() {
       </section>
 
       <section className="landing-collection-cta">
-        <h2 className="serif">Jelajahi motif batik digital hasil generative AI.</h2>
+        <h2 className="serif">Jelajahi output visual dari mesin generative AI.</h2>
         <Action href="/gallery">Buka galeri AI</Action>
       </section>
     </main>

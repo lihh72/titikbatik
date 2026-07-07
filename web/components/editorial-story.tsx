@@ -30,12 +30,15 @@ export function EditorialStory() {
     reduceMotion ? [1, 1, 1, 1] : [0.68, 1, 1, 0.78],
   );
   const copyY = useTransform(scrollYProgress, [0.12, 0.36, 0.62], reduceMotion ? [0, 0, 0] : [36, 0, -12]);
-  const transitionScale = useTransform(
-    scrollYProgress,
-    [0.35, 0.75],
-    reduceMotion ? [1, 1] : [0.94, 1.04],
-  );
-  const transitionY = useTransform(scrollYProgress, [0.42, 0.78], reduceMotion ? [0, 0] : [54, -28]);
+  const labCopyY = useTransform(scrollYProgress, [0.58, 0.86], reduceMotion ? [0, 0] : [42, -28]);
+  const labTrackX = useTransform(scrollYProgress, [0.58, 0.88], reduceMotion ? [0, 0] : [44, -34]);
+  const labRailY = useTransform(scrollYProgress, [0.58, 0.88], reduceMotion ? [0, 0] : [70, -70]);
+  const inputOpacity = useTransform(scrollYProgress, [0.54, 0.62, 0.7], reduceMotion ? [1, 1, 1] : [0.42, 1, 0.52]);
+  const modelOpacity = useTransform(scrollYProgress, [0.62, 0.72, 0.82], reduceMotion ? [1, 1, 1] : [0.38, 1, 0.55]);
+  const curationOpacity = useTransform(scrollYProgress, [0.7, 0.8, 0.9], reduceMotion ? [1, 1, 1] : [0.34, 1, 0.6]);
+  const inputY = useTransform(scrollYProgress, [0.54, 0.68], reduceMotion ? [0, 0] : [26, -10]);
+  const modelY = useTransform(scrollYProgress, [0.62, 0.8], reduceMotion ? [0, 0] : [36, -14]);
+  const curationY = useTransform(scrollYProgress, [0.7, 0.9], reduceMotion ? [0, 0] : [46, -18]);
 
   return (
     <section
@@ -44,11 +47,11 @@ export function EditorialStory() {
       className={`editorial-story${reduceMotion ? " editorial-story-reduced" : ""}`}
     >
       <motion.header className="editorial-story-intro" style={{ opacity: textOpacity, y: introY }}>
-        <p className="editorial-kicker">Dari tangan ke arsip</p>
-        <h2 className="serif">Sebuah motif dimulai jauh sebelum layar menyala.</h2>
+        <p className="editorial-kicker">Dari proses ke model AI</p>
+        <h2 className="serif">Generasi visual tetap butuh konteks material.</h2>
         <p>
-          Arsip ini menempatkan pengetahuan perajin dan material di depan proses generatif.
-          Teknologi hadir sebagai alat baca baru, bukan pengganti asal-usulnya.
+          TitikBatik AI membaca warna, ornamen, dan ritme visual sebagai parameter.
+          Foto proses menjadi pengingat bahwa output digital tetap perlu kurasi manusia.
         </p>
       </motion.header>
 
@@ -118,26 +121,54 @@ export function EditorialStory() {
         </motion.figure>
       </div>
 
-      <motion.figure
-        className="editorial-transition"
-        style={{ scale: transitionScale, opacity: textOpacity, y: transitionY }}
-      >
-        <div className="editorial-transition-image">
-          <Image
-            src="/editorial/generative-transition.webp"
-            alt="Interpretasi konseptual lapisan kain dan garis malam berwarna hijau tinta"
-            fill
-            sizes="(max-width: 768px) 100vw, 78vw"
-            className="editorial-image"
-          />
+      <section className="generative-scroll-lab" aria-label="Pipeline generative AI">
+        <div className="generative-lab-sticky">
+          <motion.div className="generative-lab-copy" style={{ opacity: textOpacity, y: labCopyY }}>
+            <p className="editorial-step">Pipeline generative AI</p>
+            <h3 className="serif">Scroll story ini mengikuti perubahan keputusan, bukan dekorasi.</h3>
+            <p>
+              Input visual dipadatkan menjadi parameter, model membuat kandidat, lalu kurator
+              memilih hasil yang cukup jelas untuk masuk galeri.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="generative-stage-track"
+            data-motion="generative-stage-track"
+            style={{ x: labTrackX, y: labRailY }}
+          >
+            <motion.article className="generative-stage" data-motion="generative-stage" style={{ opacity: inputOpacity, y: inputY }}>
+              <span className="generative-stage-index">Input visual</span>
+              <h4>Warna, ornamen, dan ritme garis dibaca sebagai bahan awal.</h4>
+              <div className="generative-token-field" aria-label="Parameter input">
+                <span>nila tua</span>
+                <span>kontras rendah</span>
+                <span>repeat organik</span>
+              </div>
+            </motion.article>
+
+            <motion.article className="generative-stage generative-stage-emphasis" data-motion="generative-stage" style={{ opacity: modelOpacity, y: modelY }}>
+              <span className="generative-stage-index">Model membuat kandidat</span>
+              <h4>Satu prompt menghasilkan beberapa arah visual untuk dibandingkan.</h4>
+              <div className="generative-signal" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </div>
+            </motion.article>
+
+            <motion.article className="generative-stage" data-motion="generative-stage" style={{ opacity: curationOpacity, y: curationY }}>
+              <span className="generative-stage-index">Kurasi ke galeri</span>
+              <h4>Hanya output yang terbaca, rapi, dan tidak menyesatkan yang dipublikasikan.</h4>
+              <div className="generative-token-field" aria-label="Parameter kurasi">
+                <span>motif utama</span>
+                <span>costume preview</span>
+                <span>metadata</span>
+              </div>
+            </motion.article>
+          </motion.div>
         </div>
-        <figcaption>
-          <strong>Visual konseptual AI</strong>
-          <span>
-            Dibuat sebagai jembatan visual menuju koleksi generatif. Gambar ini bukan dokumentasi proses atau motif tradisional tertentu.
-          </span>
-        </figcaption>
-      </motion.figure>
+      </section>
     </section>
   );
 }
