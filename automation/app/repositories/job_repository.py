@@ -57,6 +57,7 @@ class JobRepository:
         job.error_message = message[:4000]
         job.locked_by = None
         job.locked_at = None
+        job.comfyui_prompt_id = None
         job.attempt_count += 1
         if retryable and job.attempt_count < job.max_attempts:
             delay_seconds = min(300, 2 ** max(job.attempt_count, 1) * 5)

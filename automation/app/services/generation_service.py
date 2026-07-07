@@ -121,7 +121,14 @@ class GenerationService:
         await session.execute(
             update(GenerationJob)
             .where(GenerationJob.batch_id == batch_id, GenerationJob.status == "failed")
-            .values(status="queued", error_message=None, locked_by=None, locked_at=None, available_at=utcnow())
+            .values(
+                status="queued",
+                error_message=None,
+                locked_by=None,
+                locked_at=None,
+                available_at=utcnow(),
+                comfyui_prompt_id=None,
+            )
         )
         await self.batch_repository.refresh_counts(session, batch_id)
         await session.flush()

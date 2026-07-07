@@ -187,6 +187,45 @@ async def test_video_job_retries_when_comfyui_is_offline(worker_context):
         assert costume.file_video is None
 
 
+@pytest.mark.asyncio
+async def test_retry_failed_video_job_clears_stale_comfyui_prompt(worker_context):
+    job_id, _, _ = await seed_video_job(worker_context)
+    async with worker_context.factory() as session:
+        job = await session.get(GenerationJob, job_id)
+        batch_id = job.batch_id
+        job.status = "failed"
+        job.error_message = "previous failure"
+        job.comfyui_prompt_id = "stale-video-prompt"
+        await session.commit()
+
+    async with worker_context.factory() as session:
+        await worker_context.worker.generation.retry_failed_jobs(session, batch_id)
+        await session.commit()
+
+    worker = worker_context.worker
+    worker.comfyui.upload_image = AsyncMock(return_value="costume.webp")
+    worker.comfyui.queue_prompt = AsyncMock(return_value="fresh-video-prompt")
+    worker.comfyui.wait_for_completion = AsyncMock(
+        return_value={
+            "outputs": {
+                "75": {
+                    "videos": [
+                        {"filename": "result.mp4", "subfolder": "video", "type": "output"}
+                    ]
+                }
+            }
+        }
+    )
+    worker.comfyui.download_output_file = AsyncMock(
+        return_value=b"\x00\x00\x00\x18ftypisom" + b"0" * 128
+    )
+
+    await worker.process_job(job_id)
+
+    worker.comfyui.queue_prompt.assert_awaited_once()
+    worker.comfyui.wait_for_completion.assert_awaited_once_with("fresh-video-prompt")
+
+
 async def seed_combine_job(context):
     async with context.factory() as session:
         batch = GenerationBatch(
