@@ -8,7 +8,7 @@ export const metadata = { title: "Tentang" };
 const architecture = [
   {
     title: "Motif yang siap dilihat",
-    text: "Setiap kartu menampilkan motif AI sebagai objek utama, bukan catatan proses.",
+    text: "Setiap kartu menampilkan motif AI sebagai objek utama dengan palet dan komposisi yang jelas.",
     icon: GalleryHorizontalEnd,
   },
   {
@@ -67,7 +67,7 @@ export default function AboutPage() {
             <span>Metadata</span>
           </div>
           <figcaption>
-            Fokus halaman publik adalah melihat hasil akhir, bukan membongkar dapur produksinya.
+            Galeri publik dirancang sebagai ruang pamer untuk motif, costume preview, video, dan metadata.
           </figcaption>
         </MotionFigure>
       </section>

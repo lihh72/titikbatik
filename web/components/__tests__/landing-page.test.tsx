@@ -4,11 +4,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LandingPage } from "@/components/landing-page";
 import type { Batik } from "@/lib/automation-types";
 
-const mocks = vi.hoisted(() => ({ listPublicBatiks: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  listPublicBatiks: vi.fn(),
+  readPublicBatiksCache: vi.fn(),
+}));
 
 vi.mock("@/lib/automation-api", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/automation-api")>(),
   listPublicBatiks: mocks.listPublicBatiks,
+  readPublicBatiksCache: mocks.readPublicBatiksCache,
 }));
 
 vi.mock("@/components/app-provider", () => ({
@@ -44,9 +48,10 @@ function batik(id: number, name: string): Batik {
 
 describe("landing page", () => {
   beforeEach(() => {
+    mocks.readPublicBatiksCache.mockReturnValue(null);
     mocks.listPublicBatiks.mockResolvedValue({
       items: [batik(1, "Motif Satu"), batik(2, "Motif Dua"), batik(3, "Motif Tiga")],
-      pagination: { page: 1, per_page: 3, total: 3, total_pages: 1 },
+      pagination: { page: 1, per_page: 9, total: 3, total_pages: 1 },
     });
   });
 
@@ -60,7 +65,7 @@ describe("landing page", () => {
     const process = screen.getByRole("region", { name: "Showcase output AI" });
     expect(await within(process).findByAltText(/output AI Motif Satu/i)).toBeInTheDocument();
     expect(await within(process).findByAltText(/output AI Motif Dua/i)).toBeInTheDocument();
-    expect(within(process).getByRole("heading", { name: "Scroll story ini menyorot kualitas hasil, bukan dekorasi." })).toBeInTheDocument();
+    expect(within(process).getByRole("heading", { name: "Setiap gerak mengarahkan mata ke kualitas output." })).toBeInTheDocument();
     expect(process.querySelector("[data-motion='image-from-left']")).toBeInTheDocument();
     expect(process.querySelector("[data-motion='text-from-right']")).toBeInTheDocument();
     expect(process.querySelector("[data-motion='text-from-left']")).toBeInTheDocument();
@@ -71,7 +76,7 @@ describe("landing page", () => {
     expect(within(process).getByText("Detail generasi")).toBeInTheDocument();
     expect(process.querySelectorAll("[data-motion='generative-stage']")).toHaveLength(3);
 
-    expect(screen.getByRole("heading", { name: "AI dipakai untuk menghasilkan visual yang kuat, bukan menjelaskan proses." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "AI membuka variasi visual yang tajam, cepat, dan mudah dibandingkan." })).toBeInTheDocument();
     expect(screen.getByLabelText("Bukti kualitas output AI")).toBeInTheDocument();
 
     const latest = screen.getByRole("region", { name: "Koleksi AI terbaru" });
@@ -89,5 +94,24 @@ describe("landing page", () => {
     expect(within(cards[0]).getByText("soga dan nila")).toHaveClass("motif-card-meta");
     expect(within(cards[0]).getByRole("button", { name: "Sukai" })).toHaveClass("motif-card-icon-button");
     expect(within(cards[0]).getByRole("button", { name: "Simpan" })).toHaveClass("motif-card-icon-button");
+  });
+
+  it("uses the first gallery page cache before refreshing the homepage showcase", async () => {
+    mocks.readPublicBatiksCache.mockReturnValue({
+      items: [
+        batik(1, "Motif Satu"),
+        batik(2, "Motif Dua"),
+        batik(3, "Motif Tiga"),
+        batik(4, "Motif Empat"),
+      ],
+      pagination: { page: 1, per_page: 9, total: 4, total_pages: 1 },
+    });
+
+    render(<LandingPage />);
+
+    const latest = screen.getByRole("region", { name: "Koleksi AI terbaru" });
+    expect(await within(latest).findAllByRole("article")).toHaveLength(3);
+    expect(mocks.readPublicBatiksCache).toHaveBeenCalledWith({ page: 1, perPage: 9, query: "" });
+    expect(mocks.listPublicBatiks).toHaveBeenCalledWith({ page: 1, perPage: 9, query: "" });
   });
 });

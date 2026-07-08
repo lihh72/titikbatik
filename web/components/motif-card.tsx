@@ -86,6 +86,7 @@ export function MotifCard({ batik }: { batik: Batik }) {
       <Link
         href={`/gallery/${batik.slug}`}
         prefetch
+        scroll
         className="motif-card-primary-link"
         onPointerEnter={() => prefetchPublicBatik(batik.slug)}
         onFocus={() => prefetchPublicBatik(batik.slug)}
@@ -157,6 +158,7 @@ export function MotifCard({ batik }: { batik: Batik }) {
         <Link
           href={`/gallery/${batik.slug}`}
           prefetch
+          scroll
           className="motif-card-detail-link"
           onPointerEnter={() => prefetchPublicBatik(batik.slug)}
           onFocus={() => prefetchPublicBatik(batik.slug)}

@@ -33,7 +33,7 @@ export default function HelpPage() {
       <section className="help-hero">
         <MotionDiv>
           <p className="public-kicker">Panduan output AI</p>
-          <h1>Lihat motif AI seperti katalog visual, bukan dokumentasi proses.</h1>
+          <h1>Lihat motif AI seperti katalog visual yang siap dikurasi.</h1>
           <p>
             Fokus halaman ini sederhana: temukan motif yang paling kuat, cek preview costume,
             lalu buka detail jika ingin membandingkan karakter generasinya.

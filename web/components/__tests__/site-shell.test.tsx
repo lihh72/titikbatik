@@ -216,6 +216,8 @@ describe("public site shell", () => {
     expect(within(footer).getByRole("link", { name: "Akses Admin" })).toHaveAttribute("href", "/admin/login");
     expect(within(footer).getByText(/output generative AI/i)).toBeInTheDocument();
     expect(within(footer).getByRole("link", { name: "Sumber visual" })).toHaveAttribute("href", "/about#sumber-visual");
+    expect(within(footer).getByText("© 2026 TitikBatik.")).toBeInTheDocument();
+    expect(within(footer).getByRole("link", { name: "halo@titikbatik.ai" })).toHaveAttribute("href", "mailto:halo@titikbatik.ai");
   });
 
   it("provides a real target for the visual sources footer link", () => {

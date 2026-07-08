@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Source_Serif_4 } from "next/font/google";
 import { AppProvider } from "@/components/app-provider";
+import { RouteScrollReset } from "@/components/route-scroll-reset";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -27,9 +28,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="id">
+    <html lang="id" data-scroll-behavior="smooth">
       <body className={`${manrope.variable} ${sourceSerif.variable}`}>
-        <AppProvider>{children}</AppProvider>
+        <AppProvider>
+          <RouteScrollReset />
+          {children}
+        </AppProvider>
       </body>
     </html>
   );

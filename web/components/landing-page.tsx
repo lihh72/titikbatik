@@ -4,15 +4,18 @@ import { EditorialStory } from "@/components/editorial-story";
 import { MotifCard } from "@/components/motif-card";
 import { Action } from "@/components/ui/action";
 import { Feedback } from "@/components/ui/feedback";
-import { listPublicBatiks } from "@/lib/automation-api";
+import { listPublicBatiks, readPublicBatiksCache } from "@/lib/automation-api";
 import type { Batik } from "@/lib/automation-types";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
+const LANDING_PUBLIC_OPTIONS = { page: 1, perPage: 9, query: "" };
+
 export function LandingPage() {
-  const [items, setItems] = useState<Batik[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialResult] = useState(() => readPublicBatiksCache(LANDING_PUBLIC_OPTIONS));
+  const [items, setItems] = useState<Batik[]>(() => initialResult?.items ?? []);
+  const [loading, setLoading] = useState(() => !initialResult);
   const heroRef = useRef<HTMLElement>(null);
   const ethicsRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
@@ -41,9 +44,9 @@ export function LandingPage() {
 
   useEffect(() => {
     let active = true;
-    listPublicBatiks({ page: 1, perPage: 3 })
+    listPublicBatiks(LANDING_PUBLIC_OPTIONS)
       .then((result) => { if (active) setItems(result.items); })
-      .catch(() => { if (active) setItems([]); })
+      .catch(() => undefined)
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
@@ -81,7 +84,7 @@ export function LandingPage() {
               />
             </div>
             <figcaption>
-              Visual generatif untuk menegaskan arah koleksi AI, bukan dokumentasi proses manual.
+              Tekstur, garis, dan komposisi generatif yang membuka arah visual koleksi.
             </figcaption>
           </motion.figure>
         </div>
@@ -111,7 +114,7 @@ export function LandingPage() {
       <section className="landing-ethics" aria-label="Prinsip AI" ref={ethicsRef}>
         <motion.p className="landing-ethics-kicker" style={{ y: ethicsKickerY }}>Prinsip AI</motion.p>
         <motion.h2 className="serif" style={{ y: ethicsTitleY }}>
-          AI dipakai untuk menghasilkan visual yang kuat, bukan menjelaskan proses.
+          AI membuka variasi visual yang tajam, cepat, dan mudah dibandingkan.
         </motion.h2>
         <motion.div className="landing-ethics-copy" style={{ y: ethicsCopyY }}>
           <p>

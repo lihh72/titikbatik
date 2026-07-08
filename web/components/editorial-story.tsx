@@ -18,7 +18,7 @@ export function EditorialStory({ items = [] }: { items?: Batik[] }) {
     .map((item) => ({
       src: item.preview_url as string,
       alt: `Output AI ${item.keyword}`,
-      caption: `${item.keyword}. ${item.warna || "Palet warna tidak tercatat"}.`,
+      caption: `${item.keyword}. ${item.warna || "Palet generatif siap kurasi"}.`,
     }));
   const fallbackImages: ShowcaseImage[] = [
     {
@@ -79,7 +79,7 @@ export function EditorialStory({ items = [] }: { items?: Batik[] }) {
         <h2 className="serif">Yang utama adalah visual yang langsung terasa layak tampil.</h2>
         <p>
           Beranda ini menonjolkan output generative AI: motif, variasi costume, video, dan
-          metadata yang membantu pengunjung menilai kualitas hasilnya.
+          metadata yang membantu pengunjung menemukan kandidat visual terbaik.
         </p>
       </motion.header>
 
@@ -110,8 +110,8 @@ export function EditorialStory({ items = [] }: { items?: Batik[] }) {
           <p className="editorial-step">Motif utama</p>
           <h3 className="serif">Output AI harus kuat bahkan sebelum dijelaskan.</h3>
           <p>
-            Pola, palet, dan komposisi menjadi bukti pertama. Jika motif tidak langsung
-            terbaca sebagai koleksi visual, ia tidak perlu dipaksa tampil.
+            Pola, palet, dan komposisi menjadi bukti pertama. Motif terbaik terasa
+            siap dipilih sejak gambar pertama muncul.
           </p>
         </motion.div>
       </div>
@@ -125,8 +125,8 @@ export function EditorialStory({ items = [] }: { items?: Batik[] }) {
           <p className="editorial-step">Preview pemakaian</p>
           <h3 className="serif">Costume preview membuat hasil AI terasa hidup.</h3>
           <p>
-            Motif tidak berhenti sebagai gambar datar. Preview membantu pengunjung melihat
-            apakah warna dan ritmenya tetap menarik saat masuk ke media visual lain.
+            Preview membawa motif ke konteks pemakaian. Warna, ritme, dan karakter
+            visualnya bisa dibandingkan dengan lebih cepat.
           </p>
         </motion.div>
         <motion.figure
@@ -153,7 +153,7 @@ export function EditorialStory({ items = [] }: { items?: Batik[] }) {
         <div className="generative-lab-sticky">
           <motion.div className="generative-lab-copy" style={{ opacity: textOpacity, y: labCopyY }}>
             <p className="editorial-step">Kurasi output AI</p>
-            <h3 className="serif">Scroll story ini menyorot kualitas hasil, bukan dekorasi.</h3>
+            <h3 className="serif">Setiap gerak mengarahkan mata ke kualitas output.</h3>
             <p>
               Motion mengikuti tiga bukti yang dilihat pengunjung: motif utama, preview
               pemakaian, lalu detail generasi untuk membaca karakter output.
