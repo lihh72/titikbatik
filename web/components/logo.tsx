@@ -8,7 +8,7 @@ type LogoMarkProps = {
 export function LogoMark({ decorative = false, size = 36 }: LogoMarkProps) {
   return (
     <span
-      className="logo-mark"
+      className="logo-mark inline-grid shrink-0 place-items-center overflow-hidden rounded-full"
       role={decorative ? undefined : "img"}
       aria-label={decorative ? undefined : "TitikBatik AI"}
       aria-hidden={decorative || undefined}
@@ -18,6 +18,7 @@ export function LogoMark({ decorative = false, size = 36 }: LogoMarkProps) {
         alt={decorative ? "" : "TitikBatik AI"}
         width={size}
         height={size}
+        className="block h-auto w-auto"
         priority
       />
     </span>

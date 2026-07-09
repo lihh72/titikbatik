@@ -1,5 +1,6 @@
 "use client";
 
+import { adminClass } from "@/components/admin-styles";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -14,14 +15,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="admin-workbench-shell">
+    <div className={adminClass("admin-workbench-shell")}>
       <AdminSidebar onLogout={logout} />
-      <div className="admin-workbench-main">
-        <div className="admin-workbench-note" aria-label="Status area admin">
+      <div className={adminClass("admin-workbench-main")}>
+        <div className={adminClass("admin-workbench-note")} aria-label="Status area admin">
           <ShieldCheck size={14} aria-hidden="true" />
           Area administrator, tidak ditampilkan kepada pengguna umum
         </div>
-        <main id="admin-content" className="admin-workbench-content">
+        <main id="admin-content" className={adminClass("admin-workbench-content")}>
           {children}
         </main>
       </div>

@@ -38,11 +38,11 @@ export function BatikMedia({ batik }: { batik: Batik }) {
   }
 
   return (
-    <section className="batik-media" aria-label={`Media batik ${batik.keyword}`}>
-      <div className="batik-media-panel">
-        <div className="batik-media-viewer">
+    <section className="batik-media flex h-full w-full min-w-0" aria-label={`Media batik ${batik.keyword}`}>
+      <div className="grid h-full w-full content-start rounded-[var(--radius-md)] border border-[var(--line)] bg-[radial-gradient(circle_at_84%_12%,color-mix(in_srgb,var(--terracotta)_8%,transparent),transparent_17rem),color-mix(in_srgb,var(--paper-raised)_91%,white)] p-[clamp(0.65rem,1.5vw,0.95rem)] shadow-[0_24px_70px_rgba(88,70,49,0.08)]">
+        <div className="relative mx-auto aspect-square w-[min(100%,21.75rem)] overflow-hidden rounded-[var(--radius-sm)] border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,var(--paper-raised))]">
           {!selected ? (
-            <div className="batik-media-empty" role="status">Media belum tersedia</div>
+            <div className="grid h-full place-items-center text-sm text-[color:var(--ink-soft)]" role="status">Media belum tersedia</div>
           ) : selected.kind === "image" ? (
             <Image
               fill
@@ -50,7 +50,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
               sizes="(max-width: 1024px) 100vw, 640px"
               src={selected.url}
               alt={selected.label}
-              className="batik-media-main-image"
+              className="h-full w-full object-contain"
               data-testid="main-image"
             />
           ) : (
@@ -64,24 +64,24 @@ export function BatikMedia({ batik }: { batik: Batik }) {
               poster={batik.preview_url ?? undefined}
               preload="metadata"
               aria-label={selected.label}
-              className="batik-media-main-video"
+              className="h-full w-full object-contain"
             />
           )}
         </div>
 
         {mediaItems.length > 0 && (
-          <div className="batik-media-rail" aria-label="Media koleksi">
-            <div className="batik-media-rail-head">
+          <div className="mx-auto mt-3 w-[min(100%,21.75rem)] border-t border-[color-mix(in_srgb,var(--line)_72%,transparent)] pt-[0.7rem]" aria-label="Media koleksi">
+            <div className="flex items-center justify-between gap-4 text-[0.76rem] font-extrabold text-[color:var(--ink)]">
               <span>Media koleksi</span>
-              <small>{mediaItems.length} aset</small>
+              <small className="text-[0.72rem] font-bold text-[color:var(--ink-soft)]">{mediaItems.length} aset</small>
             </div>
 
-            <div className="batik-media-strip-row">
+            <div className="mt-[0.55rem] flex items-center gap-[0.65rem]">
               {hasOverflow && (
                 <button
                   type="button"
                   onClick={() => scrollThumbnails(-1)}
-                  className="batik-media-scroll-button"
+                  className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--paper-raised)] text-[color:var(--ink-soft)] transition-[border-color,color,transform] duration-[180ms] hover:border-[color:var(--terracotta-dark)] hover:text-[color:var(--terracotta-dark)]"
                   aria-label="Thumbnail sebelumnya"
                   title="Thumbnail sebelumnya"
                 >
@@ -89,7 +89,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
                 </button>
               )}
 
-              <div ref={thumbnailStrip} className="batik-media-thumbnails">
+              <div ref={thumbnailStrip} className="flex min-w-0 flex-1 gap-[0.65rem] overflow-x-auto scroll-smooth pb-[0.15rem]">
                 {mediaItems.map((item) => (
                   <button
                     key={item.id}
@@ -97,7 +97,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
                     aria-label={`Tampilkan ${item.label}`}
                     aria-pressed={item.id === selected?.id}
                     data-selected={item.id === selected?.id}
-                    className="batik-media-thumbnail relative aspect-[4/5] w-20 sm:w-24"
+                    className="relative aspect-[4/5] w-20 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_5%,var(--paper-raised))] transition-[border-color,transform,box-shadow] duration-[180ms] hover:border-[color:color-mix(in_srgb,var(--terracotta)_55%,var(--line))] focus-visible:border-[color:color-mix(in_srgb,var(--terracotta)_55%,var(--line))] data-[selected=true]:border-[color:var(--terracotta-dark)] data-[selected=true]:shadow-[0_0_0_2px_color-mix(in_srgb,var(--terracotta)_16%,transparent)] sm:w-24"
                     onClick={() => setSelection({ batikId: batik.id, mediaId: item.id })}
                   >
                     {item.kind === "image" ? (
@@ -106,7 +106,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
                         sizes="96px"
                         src={item.url}
                         alt={`Thumbnail ${item.label}`}
-                        className="batik-media-thumbnail-image"
+                        className="h-full w-full object-cover"
                       />
                     ) : (
                       <>
@@ -116,9 +116,9 @@ export function BatikMedia({ batik }: { batik: Batik }) {
                           playsInline
                           poster={batik.preview_url ?? undefined}
                           preload="metadata"
-                          className="batik-media-thumbnail-video"
+                          className="h-full w-full object-cover"
                         />
-                        <span className="batik-media-play-layer" aria-hidden="true">
+                        <span className="absolute inset-0 grid place-items-center bg-[color-mix(in_srgb,var(--ink)_42%,transparent)] text-[color:var(--paper-raised)]" aria-hidden="true">
                           <Play size={20} fill="currentColor" />
                         </span>
                       </>
@@ -131,7 +131,7 @@ export function BatikMedia({ batik }: { batik: Batik }) {
                 <button
                   type="button"
                   onClick={() => scrollThumbnails(1)}
-                  className="batik-media-scroll-button"
+                  className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--paper-raised)] text-[color:var(--ink-soft)] transition-[border-color,color,transform] duration-[180ms] hover:border-[color:var(--terracotta-dark)] hover:text-[color:var(--terracotta-dark)]"
                   aria-label="Thumbnail berikutnya"
                   title="Thumbnail berikutnya"
                 >

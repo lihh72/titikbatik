@@ -24,9 +24,9 @@ export function MotifDetail({ batik }: { batik: Batik }) {
       <section className="motif-detail-layout grid gap-4 lg:grid-cols-2 lg:items-stretch">
         <BatikMedia batik={batik} />
 
-        <aside className="motif-detail-aside rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-4 shadow-[0_24px_70px_rgba(88,70,49,0.09)] sm:p-5">
+        <aside className="h-full rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-4 shadow-[0_24px_70px_rgba(88,70,49,0.09)] sm:p-5">
           <p className="text-sm font-semibold text-[color:var(--terracotta-dark)]">Batik #{batik.id}</p>
-          <h1 className="motif-detail-title mt-2 text-2xl font-semibold leading-none tracking-[-0.045em] text-[color:var(--ink)] sm:text-3xl">
+          <h1 className="mt-2 line-clamp-3 overflow-hidden text-2xl leading-none font-semibold tracking-[-0.045em] text-[color:var(--ink)] sm:text-3xl">
             {batik.keyword}
           </h1>
           <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)]">

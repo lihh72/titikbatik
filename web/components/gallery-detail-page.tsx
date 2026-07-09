@@ -6,6 +6,10 @@ import { getPublicBatik, readPublicBatikCache } from "@/lib/automation-api";
 import type { Batik } from "@/lib/automation-types";
 import { useEffect, useState } from "react";
 
+const skeletonSurfaceClass = "relative overflow-hidden bg-[linear-gradient(110deg,transparent_0%,color-mix(in_srgb,var(--paper-raised)_78%,white)_48%,transparent_100%),color-mix(in_srgb,var(--line)_30%,var(--paper))] bg-[length:220%_100%] animate-[skeleton-shimmer_1.35s_ease-in-out_infinite]";
+const skeletonLineClass = `${skeletonSurfaceClass} h-3 w-full rounded-full`;
+const skeletonButtonClass = `${skeletonSurfaceClass} h-11 w-32 rounded-[var(--radius-sm)]`;
+
 export function GalleryDetailPage({ slug }: { slug: string }) {
   const initialBatik = readPublicBatikCache(slug);
   const [batik, setBatik] = useState<Batik | null>(() => initialBatik);
@@ -66,31 +70,31 @@ function DetailSkeleton() {
   return (
     <main className="mx-auto max-w-7xl px-4 pb-10 pt-3 sm:px-6 sm:pb-14 sm:pt-5 lg:px-8" aria-busy="true">
       <span className="sr-only">Memuat detail batik.</span>
-      <div className="mb-3 h-5 w-32 rounded-full skeleton-surface sm:mb-4" />
-      <section className="detail-skeleton grid gap-4 lg:grid-cols-2">
-        <div className="detail-skeleton-media">
-          <div className="skeleton-block detail-skeleton-main" />
-          <div className="detail-skeleton-strip">
+      <div className={`${skeletonSurfaceClass} mb-3 h-5 w-32 rounded-full sm:mb-4`} />
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--paper-raised)]">
+          <div className={`${skeletonSurfaceClass} aspect-[1/0.76] min-h-[min(58vh,32rem)]`} />
+          <div className="grid grid-cols-4 gap-3 border-t border-[var(--line)] p-[0.9rem]">
             {Array.from({ length: 4 }, (_, index) => (
-              <div className="skeleton-block detail-skeleton-thumb" key={index} />
+              <div className={`${skeletonSurfaceClass} aspect-[4/5] rounded-[var(--radius-sm)]`} key={index} />
             ))}
           </div>
         </div>
-        <aside className="detail-skeleton-panel">
-          <div className="skeleton-line skeleton-line-short" />
-          <div className="skeleton-line detail-skeleton-title" />
-          <div className="skeleton-line" />
-          <div className="skeleton-line skeleton-line-title" />
-          <div className="detail-skeleton-buttons">
-            <div className="skeleton-button-wide" />
-            <div className="skeleton-button-wide" />
+        <aside className="grid content-start gap-4 overflow-hidden rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--paper-raised)] p-5">
+          <div className={`${skeletonLineClass} max-w-28`} />
+          <div className={`${skeletonLineClass} h-8 w-[86%]`} />
+          <div className={skeletonLineClass} />
+          <div className={`${skeletonLineClass} h-5 max-w-[88%]`} />
+          <div className="flex flex-wrap gap-[0.65rem]">
+            <div className={skeletonButtonClass} />
+            <div className={skeletonButtonClass} />
           </div>
-          <div className="detail-skeleton-specs">
+          <div className="grid grid-cols-2 gap-[0.9rem] border-t border-[var(--line)] pt-4">
             {Array.from({ length: 4 }, (_, index) => (
-              <div className="skeleton-line" key={index} />
+              <div className={skeletonLineClass} key={index} />
             ))}
           </div>
-          <div className="skeleton-block detail-skeleton-prompt" />
+          <div className={`${skeletonSurfaceClass} h-28 rounded-[var(--radius-sm)]`} />
         </aside>
       </section>
     </main>

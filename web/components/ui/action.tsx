@@ -23,13 +23,27 @@ type ButtonActionProps = SharedActionProps &
 
 export type ActionProps = LinkActionProps | ButtonActionProps;
 
+const baseActionClass =
+  "action inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-sm)] border border-transparent px-4 py-[0.7rem] text-sm font-bold leading-[1.2] transition-[background-color,border-color,color,transform] duration-[180ms] hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60";
+
+const variantClasses: Record<ActionVariant, string> = {
+  primary:
+    "action-primary bg-[color:var(--terracotta-dark)] !text-white hover:bg-[#8c2e21]",
+  secondary:
+    "action-secondary border-[color:var(--ink)] bg-transparent text-[color:var(--ink)] hover:bg-[color:var(--ink)] hover:text-[color:var(--paper-raised)]",
+  quiet:
+    "action-quiet border-transparent bg-transparent px-1 text-[color:var(--ink)] underline decoration-transparent underline-offset-4 hover:text-[color:var(--terracotta-dark)] hover:decoration-current",
+  danger:
+    "action-danger border-[color:var(--danger)] bg-[color:var(--danger)] text-[color:var(--paper-raised)] hover:border-[color:var(--ink)] hover:bg-[color:var(--ink)]",
+};
+
 export function Action({
   children,
   className,
   variant = "primary",
   ...actionProps
 }: ActionProps) {
-  const classes = cn("action", `action-${variant}`, className);
+  const classes = cn(baseActionClass, variantClasses[variant], className);
 
   if ("href" in actionProps && actionProps.href !== undefined) {
     const { href, onClick, tabIndex, ...linkProps } = actionProps;

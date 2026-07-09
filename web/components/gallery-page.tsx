@@ -10,6 +10,9 @@ import { FormEvent, useEffect, useState } from "react";
 
 const pageButtonClass = "min-h-11 rounded-[var(--radius-sm)] border border-[color:var(--line)] px-4 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--terracotta-dark)] hover:text-[color:var(--terracotta-dark)] disabled:cursor-not-allowed disabled:opacity-40";
 const GALLERY_PAGE_SIZE = 9;
+const skeletonSurfaceClass = "relative overflow-hidden bg-[linear-gradient(110deg,transparent_0%,color-mix(in_srgb,var(--paper-raised)_78%,white)_48%,transparent_100%),color-mix(in_srgb,var(--line)_30%,var(--paper))] bg-[length:220%_100%] animate-[skeleton-shimmer_1.35s_ease-in-out_infinite]";
+const skeletonLineClass = `${skeletonSurfaceClass} h-3 w-full rounded-full`;
+const skeletonButtonClass = `${skeletonSurfaceClass} h-11 w-16 rounded-[var(--radius-sm)]`;
 
 export function GalleryPage() {
   const initialResult = readPublicBatiksCache({ page: 1, perPage: GALLERY_PAGE_SIZE, query: "" });
@@ -123,8 +126,16 @@ export function GalleryPage() {
         <GallerySkeleton />
       ) : error ? null : items.length ? (
         <>
-          <section className="gallery-motion-grid mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Daftar motif">
-            {items.map((batik) => <MotifCard key={batik.id} batik={batik} />)}
+          <section className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Daftar motif">
+            {items.map((batik, index) => (
+              <div
+                className="animate-[gallery-card-rise_560ms_cubic-bezier(0.16,1,0.3,1)_backwards]"
+                key={batik.id}
+                style={{ animationDelay: `${Math.min(index, 5) * 55}ms` }}
+              >
+                <MotifCard batik={batik} />
+              </div>
+            ))}
           </section>
 
           <div className="mt-8 flex items-center justify-center gap-3">
@@ -171,21 +182,21 @@ export function GalleryPage() {
 
 function GallerySkeleton() {
   return (
-    <section className="gallery-skeleton mt-8" aria-label="Memuat koleksi" aria-busy="true">
+    <section className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Memuat koleksi" aria-busy="true">
       <span className="sr-only">Menata motif dan metadata koleksi.</span>
       {Array.from({ length: GALLERY_PAGE_SIZE }, (_, index) => (
-        <article className="gallery-skeleton-card" key={index}>
-          <div className="skeleton-block skeleton-media" />
-          <div className="skeleton-copy">
-            <div className="skeleton-line skeleton-line-short" />
-            <div className="skeleton-line skeleton-line-title" />
-            <div className="skeleton-line" />
-            <div className="skeleton-line skeleton-line-tiny" />
+        <article className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--paper-raised)]" key={index}>
+          <div className={`${skeletonSurfaceClass} aspect-square`} />
+          <div className="grid min-h-[10.75rem] content-start gap-[0.85rem] p-5">
+            <div className={`${skeletonLineClass} max-w-28`} />
+            <div className={`${skeletonLineClass} h-5 max-w-[88%]`} />
+            <div className={skeletonLineClass} />
+            <div className={`${skeletonLineClass} max-w-[58%]`} />
           </div>
-          <div className="skeleton-actions">
-            <div className="skeleton-button" />
-            <div className="skeleton-button" />
-            <div className="skeleton-link" />
+          <div className="flex items-center gap-2 border-t border-[var(--line)] p-3">
+            <div className={skeletonButtonClass} />
+            <div className={skeletonButtonClass} />
+            <div className={`${skeletonLineClass} ml-auto h-3 max-w-24`} />
           </div>
         </article>
       ))}

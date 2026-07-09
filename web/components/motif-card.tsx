@@ -13,6 +13,17 @@ import { useEffect, useState } from "react";
 export const HOVER_INTENT_MS = 350;
 export const COSTUME_CYCLE_MS = 1500;
 
+const cardClass =
+  "motif-card group overflow-hidden rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--paper-raised)] text-[color:var(--ink)] transition-[border-color,transform] duration-[180ms] hover:-translate-y-0.5 hover:border-[color:color-mix(in_srgb,var(--terracotta-dark)_58%,var(--line))]";
+
+const primaryLinkClass = "block focus-visible:outline-offset-[-4px]";
+
+const iconButtonClass =
+  "motif-card-icon-button grid size-11 place-items-center rounded-[var(--radius-sm)] border border-[var(--line)] bg-transparent text-[color:var(--ink-soft)] transition-[color,background-color,border-color,transform] duration-[180ms] hover:border-[color:var(--ink-soft)] hover:bg-[color-mix(in_srgb,var(--line)_22%,transparent)] hover:text-[color:var(--ink)] active:translate-y-px active:scale-[0.98]";
+
+const activeIconButtonClass =
+  "border-[color:color-mix(in_srgb,var(--terracotta-dark)_55%,var(--line))] bg-[color-mix(in_srgb,var(--terracotta)_11%,var(--paper-raised))] text-[color:var(--terracotta-dark)]";
+
 function hasFinePointer() {
   if (typeof window === "undefined" || !window.matchMedia) return false;
   return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -76,7 +87,7 @@ export function MotifCard({ batik }: { batik: Batik }) {
   return (
     <article
       aria-label={batik.keyword}
-      className="motif-card"
+      className={cardClass}
       data-surface="light"
       onMouseEnter={handlePointerEnter}
       onMouseLeave={stopPreview}
@@ -87,12 +98,12 @@ export function MotifCard({ batik }: { batik: Batik }) {
         href={`/gallery/${batik.slug}`}
         prefetch
         scroll
-        className="motif-card-primary-link"
+        className={primaryLinkClass}
         onPointerEnter={() => prefetchPublicBatik(batik.slug)}
         onFocus={() => prefetchPublicBatik(batik.slug)}
       >
         <div
-          className="motif-card-media aspect-square"
+          className="relative aspect-square overflow-hidden bg-[color-mix(in_srgb,var(--line)_35%,var(--paper))]"
           data-preview-mode={costumePreviewUrl ? "costume" : "motif"}
           data-ratio="1:1"
           data-testid="motif-frame"
@@ -103,42 +114,42 @@ export function MotifCard({ batik }: { batik: Batik }) {
               sizes="(max-width: 768px) 100vw, 420px"
               src={batik.preview_url}
               alt={`Motif ${batik.keyword}`}
-              className="motif-card-image"
+              className="object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-[1.025] group-focus-visible:scale-[1.025]"
               data-testid="motif-preview"
             />
           ) : (
-            <div className="motif-card-placeholder">
+            <div className="grid h-full place-content-center justify-items-center gap-[0.65rem] text-[0.78rem] text-[color:var(--ink-soft)]">
               <ImageOff size={28} aria-hidden="true" />
               <span>Pratinjau belum tersedia</span>
             </div>
           )}
           {costumePreviewUrl && (
-            <div className="motif-card-costume-layer" aria-hidden="true">
+            <div className="pointer-events-none absolute inset-0" aria-hidden="true">
               <Image
                 fill
                 sizes="(max-width: 768px) 100vw, 420px"
                 src={costumePreviewUrl}
                 alt=""
-                className="motif-card-costume-image"
+                className="animate-[motif-costume-fade_260ms_ease_both] object-cover"
                 data-testid="costume-preview"
               />
             </div>
           )}
         </div>
-        <div className="motif-card-content">
-          <p className="motif-card-style">{batik.style || "Batik digital"}</p>
-          <h2>{batik.keyword}</h2>
-          <p className="motif-card-meta">{batik.warna}</p>
-          <time dateTime={batik.created_at}>
+        <div className="min-h-[10.75rem] p-5">
+          <p className="m-0 text-xs font-bold text-[color:var(--terracotta-dark)]">{batik.style || "Batik digital"}</p>
+          <h2 className="mt-2 line-clamp-2 text-[1.05rem] leading-[1.35] font-bold">{batik.keyword}</h2>
+          <p className="motif-card-meta mt-[0.65rem] truncate text-[0.78rem] text-[color:var(--ink-soft)]">{batik.warna}</p>
+          <time className="mt-4 block text-xs text-[color:color-mix(in_srgb,var(--ink-soft)_88%,var(--ink))]" dateTime={batik.created_at}>
             {new Date(batik.created_at).toLocaleDateString("id-ID")}
           </time>
         </div>
       </Link>
-      <div className="motif-card-actions">
+      <div className="flex items-center gap-2 border-t border-[var(--line)] p-3">
         <button
           type="button"
           onClick={() => toggleLike(id)}
-          className="motif-card-icon-button"
+          className={`${iconButtonClass} ${liked ? activeIconButtonClass : ""}`}
           data-active={liked}
           aria-label="Sukai"
           aria-pressed={liked}
@@ -148,7 +159,7 @@ export function MotifCard({ batik }: { batik: Batik }) {
         <button
           type="button"
           onClick={() => toggleBookmark(id)}
-          className="motif-card-icon-button"
+          className={`${iconButtonClass} ${bookmarked ? activeIconButtonClass : ""}`}
           data-active={bookmarked}
           aria-label="Simpan"
           aria-pressed={bookmarked}
@@ -159,7 +170,7 @@ export function MotifCard({ batik }: { batik: Batik }) {
           href={`/gallery/${batik.slug}`}
           prefetch
           scroll
-          className="motif-card-detail-link"
+          className="ml-auto inline-flex min-h-11 items-center px-[0.65rem] text-[0.78rem] font-bold text-[color:var(--terracotta-dark)] underline decoration-transparent underline-offset-4 hover:decoration-current focus-visible:decoration-current"
           onPointerEnter={() => prefetchPublicBatik(batik.slug)}
           onFocus={() => prefetchPublicBatik(batik.slug)}
         >

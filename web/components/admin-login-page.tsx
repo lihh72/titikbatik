@@ -41,7 +41,7 @@ export function AdminLoginPage() {
 
   return (
     <main className="min-h-[100dvh] bg-[color:var(--paper)] px-4 py-8 text-[color:var(--ink)] sm:px-6">
-      <section className="mx-auto grid min-h-[calc(100dvh-4rem)] max-w-6xl overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] shadow-[0_24px_80px_rgba(88,70,49,0.12)] lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="mx-auto grid min-h-[calc(100dvh_-_4rem)] max-w-6xl overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--line)] bg-[color:var(--paper-raised)] shadow-[0_24px_80px_rgba(88,70,49,0.12)] lg:grid-cols-[1.05fr_0.95fr]">
         <div className="border-b border-[color:var(--line)] p-7 sm:p-10 lg:border-b-0 lg:border-r lg:p-12">
           <div className="flex items-center gap-3">
             <LogoMark decorative />

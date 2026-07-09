@@ -1,5 +1,6 @@
 "use client";
 
+import { adminClass } from "@/components/admin-styles";
 import { cancelBatch, getBatch, listBatchJobs, listBatches, retryFailedBatch } from "@/lib/automation-api";
 import type { GenerationBatch, GenerationJob } from "@/lib/automation-types";
 import { AlertCircle, Ban, LoaderCircle, RefreshCw, RotateCcw } from "lucide-react";
@@ -89,42 +90,42 @@ export function HistoryPage() {
   }
 
   return (
-    <section className="admin-resource" aria-labelledby="history-title">
-      <header className="admin-resource-hero">
+    <section className={adminClass("admin-resource")} aria-labelledby="history-title">
+      <header className={adminClass("admin-resource-hero")}>
         <div>
-          <p className="admin-eyebrow">Durable worker</p>
+          <p className={adminClass("admin-eyebrow")}>Durable worker</p>
           <h1 id="history-title">Batch dan job</h1>
           <p>Status nyata untuk antrean, retry, error ComfyUI, dan output setiap tahap.</p>
         </div>
-        <button type="button" onClick={() => void load(selected?.id)} disabled={loading} className="admin-icon-action" aria-label="Muat ulang batch">
+        <button type="button" onClick={() => void load(selected?.id)} disabled={loading} className={adminClass("admin-icon-action")} aria-label="Muat ulang batch">
           <RefreshCw size={17} className={loading ? "animate-spin" : ""} aria-hidden="true" />
         </button>
       </header>
-      {error && <div role="alert" className="admin-alert"><AlertCircle size={17} aria-hidden="true" />{error}</div>}
-      {loading && !batches.length ? <div className="admin-loading"><LoaderCircle size={17} className="animate-spin" aria-hidden="true" />Memuat batch...</div> :
-        <div className="admin-resource-layout">
-          <section className="admin-resource-list" aria-label="Daftar batch">
+      {error && <div role="alert" className={adminClass("admin-alert")}><AlertCircle size={17} aria-hidden="true" />{error}</div>}
+      {loading && !batches.length ? <div className={adminClass("admin-loading")}><LoaderCircle size={17} className="animate-spin" aria-hidden="true" />Memuat batch...</div> :
+        <div className={adminClass("admin-resource-layout")}>
+          <section className={adminClass("admin-resource-list")} aria-label="Daftar batch">
             {batches.map((batch) => (
-              <button key={batch.id} type="button" onClick={() => void loadDetails(batch.id)} aria-pressed={selected?.id === batch.id} className="admin-resource-list-item" data-active={selected?.id === batch.id}>
-                <span className="admin-resource-list-meta"><b>{batch.status}</b><small>{batch.progress_percent}%</small></span>
+              <button key={batch.id} type="button" onClick={() => void loadDetails(batch.id)} aria-pressed={selected?.id === batch.id} className={adminClass("admin-resource-list-item")} data-active={selected?.id === batch.id}>
+                <span className={adminClass("admin-resource-list-meta")}><b>{batch.status}</b><small>{batch.progress_percent}%</small></span>
                 <strong>{batch.id}</strong>
                 <small>{date(batch.created_at)} · {batch.requested_count} motif</small>
               </button>
             ))}
-            {!batches.length && <p className="admin-empty">Belum ada batch.</p>}
+            {!batches.length && <p className={adminClass("admin-empty")}>Belum ada batch.</p>}
           </section>
 
-          <section className="admin-resource-detail">
+          <section className={adminClass("admin-resource-detail")}>
             {selected ? <>
-              <div className="admin-detail-card">
-                <div className="admin-detail-head">
-                  <div><p className="admin-eyebrow">{selected.status}</p><h2>{selected.id}</h2></div>
-                  <div className="admin-action-row">{activeStatuses.has(selected.status) && <button type="button" disabled={busy} onClick={() => void action("cancel")} className="admin-danger-action"><Ban size={14} aria-hidden="true" />Batalkan batch</button>}{selected.failed_count > 0 && <button type="button" disabled={busy} onClick={() => void action("retry")} className="admin-secondary-action"><RotateCcw size={14} aria-hidden="true" />Retry gagal</button>}</div>
+              <div className={adminClass("admin-detail-card")}>
+                <div className={adminClass("admin-detail-head")}>
+                  <div><p className={adminClass("admin-eyebrow")}>{selected.status}</p><h2>{selected.id}</h2></div>
+                  <div className={adminClass("admin-action-row")}>{activeStatuses.has(selected.status) && <button type="button" disabled={busy} onClick={() => void action("cancel")} className={adminClass("admin-danger-action")}><Ban size={14} aria-hidden="true" />Batalkan batch</button>}{selected.failed_count > 0 && <button type="button" disabled={busy} onClick={() => void action("retry")} className={adminClass("admin-secondary-action")}><RotateCcw size={14} aria-hidden="true" />Retry gagal</button>}</div>
                 </div>
-                <div className="admin-stat-grid">{[["Antre", selected.queued_count], ["Berjalan", selected.running_count], ["Selesai", selected.completed_count], ["Gagal", selected.failed_count], ["Batal", selected.cancelled_count]].map(([label, value]) => <div key={String(label)}><p>{label}</p><strong>{value}</strong></div>)}</div>
+                <div className={adminClass("admin-stat-grid")}>{[["Antre", selected.queued_count], ["Berjalan", selected.running_count], ["Selesai", selected.completed_count], ["Gagal", selected.failed_count], ["Batal", selected.cancelled_count]].map(([label, value]) => <div key={String(label)}><p>{label}</p><strong>{value}</strong></div>)}</div>
               </div>
-              <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Urutan</th><th>Tahap</th><th>Status</th><th>Percobaan</th><th>Output</th><th>ComfyUI</th><th>Error</th></tr></thead><tbody>{jobs.map((item) => <tr key={item.id}><td>{item.sequence_number}</td><td>{item.job_type}</td><td>{item.status}</td><td>{item.attempt_count}/{item.max_attempts}</td><td>{item.output_filename ?? "-"}</td><td>{item.comfyui_prompt_id ?? "-"}</td><td>{item.error_message ?? "-"}</td></tr>)}</tbody></table></div>
-            </> : <p className="admin-empty">Pilih batch untuk melihat job.</p>}
+              <div className={adminClass("admin-table-wrap")}><table className={adminClass("admin-table")}><thead><tr><th>Urutan</th><th>Tahap</th><th>Status</th><th>Percobaan</th><th>Output</th><th>ComfyUI</th><th>Error</th></tr></thead><tbody>{jobs.map((item) => <tr key={item.id}><td>{item.sequence_number}</td><td>{item.job_type}</td><td>{item.status}</td><td>{item.attempt_count}/{item.max_attempts}</td><td>{item.output_filename ?? "-"}</td><td>{item.comfyui_prompt_id ?? "-"}</td><td>{item.error_message ?? "-"}</td></tr>)}</tbody></table></div>
+            </> : <p className={adminClass("admin-empty")}>Pilih batch untuk melihat job.</p>}
           </section>
         </div>}
     </section>

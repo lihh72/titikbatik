@@ -1,5 +1,6 @@
 "use client";
 
+import { adminClass } from "@/components/admin-styles";
 import { LogoMark } from "@/components/logo";
 import { Database, GalleryHorizontalEnd, Home, Images, LayoutDashboard, ListChecks, LogOut, Menu, Settings, Shirt, WandSparkles, X } from "lucide-react";
 import Link from "next/link";
@@ -39,11 +40,11 @@ function AdminNavGroups({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Navigasi admin" className="admin-nav-groups">
+    <nav aria-label="Navigasi admin" className={adminClass("admin-nav-groups")}>
       {groups.map((group) => (
-        <section key={group.label} className="admin-nav-group" aria-label={group.label}>
-          <p className="admin-nav-group-label">{group.label}</p>
-          <div className="admin-nav-items">
+        <section key={group.label} className={adminClass("admin-nav-group")} aria-label={group.label}>
+          <p className={adminClass("admin-nav-group-label")}>{group.label}</p>
+          <div className={adminClass("admin-nav-items")}>
             {group.items.map((item) => {
               const Icon = item.icon;
               const active = isActive(pathname, item.href);
@@ -52,7 +53,7 @@ function AdminNavGroups({ onNavigate }: { onNavigate?: () => void }) {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className="admin-nav-link"
+                  className={adminClass("admin-nav-link")}
                   data-active={active}
                   onClick={onNavigate}
                 >
@@ -127,8 +128,8 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
 
   return (
     <>
-      <aside className="admin-sidebar">
-        <Link href="/admin" className="admin-sidebar-brand">
+      <aside className={adminClass("admin-sidebar")}>
+        <Link href="/admin" className={adminClass("admin-sidebar-brand")}>
           <LogoMark decorative />
           <span>
             <strong>TitikBatik AI</strong>
@@ -136,20 +137,20 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
           </span>
         </Link>
         <AdminNavGroups />
-        <div className="admin-sidebar-bottom">
-          <Link href="/" className="admin-nav-link">
+        <div className={adminClass("admin-sidebar-bottom")}>
+          <Link href="/" className={adminClass("admin-nav-link")}>
             <Home size={17} aria-hidden="true" />
             Galeri AI publik
           </Link>
-          <button type="button" onClick={onLogout} className="admin-logout-button" aria-label="Keluar dari admin">
+          <button type="button" onClick={onLogout} className={adminClass("admin-logout-button")} aria-label="Keluar dari admin">
             <LogOut size={17} aria-hidden="true" />
             Keluar
           </button>
         </div>
       </aside>
 
-      <div className="admin-mobile-bar">
-        <Link href="/admin" className="admin-sidebar-brand">
+      <div className={adminClass("admin-mobile-bar")}>
+        <Link href="/admin" className={adminClass("admin-sidebar-brand")}>
           <LogoMark decorative />
           <span>
             <strong>TitikBatik AI</strong>
@@ -158,7 +159,7 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
         </Link>
         <button
           type="button"
-          className="admin-menu-button"
+          className={adminClass("admin-menu-button")}
           aria-controls="admin-mobile-drawer"
           aria-expanded={open}
           aria-label="Buka menu admin"
@@ -173,24 +174,24 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
       </div>
 
       {open && (
-        <div className="admin-mobile-drawer" id="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Navigasi admin">
-          <div className="admin-mobile-drawer-panel">
-            <button type="button" className="admin-menu-button" aria-label="Tutup menu admin" onClick={() => setOpen(false)} ref={closeButtonRef}>
+        <div className={adminClass("admin-mobile-drawer")} id="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Navigasi admin">
+          <div className={adminClass("admin-mobile-drawer-panel")}>
+            <button type="button" className={adminClass("admin-menu-button")} aria-label="Tutup menu admin" onClick={() => setOpen(false)} ref={closeButtonRef}>
               <X size={20} aria-hidden="true" />
             </button>
             <AdminNavGroups onNavigate={() => {
               restoreFocusRef.current = false;
               setOpen(false);
             }} />
-            <div className="admin-sidebar-bottom">
-              <Link href="/" className="admin-nav-link" onClick={() => {
+            <div className={adminClass("admin-sidebar-bottom")}>
+              <Link href="/" className={adminClass("admin-nav-link")} onClick={() => {
                 restoreFocusRef.current = false;
                 setOpen(false);
               }}>
                 <GalleryHorizontalEnd size={17} aria-hidden="true" />
                 Galeri AI publik
               </Link>
-              <button type="button" onClick={onLogout} className="admin-logout-button">
+              <button type="button" onClick={onLogout} className={adminClass("admin-logout-button")}>
                 <LogOut size={17} aria-hidden="true" />
                 Keluar
               </button>

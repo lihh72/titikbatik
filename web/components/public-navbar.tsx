@@ -19,6 +19,15 @@ function isActiveRoute(pathname: string, href: string) {
   return href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 }
 
+const desktopLinkClass =
+  "relative inline-flex h-full items-center whitespace-nowrap text-sm font-bold after:absolute after:right-0 after:bottom-[-1px] after:left-0 after:h-[3px] after:origin-center after:scale-x-0 after:bg-[var(--terracotta)] after:transition-transform after:duration-[180ms] hover:text-[color:var(--ink)]";
+
+const inactiveDesktopLinkClass = "!text-[color:var(--ink-soft)]";
+const activeDesktopLinkClass = "!text-[color:var(--ink)] after:scale-x-100";
+
+const mobileLinkClass =
+  "min-h-12 content-center border-b border-[color-mix(in_srgb,var(--line)_60%,transparent)] px-2 font-bold";
+
 export function PublicNavbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -79,19 +88,24 @@ export function PublicNavbar() {
   }, [open]);
 
   return (
-    <header className="public-header">
-      <div className="public-navbar public-navbar-controls">
-        <Link className="public-brand" href="/" aria-label="TitikBatik AI" onClick={() => setOpen(false)}>
+    <header className="fixed inset-x-0 top-0 z-[70] border-b border-[color-mix(in_srgb,var(--line)_82%,transparent)] bg-[color-mix(in_srgb,var(--paper-raised)_92%,transparent)] backdrop-blur-[18px] backdrop-saturate-[140%]">
+      <div className="public-navbar-controls mx-auto flex h-[72px] w-[calc(100%_-_2rem)] max-w-7xl items-center justify-between gap-8 max-[55rem]:h-16">
+        <Link
+          className="inline-flex items-center gap-3 whitespace-nowrap font-extrabold tracking-[-0.02em]"
+          href="/"
+          aria-label="TitikBatik AI"
+          onClick={() => setOpen(false)}
+        >
           <LogoMark decorative />
           <span>TitikBatik AI</span>
         </Link>
 
-        <nav className="public-desktop-nav" aria-label="Navigasi utama">
+        <nav className="flex self-stretch items-center gap-7 max-[55rem]:hidden" aria-label="Navigasi utama">
           {PUBLIC_NAV_ITEMS.map((item) => {
             const active = isActiveRoute(pathname, item.href);
             return (
               <Link
-                className="public-nav-link"
+                className={`${desktopLinkClass} ${active ? activeDesktopLinkClass : inactiveDesktopLinkClass}`}
                 href={item.href}
                 key={item.href}
                 aria-current={active ? "page" : undefined}
@@ -102,13 +116,13 @@ export function PublicNavbar() {
           })}
         </nav>
 
-        <div className="public-navbar-actions">
-          <Action className="public-navbar-cta" href="/gallery">Lihat output AI</Action>
+        <div className="flex items-center">
+          <Action className="max-[55rem]:hidden" href="/gallery">Lihat output AI</Action>
           <button
             aria-controls="public-mobile-nav"
             aria-expanded={open}
             aria-label={open ? "Tutup navigasi" : "Buka navigasi"}
-            className="public-menu-button"
+            className="hidden size-11 place-items-center rounded-[var(--radius-sm)] border border-[var(--line)] bg-transparent text-[color:var(--ink)] max-[55rem]:grid"
             onClick={() => {
               restoreFocusRef.current = true;
               setOpen((current) => !current);
@@ -122,10 +136,16 @@ export function PublicNavbar() {
       </div>
 
       {open && (
-        <div className="public-mobile-nav" id="public-mobile-nav" role="dialog" aria-label="Navigasi utama" aria-modal="true">
+        <div
+          className="fixed inset-x-0 top-[72px] bottom-0 z-[75] grid auto-rows-min overflow-y-auto overscroll-contain border-t border-[var(--line)] bg-[var(--paper-raised)] px-4 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] max-[55rem]:top-16 max-[55rem]:bottom-auto max-[55rem]:h-[calc(100svh-64px)]"
+          id="public-mobile-nav"
+          role="dialog"
+          aria-label="Navigasi utama"
+          aria-modal="true"
+        >
           <button
             aria-label="Tutup dialog navigasi"
-            className="public-dialog-close"
+            className="ml-auto grid size-11 place-items-center rounded-[var(--radius-sm)] border border-[var(--line)] bg-transparent text-[color:var(--ink)]"
             onClick={() => setOpen(false)}
             ref={closeButtonRef}
             type="button"
@@ -134,6 +154,7 @@ export function PublicNavbar() {
           </button>
           {PUBLIC_NAV_ITEMS.map((item) => (
             <Link
+              className={`${mobileLinkClass} ${isActiveRoute(pathname, item.href) ? "!text-[color:var(--terracotta-dark)]" : "!text-[color:var(--ink-soft)]"}`}
               aria-current={isActiveRoute(pathname, item.href) ? "page" : undefined}
               href={item.href}
               key={item.href}

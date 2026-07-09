@@ -1,5 +1,6 @@
 "use client";
 
+import { adminClass } from "@/components/admin-styles";
 import { BatikMedia } from "@/components/batik-media";
 import { deleteBatik, listAdminBatiks, publishBatik, regenerateCostume, regenerateVideo, unpublishBatik, updateBatik } from "@/lib/automation-api";
 import type { Batik } from "@/lib/automation-types";
@@ -79,71 +80,71 @@ export function AdminGalleryPage() {
   }
 
   return (
-    <section className="admin-resource" aria-labelledby="admin-gallery-title">
-      <header className="admin-resource-hero">
+    <section className={adminClass("admin-resource")} aria-labelledby="admin-gallery-title">
+      <header className={adminClass("admin-resource-hero")}>
         <div>
-          <p className="admin-eyebrow">Output generative AI</p>
+          <p className={adminClass("admin-eyebrow")}>Output generative AI</p>
           <h1 id="admin-gallery-title">Kurasi hasil AI</h1>
           <h2 className="sr-only">Kurasi visual dan publikasi</h2>
           <p>Pilih hasil, cek motif serta costume, lalu tentukan mana yang siap tampil di galeri publik.</p>
         </div>
-        <button type="button" onClick={() => void load(selected?.id)} disabled={loading} className="admin-secondary-action" aria-label="Muat ulang hasil batik">
+        <button type="button" onClick={() => void load(selected?.id)} disabled={loading} className={adminClass("admin-secondary-action")} aria-label="Muat ulang hasil batik">
           <RefreshCw size={17} className={loading ? "animate-spin" : ""} aria-hidden="true" />
           Muat ulang
         </button>
       </header>
 
-      <div className="admin-metric-grid">
+      <div className={adminClass("admin-metric-grid")}>
         <MetricCard label="Total hasil" value={`${metrics.total} hasil`} />
         <MetricCard label="Sudah tampil" value={`${metrics.published} publik`} />
         <MetricCard label="Masih ditahan" value={`${metrics.draft} draft`} />
         <MetricCard label="Kostum dan video" value={`${metrics.supportingMedia} media`} />
       </div>
 
-      {error && <div role="alert" className="admin-alert"><AlertCircle size={17} aria-hidden="true" />{error}</div>}
-      {notice && <div className="studio-success">{notice}</div>}
+      {error && <div role="alert" className={adminClass("admin-alert")}><AlertCircle size={17} aria-hidden="true" />{error}</div>}
+      {notice && <div className={adminClass("studio-success")}>{notice}</div>}
 
-      {loading && !items.length ? <div className="admin-loading"><LoaderCircle size={17} className="animate-spin" aria-hidden="true" />Memuat hasil...</div> : (
-        <div className="admin-resource-layout">
-          <section className="admin-resource-list admin-gallery-list" aria-label="Daftar hasil batik">
+      {loading && !items.length ? <div className={adminClass("admin-loading")}><LoaderCircle size={17} className="animate-spin" aria-hidden="true" />Memuat hasil...</div> : (
+        <div className={adminClass("admin-resource-layout")}>
+          <section className={adminClass("admin-resource-list admin-gallery-list")} aria-label="Daftar hasil batik">
             {items.map((batik) => (
-              <button key={batik.id} type="button" onClick={() => select(batik)} aria-pressed={selected?.id === batik.id} className="admin-resource-list-item admin-gallery-item" data-active={selected?.id === batik.id}>
-                <span data-testid={`admin-gallery-tile-${batik.id}`} className="admin-square-preview">
+              <button key={batik.id} type="button" onClick={() => select(batik)} aria-pressed={selected?.id === batik.id} className={adminClass("admin-resource-list-item admin-gallery-item")} data-active={selected?.id === batik.id}>
+                <span data-testid={`admin-gallery-tile-${batik.id}`} className={adminClass("admin-square-preview")}>
                   {batik.preview_url ? <Image fill sizes="76px" src={batik.preview_url} alt="" /> : null}
                 </span>
                 <span><strong>#{batik.id} {batik.keyword}</strong><small>{batik.style} / {batik.warna}</small></span>
                 <b>{batik.is_published ? "Publik" : "Draft"}</b>
               </button>
             ))}
-            {!items.length && <p className="admin-empty">Belum ada hasil batik.</p>}
+            {!items.length && <p className={adminClass("admin-empty")}>Belum ada hasil batik.</p>}
           </section>
 
           {selected && (
-            <section className="admin-resource-detail">
-              <div className="admin-gallery-detail">
+            <section className={adminClass("admin-resource-detail")}>
+              <div className={adminClass("admin-gallery-detail")}>
                 <BatikMedia batik={selected} />
-                <aside className="admin-detail-card">
-                  <div className="admin-detail-head">
-                    <div><p className="admin-eyebrow">Batik #{selected.id}</p><h2>{selected.keyword}</h2></div>
-                    <span className="admin-status-pill">{selected.is_published ? "Publik" : "Draft"}</span>
+                <aside className={adminClass("admin-detail-card")}>
+                  <div className={adminClass("admin-detail-head")}>
+                    <div><p className={adminClass("admin-eyebrow")}>Batik #{selected.id}</p><h2>{selected.keyword}</h2></div>
+                    <span className={adminClass("admin-status-pill")}>{selected.is_published ? "Publik" : "Draft"}</span>
                   </div>
-                  <div className="admin-form-stack">
-                    <label>Keyword<input className="admin-field" value={draft.keyword} onChange={(event) => setDraft((value) => ({ ...value, keyword: event.target.value }))} /></label>
-                    <label>Warna<input className="admin-field" value={draft.warna} onChange={(event) => setDraft((value) => ({ ...value, warna: event.target.value }))} /></label>
-                    <label>Style<input className="admin-field" value={draft.style} onChange={(event) => setDraft((value) => ({ ...value, style: event.target.value }))} /></label>
+                  <div className={adminClass("admin-form-stack")}>
+                    <label>Keyword<input className={adminClass("admin-field")} value={draft.keyword} onChange={(event) => setDraft((value) => ({ ...value, keyword: event.target.value }))} /></label>
+                    <label>Warna<input className={adminClass("admin-field")} value={draft.warna} onChange={(event) => setDraft((value) => ({ ...value, warna: event.target.value }))} /></label>
+                    <label>Style<input className={adminClass("admin-field")} value={draft.style} onChange={(event) => setDraft((value) => ({ ...value, style: event.target.value }))} /></label>
                   </div>
-                  <button type="button" disabled={busy} onClick={() => void perform(() => updateBatik(selected.id, draft), "Metadata batik disimpan.")} className="admin-primary-action"><Save size={15} aria-hidden="true" />Simpan metadata</button>
-                  <div className="admin-action-grid">
-                    <button type="button" disabled={busy} onClick={() => void perform(() => selected.is_published ? unpublishBatik(selected.id) : publishBatik(selected.id), selected.is_published ? "Batik ditampilkan sebagai draft." : "Batik dipublikasikan.")} className="admin-secondary-action">
+                  <button type="button" disabled={busy} onClick={() => void perform(() => updateBatik(selected.id, draft), "Metadata batik disimpan.")} className={adminClass("admin-primary-action")}><Save size={15} aria-hidden="true" />Simpan metadata</button>
+                  <div className={adminClass("admin-action-grid")}>
+                    <button type="button" disabled={busy} onClick={() => void perform(() => selected.is_published ? unpublishBatik(selected.id) : publishBatik(selected.id), selected.is_published ? "Batik ditampilkan sebagai draft." : "Batik dipublikasikan.")} className={adminClass("admin-secondary-action")}>
                       {selected.is_published ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
                       {selected.is_published ? "Tampilkan sebagai draft" : "Publikasikan"}
                     </button>
-                    <button type="button" disabled={busy} onClick={() => void perform(() => regenerateCostume(selected.id), "Buat ulang kostum masuk antrean.")} className="admin-secondary-action"><Shirt size={15} aria-hidden="true" />Buat ulang kostum</button>
-                    <button type="button" disabled={busy} onClick={() => void perform(() => regenerateVideo(selected.id), "Buat ulang video masuk antrean.")} className="admin-secondary-action"><Video size={15} aria-hidden="true" />Buat ulang video</button>
+                    <button type="button" disabled={busy} onClick={() => void perform(() => regenerateCostume(selected.id), "Buat ulang kostum masuk antrean.")} className={adminClass("admin-secondary-action")}><Shirt size={15} aria-hidden="true" />Buat ulang kostum</button>
+                    <button type="button" disabled={busy} onClick={() => void perform(() => regenerateVideo(selected.id), "Buat ulang video masuk antrean.")} className={adminClass("admin-secondary-action")}><Video size={15} aria-hidden="true" />Buat ulang video</button>
                   </div>
-                  <div className="admin-danger-zone">
+                  <div className={adminClass("admin-danger-zone")}>
                     <p>Area berisiko</p>
-                    <button type="button" disabled={busy} onClick={() => { if (window.confirm(`Hapus batik #${selected.id}?`)) void perform(() => deleteBatik(selected.id), "Batik dihapus.", false); }} className="admin-danger-action"><Trash2 size={15} aria-hidden="true" />Hapus hasil</button>
+                    <button type="button" disabled={busy} onClick={() => { if (window.confirm(`Hapus batik #${selected.id}?`)) void perform(() => deleteBatik(selected.id), "Batik dihapus.", false); }} className={adminClass("admin-danger-action")}><Trash2 size={15} aria-hidden="true" />Hapus hasil</button>
                   </div>
                 </aside>
               </div>
@@ -156,5 +157,5 @@ export function AdminGalleryPage() {
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
-  return <div className="admin-metric-card"><p>{label}</p><strong>{value}</strong></div>;
+  return <div className={adminClass("admin-metric-card")}><p>{label}</p><strong>{value}</strong></div>;
 }

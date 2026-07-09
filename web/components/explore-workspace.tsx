@@ -1,5 +1,6 @@
 "use client";
 
+import { adminClass } from "@/components/admin-styles";
 import { createGenerationBatch, listCostumeTemplates, listWordlistCategories, listWordlistItems } from "@/lib/automation-api";
 import type { CostumeTemplate, CostumeTemplateMode, GenerationBatchCreate, GenerationMode, WordlistCategory, WordlistItem } from "@/lib/automation-types";
 import { buildGenerationPayload } from "@/lib/generation-form";
@@ -145,25 +146,25 @@ export function ExploreWorkspace() {
   }
 
   return (
-    <section className="studio-flow" aria-labelledby="studio-title">
-      <header className="studio-hero">
+    <section className={adminClass("studio-flow")} aria-labelledby="studio-title">
+      <header className={adminClass("studio-hero")}>
         <div>
-          <p className="admin-eyebrow">Studio Produksi</p>
+          <p className={adminClass("admin-eyebrow")}>Studio Produksi</p>
           <h1 id="studio-title">Buat batch automation</h1>
           <p>Rangkai jumlah motif, aturan prompt, costume, dan video dalam alur produksi yang lebih jelas.</p>
         </div>
-        <Link href="/admin/history" className="admin-primary-action">Lihat batch</Link>
+        <Link href="/admin/history" className={adminClass("admin-primary-action")}>Lihat batch</Link>
       </header>
 
       {loading ? (
-        <div className="admin-loading">
+        <div className={adminClass("admin-loading")}>
           <LoaderCircle size={17} className="animate-spin" aria-hidden="true" />
           Memuat konfigurasi backend...
         </div>
       ) : (
-        <div className="studio-layout">
-          <section className="studio-panel">
-            <div role="tablist" aria-label="Tahap studio" className="studio-tabs">
+        <div className={adminClass("studio-layout")}>
+          <section className={adminClass("studio-panel")}>
+            <div role="tablist" aria-label="Tahap studio" className={adminClass("studio-tabs")}>
               {stages.map((item, index) => (
                 <button
                   key={item.id}
@@ -171,7 +172,7 @@ export function ExploreWorkspace() {
                   role="tab"
                   aria-label={item.label}
                   aria-selected={stage === item.id}
-                  className="studio-tab"
+                  className={adminClass("studio-tab")}
                   data-active={stage === item.id}
                   onClick={() => setStage(item.id)}
                 >
@@ -182,19 +183,19 @@ export function ExploreWorkspace() {
             </div>
 
             {stage === "batch" && (
-              <div className="studio-stage">
+              <div className={adminClass("studio-stage")}>
                 <h2>Konfigurasi batch</h2>
                 <p>Mulai dari ukuran batch dan identitas run. Bagian ini tidak menyentuh aturan prompt.</p>
-                <div className="studio-field-grid">
+                <div className={adminClass("studio-field-grid")}>
                   <label>
                     Jumlah
-                    <input className="studio-input" type="number" min={1} max={500} value={amount} onChange={(event) => setAmount(Number(event.target.value))} />
+                    <input className={adminClass("studio-input")} type="number" min={1} max={500} value={amount} onChange={(event) => setAmount(Number(event.target.value))} />
                   </label>
                   <label>
                     Random seed
-                    <input className="studio-input" inputMode="numeric" value={randomSeed} onChange={(event) => setRandomSeed(event.target.value)} placeholder="Opsional" />
+                    <input className={adminClass("studio-input")} inputMode="numeric" value={randomSeed} onChange={(event) => setRandomSeed(event.target.value)} placeholder="Opsional" />
                   </label>
-                  <label className="studio-checkbox-card">
+                  <label className={adminClass("studio-checkbox-card")}>
                     <input type="checkbox" checked={allowDuplicates} onChange={(event) => setAllowDuplicates(event.target.checked)} />
                     <span>
                       Izinkan prompt duplikat
@@ -206,12 +207,12 @@ export function ExploreWorkspace() {
             )}
 
             {stage === "prompt" && (
-              <div className="studio-stage">
+              <div className={adminClass("studio-stage")}>
                 <h2>Aturan prompt</h2>
                 <p>Pilih cara wordlist dipakai. Mode fixed wajib mengisi kategori bertanda wajib.</p>
                 <label>
                   Mode
-                  <select className="studio-input" value={mode} onChange={(event) => setMode(event.target.value as GenerationMode)}>
+                  <select className={adminClass("studio-input")} value={mode} onChange={(event) => setMode(event.target.value as GenerationMode)}>
                     <option value="random">Random</option>
                     <option value="mixed">Mixed</option>
                     <option value="fixed">Fixed</option>
@@ -219,12 +220,12 @@ export function ExploreWorkspace() {
                 </label>
 
                 {mode !== "random" && (
-                  <div className="studio-field-grid">
+                  <div className={adminClass("studio-field-grid")}>
                     {selectableCategories.map((category) => (
                       <label key={category.id}>
                         {category.name}{category.is_required && mode === "fixed" ? " wajib" : ""}
                         <select
-                          className="studio-input"
+                          className={adminClass("studio-input")}
                           value={fixedSelections[category.code] ?? ""}
                           onChange={(event) => setFixedSelections((current) => ({ ...current, [category.code]: Number(event.target.value) }))}
                         >
@@ -241,15 +242,15 @@ export function ExploreWorkspace() {
             )}
 
             {stage === "media" && (
-              <div className="studio-stage">
+              <div className={adminClass("studio-stage")}>
                 <h2>Media output</h2>
                 <p>Generate motif selalu aktif. Combine dan video mengikuti template yang tersedia.</p>
-                <div className="studio-output-grid">
-                  <label className="studio-checkbox-card">
+                <div className={adminClass("studio-output-grid")}>
+                  <label className={adminClass("studio-checkbox-card")}>
                     <input type="checkbox" checked readOnly />
                     <span>Generate motif<small>Output motif WebP.</small></span>
                   </label>
-                  <label className="studio-checkbox-card">
+                  <label className={adminClass("studio-checkbox-card")}>
                     <input
                       type="checkbox"
                       checked={combineEnabled}
@@ -260,7 +261,7 @@ export function ExploreWorkspace() {
                     />
                     <span>Combine costume<small>Pasangkan motif ke template aktif.</small></span>
                   </label>
-                  <label className="studio-checkbox-card">
+                  <label className={adminClass("studio-checkbox-card")}>
                     <input
                       type="checkbox"
                       checked={videoEnabled}
@@ -277,23 +278,23 @@ export function ExploreWorkspace() {
                 </div>
 
                 {combineEnabled && (
-                  <div className="studio-template-panel">
-                    <div className="studio-template-heading">
+                  <div className={adminClass("studio-template-panel")}>
+                    <div className={adminClass("studio-template-heading")}>
                       <h3>Template costume</h3>
                       <Link href="/admin/templates">Kelola template</Link>
                     </div>
                     <label>
                       Mode template
-                      <select className="studio-input" value={templateMode} onChange={(event) => setTemplateMode(event.target.value as CostumeTemplateMode)}>
+                      <select className={adminClass("studio-input")} value={templateMode} onChange={(event) => setTemplateMode(event.target.value as CostumeTemplateMode)}>
                         <option value="random_one">Pilih satu secara acak</option>
                         <option value="selected">Pilih manual</option>
                         <option value="all" disabled={videoEnabled}>Gunakan semua</option>
                       </select>
                     </label>
                     {templateMode === "selected" && (
-                      <div className="studio-template-list">
+                      <div className={adminClass("studio-template-list")}>
                         {activeTemplates.map((template) => (
-                          <label key={template.id} className="studio-checkbox-card">
+                          <label key={template.id} className={adminClass("studio-checkbox-card")}>
                             <input type="checkbox" checked={selectedTemplateIds.includes(template.id)} onChange={() => toggleTemplate(template.id)} />
                             <span>{template.name}</span>
                           </label>
@@ -301,7 +302,7 @@ export function ExploreWorkspace() {
                       </div>
                     )}
                     {!activeTemplates.length && (
-                      <p className="studio-warning">Belum ada template aktif. Upload template sebelum combine.</p>
+                      <p className={adminClass("studio-warning")}>Belum ada template aktif. Upload template sebelum combine.</p>
                     )}
                   </div>
                 )}
@@ -309,10 +310,10 @@ export function ExploreWorkspace() {
             )}
 
             {stage === "review" && (
-              <div className="studio-stage">
+              <div className={adminClass("studio-stage")}>
                 <h2>Review payload</h2>
                 <p>Cek lagi sebelum batch masuk antrean worker.</p>
-                <section className="studio-review" aria-label="Ringkasan payload">
+                <section className={adminClass("studio-review")} aria-label="Ringkasan payload">
                   <dl>
                     <div><dt>Jumlah</dt><dd>{amount} motif</dd></div>
                     <div><dt>Mode</dt><dd>{modeLabel(mode)}</dd></div>
@@ -327,20 +328,20 @@ export function ExploreWorkspace() {
               </div>
             )}
 
-            <div className="studio-actions">
+            <div className={adminClass("studio-actions")}>
               {stage !== "batch" && (
-                <button type="button" className="admin-logout-button" onClick={goBack}>
+                <button type="button" className={adminClass("admin-logout-button")} onClick={goBack}>
                   <ChevronLeft size={16} aria-hidden="true" />
                   Kembali
                 </button>
               )}
               {stage !== "review" ? (
-                <button type="button" className="admin-primary-action" onClick={goNext}>
+                <button type="button" className={adminClass("admin-primary-action")} onClick={goNext}>
                   {stage === "batch" ? "Lanjut ke prompt" : stage === "prompt" ? "Lanjut ke media" : "Review batch"}
                   <ChevronRight size={16} aria-hidden="true" />
                 </button>
               ) : (
-                <button type="button" disabled={submitting} onClick={() => void submit()} className="admin-primary-action">
+                <button type="button" disabled={submitting} onClick={() => void submit()} className={adminClass("admin-primary-action")}>
                   {submitting ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}
                   Jalankan batch
                 </button>
@@ -348,20 +349,20 @@ export function ExploreWorkspace() {
             </div>
 
             {error && (
-              <div role="alert" className="admin-alert">
+              <div role="alert" className={adminClass("admin-alert")}>
                 <AlertCircle size={17} className="shrink-0" aria-hidden="true" />
                 {error}
               </div>
             )}
             {batchId && (
-              <div className="studio-success">
+              <div className={adminClass("studio-success")}>
                 <span><CheckCircle2 size={17} aria-hidden="true" />Batch {batchId} sudah masuk antrean.</span>
                 <Link href={`/admin/history?batch=${encodeURIComponent(batchId)}`}>Pantau</Link>
               </div>
             )}
           </section>
 
-          <aside className="studio-contract">
+          <aside className={adminClass("studio-contract")}>
             <Workflow size={19} aria-hidden="true" />
             <h2>Kontrak worker</h2>
             <ol>

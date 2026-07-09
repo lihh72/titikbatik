@@ -15,17 +15,11 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("design system", () => {
-  it("keeps transitional archive surfaces opaque and readable for current light text", () => {
+  it("keeps legacy archive surface classes out of the migrated global stylesheet", () => {
     const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
-    const archivePanel = css.match(/\.archive-panel\s*\{([^}]*)\}/)?.[1];
-    const archiveSoft = css.match(/\.archive-soft\s*\{([^}]*)\}/)?.[1];
 
-    expect(archivePanel).toMatch(/\bbackground\s*:\s*var\(--ink\)\s*;/);
-    expect(archivePanel).toMatch(/\bcolor\s*:\s*var\(--paper\)\s*;/);
-    expect(archiveSoft).toMatch(/\bbackground\s*:\s*#26312b\s*;/i);
-    expect(archiveSoft).toMatch(/\bcolor\s*:\s*var\(--paper\)\s*;/);
-    expect(archivePanel).not.toMatch(/backdrop-filter/);
-    expect(archiveSoft).not.toMatch(/backdrop-filter/);
+    expect(css).not.toMatch(/\.archive-panel/);
+    expect(css).not.toMatch(/\.archive-soft/);
   });
 
   it("contains no legacy glass surface class tokens in TSX", () => {
@@ -43,18 +37,14 @@ describe("design system", () => {
     expect(findLegacyConsumers(process.cwd())).toEqual([]);
   });
 
-  it("keeps pressed action feedback after variant hover transforms in the CSS cascade", () => {
-    const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
-    const activeRule = css.match(/\.action:active:not\(:disabled\):not\(\[aria-disabled="true"\]\)\s*\{([^}]*)\}/);
-    const hoverTransformIndices = Array.from(
-      css.matchAll(/\.action-[\w-]+:not\(:disabled\):not\(\[aria-disabled="true"\]\):hover\s*\{[^}]*\btransform\s*:/g),
-      ({ index }) => index,
-    );
+  it("keeps pressed action feedback in component-level Tailwind classes", () => {
+    render(<Action>Jelajahi koleksi</Action>);
+    const action = screen.getByRole("button", { name: "Jelajahi koleksi" });
 
-    expect(activeRule).not.toBeNull();
-    expect(activeRule?.[1]).toMatch(/\btransform\s*:\s*translateY\(1px\)\s+scale\(0\.98\)\s*;/);
-    expect(hoverTransformIndices.length).toBeGreaterThan(0);
-    expect(activeRule?.index).toBeGreaterThan(Math.max(...hoverTransformIndices));
+    expect(action).toHaveClass("action", "action-primary");
+    expect(action.className).toContain("hover:-translate-y-px");
+    expect(action.className).toContain("active:scale-[0.98]");
+    expect(action.className).toContain("hover:bg-[#8c2e21]");
   });
 
   it("renders semantic page and feedback regions", () => {
