@@ -30,11 +30,11 @@ const variantClasses: Record<ActionVariant, string> = {
   primary:
     "action-primary bg-[color:var(--terracotta-dark)] !text-white hover:bg-[#8c2e21]",
   secondary:
-    "action-secondary border-[color:var(--ink)] bg-transparent text-[color:var(--ink)] hover:bg-[color:var(--ink)] hover:text-[color:var(--paper-raised)]",
+    "action-secondary border-[color:var(--line)] bg-transparent text-[color:var(--ink)] hover:border-[color:var(--terracotta-dark)] hover:bg-[color-mix(in_srgb,var(--terracotta)_10%,var(--paper-raised))] hover:text-[color:var(--terracotta-dark)]",
   quiet:
     "action-quiet border-transparent bg-transparent px-1 text-[color:var(--ink)] underline decoration-transparent underline-offset-4 hover:text-[color:var(--terracotta-dark)] hover:decoration-current",
   danger:
-    "action-danger border-[color:var(--danger)] bg-[color:var(--danger)] text-[color:var(--paper-raised)] hover:border-[color:var(--ink)] hover:bg-[color:var(--ink)]",
+    "action-danger border-[color:var(--danger)] bg-[color:var(--danger)] text-[color:var(--paper-raised)] hover:border-[#8f1d14] hover:bg-[#8f1d14]",
 };
 
 export function Action({
