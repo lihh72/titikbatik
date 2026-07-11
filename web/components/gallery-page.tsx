@@ -3,7 +3,7 @@
 import { MotifCard } from "@/components/motif-card";
 import { Feedback } from "@/components/ui/feedback";
 import { PageHeading } from "@/components/ui/page-heading";
-import { listPublicBatiks, readPublicBatiksCache } from "@/lib/automation-api";
+import { listPublicBatiks } from "@/lib/automation-api";
 import type { Batik, Pagination } from "@/lib/automation-types";
 import { Search } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
@@ -15,37 +15,22 @@ const skeletonLineClass = `${skeletonSurfaceClass} h-3 w-full rounded-full`;
 const skeletonButtonClass = `${skeletonSurfaceClass} h-11 w-16 rounded-[var(--radius-sm)]`;
 
 export function GalleryPage() {
-  const initialResult = readPublicBatiksCache({ page: 1, perPage: GALLERY_PAGE_SIZE, query: "" });
-  const [items, setItems] = useState<Batik[]>(() => initialResult?.items ?? []);
-  const [pagination, setPagination] = useState<Pagination>(() => initialResult?.pagination ?? { page: 1, per_page: GALLERY_PAGE_SIZE, total: 0, total_pages: 0 });
+  const [items, setItems] = useState<Batik[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, per_page: GALLERY_PAGE_SIZE, total: 0, total_pages: 0 });
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(() => !initialResult);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    const cached = readPublicBatiksCache({ page, perPage: GALLERY_PAGE_SIZE, query: activeQuery });
-
-    if (cached) {
-      queueMicrotask(() => {
-        if (!active) return;
-        setItems(cached.items);
-        setPagination(cached.pagination);
-        setError(null);
-        setLoading(false);
-      });
-      return () => {
-        active = false;
-      };
-    }
 
     queueMicrotask(() => {
       if (!active) return;
       setLoading(true);
     });
-    listPublicBatiks({ page, perPage: GALLERY_PAGE_SIZE, query: activeQuery })
+    listPublicBatiks({ page, perPage: GALLERY_PAGE_SIZE, query: activeQuery, realtime: true })
       .then((result) => {
         if (active) {
           setItems(result.items);

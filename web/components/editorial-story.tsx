@@ -57,6 +57,29 @@ export function EditorialStory({ items = [] }: { items?: Batik[] }) {
     },
   ];
   const showcaseImages = [...outputImages, ...fallbackImages].slice(0, 2);
+  const usageFallbackImages: ShowcaseImage[] = [
+    {
+      ...showcaseImages[1],
+      alt: `Preview pemakaian ${showcaseImages[1].alt}`,
+    },
+    {
+      ...fallbackImages[1],
+      alt: "Preview pemakaian visual generatif pada material tekstil",
+    },
+  ];
+  const costumeImages: ShowcaseImage[] = items
+    .flatMap((item) =>
+      item.costume_urls.slice(0, 2).map((src, index) => ({
+        src,
+        alt: `Costume preview ${item.keyword}`,
+        caption:
+          index === 0
+            ? `${item.keyword} saat motif masuk ke konteks pemakaian.`
+            : `Variasi pemakaian ${item.keyword} untuk membaca warna dan ritme visual.`,
+      })),
+    )
+    .slice(0, 2);
+  const usageImages = [...costumeImages, ...usageFallbackImages].slice(0, 2);
   const reduceMotion = useReducedMotion();
   const section = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
@@ -111,17 +134,17 @@ export function EditorialStory({ items = [] }: { items?: Batik[] }) {
 
       <div className={chapterClass}>
         <motion.figure
-          className={`${figureClass} col-span-7`}
+          className={`${figureClass} col-span-6`}
           data-motion="image-from-left"
           style={{ rotate: leftImageRotate, scale: imageScale, x: leftImageX, y: imageY }}
         >
-          <div className={`${imageMaskClass} aspect-[4/5]`}>
+          <div className={`${imageMaskClass} mx-auto aspect-[5/4] max-h-[clamp(18rem,42vw,30rem)] w-[min(100%,34rem)] rounded-[18px] max-[52rem]:aspect-[4/3] max-[52rem]:w-full`}>
             <Image
               src={showcaseImages[0].src}
               alt={showcaseImages[0].alt}
               fill
-              sizes="(max-width: 768px) 100vw, 54vw"
-              className="editorial-image object-cover transition-transform duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.035]"
+              sizes="(max-width: 768px) 100vw, 38vw"
+              className="editorial-image rounded-[inherit] object-cover transition-transform duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.035]"
             />
           </div>
           <figcaption className={captionClass}>
@@ -129,7 +152,7 @@ export function EditorialStory({ items = [] }: { items?: Batik[] }) {
           </figcaption>
         </motion.figure>
         <motion.div
-          className={`${copyClass} col-span-5`}
+          className={`${copyClass} col-span-6`}
           data-motion="text-from-right"
           style={{ opacity: textOpacity, x: leftTextX, y: copyY }}
         >
@@ -155,24 +178,33 @@ export function EditorialStory({ items = [] }: { items?: Batik[] }) {
             visualnya bisa dibandingkan dengan lebih cepat.
           </p>
         </motion.div>
-        <motion.figure
+        <motion.div
           className={`${figureClass} col-span-7`}
           data-motion="image-from-right"
           style={{ rotate: rightImageRotate, scale: imageScale, x: rightImageX, y: imageY }}
         >
-          <div className={`${imageMaskClass} aspect-[16/10]`}>
-            <Image
-              src={showcaseImages[1].src}
-              alt={showcaseImages[1].alt}
-              fill
-              sizes="(max-width: 768px) 100vw, 58vw"
-              className="editorial-image object-cover transition-transform duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.035]"
-            />
+          <div className="grid grid-cols-[minmax(0,0.88fr)_minmax(0,0.68fr)] items-start gap-[clamp(0.9rem,2vw,1.6rem)] max-[52rem]:grid-cols-2 max-[36rem]:grid-cols-1">
+            {usageImages.map((image, index) => (
+              <figure
+                className={`m-0 ${index === 1 ? "mt-[clamp(2rem,5vw,4.4rem)] max-[36rem]:mt-0" : ""}`}
+                key={`${image.src}-${index}`}
+              >
+                <div className={`${imageMaskClass} aspect-[4/5] rounded-[18px]`}>
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    fill
+                    sizes={index === 0 ? "(max-width: 768px) 52vw, 34vw" : "(max-width: 768px) 44vw, 26vw"}
+                    className="editorial-image rounded-[inherit] object-cover transition-transform duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.035]"
+                  />
+                </div>
+                <figcaption className={captionClass}>
+                  {image.caption}
+                </figcaption>
+              </figure>
+            ))}
           </div>
-          <figcaption className={captionClass}>
-            {showcaseImages[1].caption}
-          </figcaption>
-        </motion.figure>
+        </motion.div>
       </div>
 
       <section className="mt-[clamp(5rem,9vw,8rem)] max-[52rem]:mt-28" aria-label="Pipeline generative AI">

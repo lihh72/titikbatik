@@ -113,6 +113,31 @@ describe("automation API client", () => {
     expect(result.items[0].costume_files[0].video_url).toBe("/api/automation/public/images/video/video.mp4");
   });
 
+  it("can load public gallery results in real time without client cache", async () => {
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            success: true,
+            message: "ok",
+            data: { items: [], pagination: { page: 1, per_page: 9, total: 0, total_pages: 0 } },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await listPublicBatiks({ page: 1, perPage: 9, query: "", realtime: true });
+    await listPublicBatiks({ page: 1, perPage: 9, query: "", realtime: true });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/automation/public/batiks?page=1&per_page=9",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+  });
+
   it("loads a public batik by encoded slug", async () => {
     const batik = {
       id: 1, slug: "kawung-biru", keyword: "kawung", warna: "biru", style: "modern", seed: 4,

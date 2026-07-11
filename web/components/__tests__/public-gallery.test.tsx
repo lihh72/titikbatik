@@ -110,6 +110,7 @@ describe("public gallery", () => {
         page: 1,
         perPage: 9,
         query: "mega mendung",
+        realtime: true,
       });
     });
     expect(await screen.findByText("Mega Mendung")).toBeInTheDocument();
@@ -157,6 +158,7 @@ describe("public gallery", () => {
         page: 2,
         perPage: 9,
         query: "",
+        realtime: true,
       });
     });
     expect(await screen.findByText("Parang Sore")).toBeInTheDocument();

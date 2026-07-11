@@ -29,7 +29,7 @@ function getRequestMethod(init?: RequestInit) {
 }
 
 function shouldUseClientCache(path: string, init?: RequestInit) {
-  return getRequestMethod(init) === "GET" && path.startsWith(PUBLIC_BASE);
+  return getRequestMethod(init) === "GET" && init?.cache !== "no-store" && path.startsWith(PUBLIC_BASE);
 }
 
 function getCachedValue<T>(key: string): T | null {
@@ -49,7 +49,14 @@ function publicBatikPath(slug: string) {
   return `${PUBLIC_BASE}/batiks/${encodeURIComponent(slug)}`;
 }
 
-function publicBatikListPath(options: { page?: number; perPage?: number; query?: string } = {}) {
+type PublicBatikListOptions = {
+  page?: number;
+  perPage?: number;
+  query?: string;
+  realtime?: boolean;
+};
+
+function publicBatikListPath(options: PublicBatikListOptions = {}) {
   const path = options.query ? "batiks/search" : "batiks";
   return `${PUBLIC_BASE}/${path}${queryString({
     q: options.query,
@@ -148,7 +155,7 @@ export function readPublicBatikCache(slug: string) {
   return getCachedValue<Batik>(publicBatikPath(slug));
 }
 
-export function readPublicBatiksCache(options: { page?: number; perPage?: number; query?: string } = {}) {
+export function readPublicBatiksCache(options: PublicBatikListOptions = {}) {
   return getCachedValue<PublicBatikList>(publicBatikListPath(options));
 }
 
@@ -220,12 +227,12 @@ export const listSettings = () => automationRequest<AppSettings>(`${ADMIN_BASE}/
 export const putSetting = (key: string, value: Record<string, unknown>) =>
   automationRequest<{ key: string; value: Record<string, unknown> }>(`${ADMIN_BASE}/settings/${encodeURIComponent(key)}`, jsonRequest("PUT", value));
 
-export const listPublicBatiks = (options: { page?: number; perPage?: number; query?: string } = {}) => {
+export const listPublicBatiks = (options: PublicBatikListOptions = {}) => {
   const cachePath = publicBatikListPath(options);
-  return automationRequest<PublicBatikList>(cachePath).then((result) => {
+  return automationRequest<PublicBatikList>(cachePath, options.realtime ? { cache: "no-store" } : undefined).then((result) => {
     const items = result.items.map(normalizeBatikMedia);
     const normalized = { ...result, items };
-    setCachedValue(cachePath, normalized);
+    if (!options.realtime) setCachedValue(cachePath, normalized);
     items.forEach(putPublicBatikCache);
     return normalized;
   });
