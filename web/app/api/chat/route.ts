@@ -1,4 +1,5 @@
 import { backendUrl } from "@/lib/server-backend";
+import { planCatalogSearch, type CatalogSearchPlan } from "@/lib/catalog-planner";
 
 type ChatRole = "user" | "assistant" | "system";
 
@@ -110,10 +111,7 @@ function sanitizeMessages(value: unknown): ChatMessage[] | null {
 function extractBatikReference(content: string) {
   const idMatch = content.match(/\bbatik\s*#?\s*(\d+)\b/i) ?? content.match(/#\s*(\d+)\b/);
   if (idMatch) return { id: Number(idMatch[1]), query: null };
-  if (/\b(?:berapa|jumlah)\s+batik\b/i.test(content)) return { id: null, query: null };
-
-  const nameMatch = content.match(/\b(?:nama|motif|batik)\s+([a-z0-9][a-z0-9\s,-]{2,})/i);
-  return { id: null, query: nameMatch?.[1]?.trim().toLowerCase() ?? null };
+  return { id: null, query: null };
 }
 
 function wantsBatikVisual(content: string) {
@@ -137,15 +135,6 @@ function findReferencedBatikMessage(messages: ChatMessage[]) {
       return reference.id !== null || reference.query !== null;
     })());
 }
-function wantsRecommendations(content: string) {
-  const reference = extractBatikReference(content);
-  return /\b(?:rekomendasi|rekomendasikan|saran|cocok)\b/i.test(content) ||
-    /\b(?:lihat|tampilkan|cari)\b/i.test(content) && (
-      reference.query !== null ||
-      /\b(?:warna(?:nya)?|palet|style|gaya|motif|corak|pattern|prompt|seed)\b/i.test(content)
-    );
-}
-
 function publicPreviewUrl(batik: PublicBatik) {
   if (batik.file_preview) {
     return `/api/automation/public/images/preview/${encodeURIComponent(batik.file_preview)}`;
@@ -161,41 +150,6 @@ function publicCostumeUrl(batik: PublicBatik) {
   const filename = batik.costume_files?.[0]?.filename;
   if (filename) return `/api/automation/public/images/costume/${encodeURIComponent(filename)}`;
   return batik.costume_urls?.[0] ?? null;
-}
-
-type BatikReference = ReturnType<typeof extractBatikReference>;
-
-const CATALOG_ALIASES: Record<string, string[]> = {
-  "kupu-kupu": ["kupu kupu", "butterfly"],
-  butterfly: ["butterfly", "kupu kupu"],
-  lotus: ["lotus", "padma"],
-  padma: ["padma", "lotus"],
-  tradisional: ["traditional", "wax resist", "klasik"],
-  tropis: ["tropical"],
-  tropical: ["tropical", "tropis"],
-  modern: ["modern", "contemporary", "geometric"],
-  formal: ["elegant", "formal", "navy", "cream"],
-};
-
-function normalizeCatalogText(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function catalogTerms(content: string, reference = extractBatikReference(content)) {
-  const normalizedContent = normalizeCatalogText(content);
-  const rawTerms = [reference.query ?? ""];
-  const metadataMatches = normalizedContent.matchAll(
-    /\b(?:warna(?:nya)?|palet|style|gaya|motif|corak|pattern|prompt)\s+([a-z0-9]+(?:\s+[a-z0-9]+){0,5})/g,
-  );
-  for (const match of metadataMatches) rawTerms.push(match[1]);
-  const seedMatch = normalizedContent.match(/\bseed\s+(\d+)\b/);
-  if (seedMatch) rawTerms.push(seedMatch[1]);
-
-  for (const [needle, aliases] of Object.entries(CATALOG_ALIASES)) {
-    if (normalizedContent.includes(normalizeCatalogText(needle))) rawTerms.push(...aliases);
-  }
-
-  return [...new Set(rawTerms.map(normalizeCatalogText).filter((term) => term.length >= 3))];
 }
 
 type DateStatistic = {
@@ -230,28 +184,7 @@ async function loadDateStatistic(date: string | null): Promise<DateStatistic | n
   }
 }
 
-function catalogScore(item: PublicBatik, terms: string[]) {
-  const searchable = normalizeCatalogText(
-    `${item.slug} ${item.keyword} ${item.style ?? ""} ${item.warna ?? ""} ${item.positive_prompt ?? ""} ${item.seed ?? ""}`,
-  );
-  return terms.reduce((total, term) => total + (searchable.includes(term) ? 1 : 0), 0);
-}
-
-function matchBatik(items: PublicBatik[], reference: BatikReference, terms: string[]) {
-  if (reference.id !== null) return items.find((item) => item.id === reference.id) ?? null;
-  if (!terms.length) return null;
-
-  const ranked = items
-    .map((item, index) => ({ item, index, score: catalogScore(item, terms) }))
-    .sort((left, right) => right.score - left.score || left.index - right.index);
-  return ranked[0]?.score ? ranked[0].item : null;
-}
-
-async function loadPublicBatikContext(userMessage: string) {
-  const reference = extractBatikReference(userMessage);
-  const terms = catalogTerms(userMessage, reference);
-  if (reference.id === null && !terms.length) return null;
-
+async function loadPublicBatikById(id: number) {
   try {
     const response = await fetch(
       backendUrl(`/api/v1/batiks?per_page=${PUBLIC_BATIK_CONTEXT_LIMIT}`),
@@ -259,33 +192,33 @@ async function loadPublicBatikContext(userMessage: string) {
     );
     if (!response.ok) return null;
     const payload = (await response.json()) as PublicBatikListEnvelope;
-    const items = payload.data?.items ?? [];
-    return matchBatik(items, reference, terms);
+    return payload.data?.items?.find((item) => item.id === id) ?? null;
   } catch {
     return null;
   }
 }
-async function loadRecommendations(userMessage: string) {
-  const reference = extractBatikReference(userMessage);
-  const terms = catalogTerms(userMessage, reference);
 
+async function searchPublicBatiks(queries: string[]) {
   try {
-    const response = await fetch(backendUrl("/api/v1/batiks?per_page=9"), { cache: "no-store" });
-    const payload = await response.json() as PublicBatikListEnvelope;
-    const items = payload.data?.items ?? [];
-    if (!response.ok) return [];
+    const responses = await Promise.all(queries.map((query) =>
+      fetch(backendUrl(`/api/v1/batiks/search?q=${encodeURIComponent(query)}&per_page=9`), { cache: "no-store" }),
+    ));
+    const payloads = await Promise.all(responses.map(async (response) =>
+      response.ok ? (await response.json()) as PublicBatikListEnvelope : null,
+    ));
+    const seen = new Set<number>();
+    const items: PublicBatik[] = [];
 
-    const ranked = items
-      .map((item, index) => {
-        const score = catalogScore(item, terms);
-        return { item, index, score };
-      })
-      .sort((left, right) => right.score - left.score || left.index - right.index);
-    const matches = terms.length ? ranked.filter((candidate) => candidate.score > 0) : ranked;
+    for (const payload of payloads) {
+      for (const item of payload?.data?.items ?? []) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          items.push(item);
+        }
+      }
+    }
 
-    return matches
-      .slice(0, 3)
-      .map(({ item }) => item);
+    return items.slice(0, 3);
   } catch {
     return [];
   }
@@ -421,7 +354,7 @@ function createChatStream(providerStream: ReadableStream<Uint8Array>, batik: Pub
       let buffer = "";
 
       try {
-        for (const candidate of recommendations) { const imageUrl = publicPreviewUrl(candidate); if (imageUrl) controller.enqueue(sseEvent("batik", { id: String(candidate.id), title: `Rekomendasi Batik #${candidate.id}`, previewUrl: imageUrl, detailUrl: `/gallery/${candidate.slug}`, downloadUrl: imageUrl })); }
+        for (const candidate of recommendations) { const imageUrl = publicPreviewUrl(candidate); if (imageUrl) controller.enqueue(sseEvent("batik", { id: String(candidate.id), title: candidate.keyword, previewUrl: imageUrl, detailUrl: `/gallery/${candidate.slug}`, downloadUrl: imageUrl })); }
         const costume = batik && includeCostume ? publicCostumeUrl(batik) : null;
         const previewUrl = costume ?? (batik ? publicPreviewUrl(batik) : null);
         if (!recommendations.length && batik && previewUrl && includeBatikVisual) {
@@ -489,13 +422,26 @@ export async function POST(request: Request) {
   }
 
   try {
-    const recommend = wantsRecommendations(lastMessage.content);
     const referencedMessage = findReferencedBatikMessage(messages);
-    const [batik, recommendations, dateStatistic] = await Promise.all([
-      loadPublicBatikContext(referencedMessage?.content ?? lastMessage.content),
-      recommend ? loadRecommendations(lastMessage.content) : Promise.resolve([]),
-      loadDateStatistic(extractGeneratedDate(lastMessage.content)),
+    const referencedId = referencedMessage ? extractBatikReference(referencedMessage.content).id : null;
+    const requestedDate = extractGeneratedDate(lastMessage.content);
+    const plan: CatalogSearchPlan = referencedId === null && !requestedDate
+      ? await planCatalogSearch({
+          apiKey: process.env.MODEL_API_KEY,
+          baseUrl: (process.env.MODEL_API_BASE_URL ?? "https://api.meta.ai/v1").replace(/\/$/, ""),
+          model: process.env.MODEL_API_MODEL ?? "muse-spark-1.1",
+          message: lastMessage.content,
+        })
+      : { catalog: false, intent: "none", queries: [], needsImage: false, needsCostume: false };
+    const [referencedBatik, searchedBatiks, dateStatistic] = await Promise.all([
+      referencedId === null ? Promise.resolve(null) : loadPublicBatikById(referencedId),
+      plan.catalog ? searchPublicBatiks(plan.queries) : Promise.resolve([]),
+      loadDateStatistic(requestedDate),
     ]);
+    const batik = referencedBatik ?? (plan.intent === "detail" ? searchedBatiks[0] ?? null : null);
+    const recommendations = plan.catalog && (plan.intent === "recommend" || plan.intent === "search" || plan.needsImage)
+      ? searchedBatiks
+      : [];
     const origin = new URL(request.url).origin;
     const providerStream = await callMetaChat(
       buildProviderMessages(messages, image),
@@ -507,7 +453,7 @@ export async function POST(request: Request) {
       Boolean(batik && (
         wantsVisualAction(lastMessage.content) ||
         lastReference.id !== null ||
-        lastReference.query !== null
+        plan.catalog
       ));
     return new Response(createChatStream(providerStream, batik, includeBatikVisual || includeCostume, includeCostume, recommendations), {
       headers: {

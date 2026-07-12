@@ -2,6 +2,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const plannerMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/catalog-planner", () => ({
+  planCatalogSearch: plannerMock,
+}));
+
 import { POST } from "./route";
 
 function chatRequest(body: unknown) {
@@ -62,6 +68,17 @@ describe("chat API route", () => {
     process.env.MODEL_API_KEY = "server-only-model-key";
     process.env.MODEL_API_BASE_URL = "https://api.meta.ai/v1";
     process.env.MODEL_API_MODEL = "muse-spark-1.1";
+    plannerMock.mockImplementation(({ message }: { message: string }) => {
+      const query = message.toLowerCase();
+      if (query.includes("kawung")) return Promise.resolve({ catalog: true, intent: "detail", queries: ["kawung"], needsImage: false, needsCostume: false });
+      if (query.includes("tradisional")) return Promise.resolve({ catalog: true, intent: "recommend", queries: ["traditional", "wax resist"], needsImage: true, needsCostume: false });
+      if (query.includes("kupu-kupu")) return Promise.resolve({ catalog: true, intent: "search", queries: ["butterfly", "bird"], needsImage: true, needsCostume: false });
+      if (query.includes("tropis")) return Promise.resolve({ catalog: true, intent: "search", queries: ["tropical", "leaf"], needsImage: true, needsCostume: false });
+      if (query.includes("lotus")) return Promise.resolve({ catalog: true, intent: "recommend", queries: ["lotus", "padma"], needsImage: true, needsCostume: false });
+      if (query.includes("dark navy")) return Promise.resolve({ catalog: true, intent: "search", queries: ["dark navy", "navy"], needsImage: true, needsCostume: false });
+      if (query.includes("style")) return Promise.resolve({ catalog: true, intent: "search", queries: ["traditional wax resist", "batik"], needsImage: true, needsCostume: false });
+      return Promise.resolve({ catalog: false, intent: "none", queries: [], needsImage: false, needsCostume: false });
+    });
   });
 
   afterEach(() => {
@@ -70,6 +87,30 @@ describe("chat API route", () => {
     delete process.env.MODEL_API_KEY;
     delete process.env.MODEL_API_BASE_URL;
     delete process.env.MODEL_API_MODEL;
+  });
+
+  it("executes backend searches from the planner queries instead of local aliases", async () => {
+    plannerMock.mockResolvedValue({
+      catalog: true,
+      intent: "recommend",
+      queries: ["peacock", "blue"],
+      needsImage: true,
+      needsCostume: false,
+    });
+    const peacock = { ...publicBatikList.data.items[0], id: 4, slug: "peacock-feather", keyword: "peacock feather", file_preview: "peacock.webp" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [peacock] } }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [peacock] } }), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Pilihan terverifikasi." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(chatRequest({ messages: [{ role: "user", content: "Saya ingin batik warna-warni dengan burung" }] }));
+    const payload = await response.text();
+
+    expect(plannerMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:8000/api/v1/batiks/search?q=peacock&per_page=9");
+    expect(fetchMock.mock.calls[1][0]).toBe("http://127.0.0.1:8000/api/v1/batiks/search?q=blue&per_page=9");
+    expect(payload).toContain('"id":"4"');
   });
 
   it("rejects chat requests when the model key is missing", async () => {
@@ -161,7 +202,7 @@ describe("chat API route", () => {
 
     expect(response.status).toBe(200);
     expect(payload).toContain("Motif kawung ini cocok untuk preview halus.");
-    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:8000/api/v1/batiks?per_page=100");
+    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:8000/api/v1/batiks/search?q=kawung&per_page=9");
   });
 
   it("emits a public motif card when the user asks to download Batik #9", async () => {
@@ -256,7 +297,7 @@ describe("chat API route", () => {
     const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
 
     expect(response.status).toBe(200);
-    expect(context).toContain("Batik #7");
+    expect(context).toContain("ID internal: 7");
     expect(context).toContain("batik-pattern-butterfly-scattered-botanical-arrangement");
   });
 
@@ -268,7 +309,7 @@ describe("chat API route", () => {
       keyword: "batik pattern, tropical leaf, scattered botanical arrangement",
       file_preview: "tropical.webp",
     };
-    const catalog = { ...publicBatikList, data: { ...publicBatikList.data, items: [publicBatikList.data.items[0], tropical] } };
+    const catalog = { ...publicBatikList, data: { ...publicBatikList.data, items: [tropical] } };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify(catalog), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify(catalog), { status: 200 }))
@@ -280,7 +321,6 @@ describe("chat API route", () => {
 
     expect(payload).toContain('"id":"8"');
     expect(payload).toContain('"previewUrl":"/api/automation/public/images/preview/tropical.webp"');
-    expect(payload).not.toContain('"id":"9"');
   });
 
   it("ranks the verified lotus catalog item ahead of unrelated recommendations", async () => {
@@ -293,7 +333,7 @@ describe("chat API route", () => {
       file_preview: "lotus.webp",
     };
     const tropical = { ...publicBatikList.data.items[0], id: 8, slug: "batik-tropical-leaf", keyword: "tropical leaf" };
-    const catalog = { ...publicBatikList, data: { ...publicBatikList.data, items: [tropical, lotus] } };
+    const catalog = { ...publicBatikList, data: { ...publicBatikList.data, items: [lotus] } };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify(catalog), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify(catalog), { status: 200 }))
@@ -306,9 +346,8 @@ describe("chat API route", () => {
     const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
     const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
 
-    expect(context).toContain("Batik #9");
+    expect(context).toContain("ID internal: 9");
     expect(payload).toContain('"id":"9"');
-    expect(payload).not.toContain('"id":"8"');
   });
 
   it("finds and shows catalog cards for a requested dark navy palette", async () => {
@@ -320,7 +359,7 @@ describe("chat API route", () => {
       warna: "dark navy and cream",
       file_preview: "lotus-navy.webp",
     };
-    const catalog = { ...publicBatikList, data: { ...publicBatikList.data, items: [publicBatikList.data.items[0], navy] } };
+    const catalog = { ...publicBatikList, data: { ...publicBatikList.data, items: [navy] } };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify(catalog), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify(catalog), { status: 200 }))
@@ -343,7 +382,7 @@ describe("chat API route", () => {
       style: "traditional wax-resist Indonesian batik",
       file_preview: "lotus-traditional.webp",
     };
-    const catalog = { ...publicBatikList, data: { ...publicBatikList.data, items: [publicBatikList.data.items[0], traditional] } };
+    const catalog = { ...publicBatikList, data: { ...publicBatikList.data, items: [traditional] } };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify(catalog), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify(catalog), { status: 200 }))
