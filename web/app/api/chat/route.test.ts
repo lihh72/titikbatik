@@ -126,6 +126,20 @@ describe("chat API route", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("instructs the model to decline requests outside TitikBatik scope", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Maaf, saya fokus pada TitikBatik AI." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "Bantu saya coding" }] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("di luar cakupan TitikBatik AI");
+  });
+
   it("streams Meta tokens while retaining TitikBatik and matching batik context", async () => {
     const fetchMock = vi
       .fn()

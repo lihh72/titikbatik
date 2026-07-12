@@ -247,6 +247,7 @@ function buildSystemPrompt(
     "Jika user meminta URL atau ingin melihat Batik tertentu, berikan satu tautan Markdown langsung tanpa langkah pencarian atau pengantar panjang. Gunakan nama atau keyword motif sebagai teks tautan, bukan label internal seperti 'Batik #6', kecuali user secara eksplisit meminta nomor tersebut. Jangan pernah membuat domain atau pola URL sendiri.",
     "TitikBatik AI adalah galeri output generative AI untuk motif batik, preview costume, video, dan metadata kurasi.",
     "Fokus pada kualitas visual, palet, motif, prompt, seed, costume preview, video, dan cara menjelajahi galeri.",
+    "Jika user meminta bantuan yang di luar cakupan TitikBatik AI, termasuk coding umum atau topik yang tidak terkait batik, galeri, visual AI, atau gambar yang mereka unggah, tolak dengan singkat dan arahkan kembali ke TitikBatik AI.",
     "Jika tidak tahu, katakan dengan jelas dan sarankan membuka galeri atau detail batik terkait.",
     "Jangan mengarang data batik yang tidak tersedia di konteks.",
   ];
@@ -333,7 +334,16 @@ async function callMetaChat(messages: ProviderMessage[], systemPrompt: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Meta Model API mengembalikan status ${response.status}.`);
+    if (response.status === 400 || response.status === 415) {
+      throw new Error("Model AI menolak request atau gambar. Coba gunakan gambar yang lebih kecil atau format JPEG, PNG, WebP, maupun GIF.");
+    }
+    if (response.status === 413) {
+      throw new Error("Gambar terlalu besar untuk diproses model AI. Pilih gambar yang lebih kecil lalu coba lagi.");
+    }
+    if (response.status === 429) {
+      throw new Error("Model AI sedang sibuk atau terkena batas permintaan. Coba lagi sebentar.");
+    }
+    throw new Error(`Model AI sementara gagal merespons (HTTP ${response.status}). Coba lagi.`);
   }
 
   if (!response.body) throw new Error("Meta Model API tidak mengirim stream jawaban.");

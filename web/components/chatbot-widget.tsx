@@ -80,13 +80,39 @@ function readBatikCard(value: Record<string, unknown>): BatikCard | null {
   };
 }
 
-function readImage(file: File) {
+function readImageDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Gambar tidak dapat dibaca."));
     reader.onerror = () => reject(new Error("Gambar tidak dapat dibaca."));
     reader.readAsDataURL(file);
   });
+}
+
+async function readImage(file: File): Promise<Pick<ChatImage, "dataUrl" | "mimeType">> {
+  const dataUrl = await readImageDataUrl(file);
+  if (file.type !== "image/jpeg" || typeof Image === "undefined") {
+    return { dataUrl, mimeType: file.type };
+  }
+
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => reject(new Error("Gambar tidak dapat dibaca."));
+    element.src = dataUrl;
+  });
+  const largestSide = Math.max(image.naturalWidth, image.naturalHeight);
+  if (largestSide <= 1600) return { dataUrl, mimeType: file.type };
+
+  const scale = 1600 / largestSide;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(image.naturalWidth * scale);
+  canvas.height = Math.round(image.naturalHeight * scale);
+  const context = canvas.getContext("2d");
+  if (!context) return { dataUrl, mimeType: file.type };
+
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return { dataUrl: canvas.toDataURL("image/jpeg", 0.82), mimeType: "image/jpeg" };
 }
 
 function readStoredMessages(): ChatMessage[] {
@@ -263,7 +289,8 @@ export function ChatbotWidget() {
     }
 
     try {
-      setAttachment({ dataUrl: await readImage(file), mimeType: file.type, name: file.name });
+      const image = await readImage(file);
+      setAttachment({ ...image, name: file.name });
       setError(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Gambar tidak dapat dibaca.");
@@ -271,15 +298,15 @@ export function ChatbotWidget() {
   }
 
   return (
-    <div className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[90] flex flex-col items-end gap-3 sm:right-6">
+    <div className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[90] flex max-h-[calc(100dvh-1rem-env(safe-area-inset-bottom))] flex-col items-end gap-3 sm:right-6">
       {open && (
         <section
           aria-label="Chatbot TitikBatik AI"
           aria-modal="false"
           role="dialog"
-          className="w-[min(calc(100vw-2rem),25.5rem)] overflow-hidden rounded-[22px] border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color:var(--paper-raised)] shadow-[0_26px_90px_rgba(49,37,25,0.22)]"
+          className="flex max-h-[calc(100dvh-6rem-env(safe-area-inset-bottom))] w-[min(calc(100vw-2rem),25.5rem)] flex-col overflow-hidden rounded-[22px] border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color:var(--paper-raised)] shadow-[0_26px_90px_rgba(49,37,25,0.22)]"
         >
-          <header className="flex items-start justify-between gap-4 border-b border-[color:var(--line)] px-4 py-4">
+          <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[color:var(--line)] px-4 py-4">
             <div className="flex items-start gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[color:var(--terracotta-dark)] text-[color:var(--paper-raised)]">
                 <Bot size={19} aria-hidden="true" />
@@ -309,7 +336,7 @@ export function ChatbotWidget() {
             </div>
           </header>
 
-          <div ref={scrollRef} className="max-h-[min(58vh,28rem)] overflow-y-auto px-4 py-4">
+          <div ref={scrollRef} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-4">
             {!hasMessages && (
               <div className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--paper)] p-4 text-sm leading-6 text-[color:var(--ink-soft)]">
                 {intro}
@@ -334,7 +361,7 @@ export function ChatbotWidget() {
 
                 return (
                 <article
-                  className={`max-w-[88%] rounded-[18px] px-4 py-3 text-sm leading-6 ${
+                  className={`max-w-[88%] min-w-0 break-words rounded-[18px] px-4 py-3 text-sm leading-6 ${
                     message.role === "user"
                       ? "ml-auto bg-[color:var(--terracotta-dark)] text-[color:var(--paper-raised)]"
                       : "mr-auto border border-[color:var(--line)] bg-[color:var(--paper)] text-[color:var(--ink)]"
@@ -360,12 +387,12 @@ export function ChatbotWidget() {
                       remarkPlugins={[remarkGfm]}
                       components={{
                         a: ({ children, node: _node, ...props }) => (
-                          <a {...props} className="font-bold text-[color:var(--terracotta-dark)] underline decoration-[color-mix(in_srgb,var(--terracotta-dark)_45%,transparent)] underline-offset-4" rel="noreferrer" target="_blank">
+                        <a {...props} className="break-words font-bold text-[color:var(--terracotta-dark)] underline decoration-[color-mix(in_srgb,var(--terracotta-dark)_45%,transparent)] underline-offset-4" rel="noreferrer" target="_blank">
                             {children}
                           </a>
                         ),
                         code: ({ children }) => (
-                          <code className="rounded bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] px-1.5 py-0.5 font-mono text-[0.82em]">
+                          <code className="whitespace-pre-wrap break-all rounded bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] px-1.5 py-0.5 font-mono text-[0.82em]">
                             {children}
                           </code>
                         ),
@@ -390,8 +417,8 @@ export function ChatbotWidget() {
           </div>
 
           {error && (
-            <div className="mx-4 mb-3 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--terracotta-dark)_35%,var(--line))] bg-[color-mix(in_srgb,var(--terracotta)_9%,var(--paper))] px-3 py-2 text-sm text-[color:var(--terracotta-dark)]" role="alert">
-              {error}
+            <div className="mx-4 mb-3 shrink-0 break-words rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--terracotta-dark)_35%,var(--line))] bg-[color-mix(in_srgb,var(--terracotta)_9%,var(--paper))] px-3 py-2 text-sm text-[color:var(--terracotta-dark)]" role="alert">
+              <span className="font-bold">Tidak dapat menjawab.</span> {error}
             </div>
           )}
 
@@ -405,7 +432,7 @@ export function ChatbotWidget() {
             </div>
           )}
 
-          <form className="flex items-end gap-2 border-t border-[color:var(--line)] bg-[color:var(--paper)] p-3" onSubmit={submit}>
+          <form className="flex shrink-0 items-end gap-2 border-t border-[color:var(--line)] bg-[color:var(--paper)] p-3" onSubmit={submit}>
             <label className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full border border-[color:var(--line)] text-[color:var(--ink-soft)] transition hover:border-[color:var(--terracotta-dark)] hover:text-[color:var(--terracotta-dark)]" title="Lampirkan gambar batik">
               <ImagePlus size={18} aria-hidden="true" />
               <input
@@ -436,7 +463,7 @@ export function ChatbotWidget() {
               <CornerDownLeft size={17} aria-hidden="true" />
             </button>
           </form>
-          <div className="space-y-1 px-4 pb-3 text-[0.68rem] leading-4 text-[color:var(--ink-soft)]">
+          <div className="shrink-0 space-y-1 px-4 pb-3 text-[0.68rem] leading-4 text-[color:var(--ink-soft)]">
             <p>AI dapat membuat kesalahan. Periksa kembali informasi penting.</p>
             <p className="font-semibold text-[color:var(--ink-soft)]">Model: Muse Spark 1.1 oleh Meta AI</p>
           </div>
