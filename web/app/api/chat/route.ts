@@ -35,7 +35,7 @@ type PublicBatik = {
   file_preview?: string | null;
   preview_url?: string | null;
   costume_urls?: string[];
-  costume_files?: Array<{ filename: string }>;
+  costume_files?: Array<{ filename: string }> | { filename: string };
 };
 
 type PublicBatikListEnvelope = {
@@ -124,7 +124,7 @@ function wantsVisualAction(content: string) {
 }
 
 function wantsCostume(content: string) {
-  return /\b(?:costume|kostum|pakaian|dipakai)\b/i.test(content);
+  return /\b(?:costume|kostum)\w*\b|\b(?:pakaian|dipakai)\b/i.test(content);
 }
 
 function findReferencedBatikMessage(messages: ChatMessage[]) {
@@ -147,9 +147,20 @@ function publicPreviewUrl(batik: PublicBatik) {
 }
 
 function publicCostumeUrl(batik: PublicBatik) {
-  const filename = batik.costume_files?.[0]?.filename;
+  const filename = Array.isArray(batik.costume_files)
+    ? batik.costume_files[0]?.filename
+    : batik.costume_files?.filename;
   if (filename) return `/api/automation/public/images/costume/${encodeURIComponent(filename)}`;
-  return batik.costume_urls?.[0] ?? null;
+  const legacyFilename = batik.costume_urls?.[0]?.match(/^\/api\/image\/([^/?#]+)$/)?.[1];
+  return legacyFilename
+    ? `/api/automation/public/images/costume/${encodeURIComponent(legacyFilename)}`
+    : batik.costume_urls?.[0] ?? null;
+}
+
+function costumeCount(batik: PublicBatik) {
+  if (Array.isArray(batik.costume_files)) return batik.costume_files.length;
+  if (batik.costume_files) return 1;
+  return batik.costume_urls?.length ?? 0;
 }
 
 type DateStatistic = {
@@ -260,7 +271,7 @@ function buildSystemPrompt(
     `Seed: ${batik.seed ?? "tidak tersedia"}`,
     `Prompt: ${batik.positive_prompt ?? "tidak tersedia"}`,
     `Tanggal dibuat: ${batik.created_at}`,
-    `Jumlah costume preview: ${batik.costume_urls?.length ?? batik.costume_files?.length ?? 0}`,
+    `Jumlah costume preview: ${costumeCount(batik)}`,
   ] : base;
 
   if (!recommendations.length) return batikContext.join("\n");

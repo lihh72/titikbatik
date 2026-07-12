@@ -263,6 +263,32 @@ describe("chat API route", () => {
     expect(payload).toContain('"previewUrl":"/api/automation/public/images/costume/kawung-costume.webp"');
   });
 
+  it("recognizes Indonesian costume suffixes and normalizes legacy costume media URLs", async () => {
+    const batikThree = {
+      ...publicBatikList.data.items[0],
+      id: 3,
+      slug: "batik-tropical-leaf",
+      costume_urls: ["/api/image/batik-3-costume.webp"],
+      costume_files: { filename: "batik-3-costume.webp" },
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [batikThree] } }), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Ini costume-nya." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(chatRequest({
+      messages: [
+        { role: "user", content: "Jelaskan Batik #3" },
+        { role: "assistant", content: "Batik #3 tersedia." },
+        { role: "user", content: "costumenya juga" },
+      ],
+    }));
+    const payload = await response.text();
+
+    expect(payload).toContain('"title":"Costume preview Batik #3"');
+    expect(payload).toContain('"previewUrl":"/api/automation/public/images/costume/batik-3-costume.webp"');
+  });
+
   it("emits up to three public cards for a recommendation request", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [{ ...publicBatikList.data.items[0], style: "traditional wax-resist batik" }, { ...publicBatikList.data.items[0], id: 10, slug: "batik-tradisional-2", style: "traditional wax-resist batik", file_preview: "tradisional-2.webp" }] } }), { status: 200 }))
