@@ -75,6 +75,7 @@ describe("chatbot widget", () => {
     );
     const requestBody = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
     expect(requestBody.messages.at(-1)).toMatchObject({ role: "user", content: "Jelaskan Batik #9" });
+    expect(requestBody.supportsBatikCards).toBe(true);
     expect(localStorage.getItem("titikbatik-chat:v1")).toContain("Visual Motif Batik");
   });
 

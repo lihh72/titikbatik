@@ -178,7 +178,7 @@ export function ChatbotWidget() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages, image: requestImage }),
+        body: JSON.stringify({ messages: nextMessages, image: requestImage, supportsBatikCards: true }),
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => null) as { error?: string } | null;
