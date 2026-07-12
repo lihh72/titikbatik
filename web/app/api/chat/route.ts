@@ -117,17 +117,33 @@ function extractBatikReference(content: string) {
 }
 
 function wantsBatikVisual(content: string) {
-  return /\b(?:unduh|download|kirim|tampilkan|lihat|gambar|foto|visual)\b/i.test(content) &&
+  return wantsVisualAction(content) &&
     (extractBatikReference(content).id !== null || extractBatikReference(content).query !== null);
+}
+
+function wantsVisualAction(content: string) {
+  return /\b(?:unduh|download|kirim|tampilkan|lihat|gambar|foto|visual)\b/i.test(content);
 }
 
 function wantsCostume(content: string) {
   return /\b(?:costume|kostum|pakaian|dipakai)\b/i.test(content);
 }
+
+function findReferencedBatikMessage(messages: ChatMessage[]) {
+  return [...messages]
+    .reverse()
+    .find((message) => message.role === "user" && (() => {
+      const reference = extractBatikReference(message.content);
+      return reference.id !== null || reference.query !== null;
+    })());
+}
 function wantsRecommendations(content: string) {
+  const reference = extractBatikReference(content);
   return /\b(?:rekomendasi|rekomendasikan|saran|cocok)\b/i.test(content) ||
-    /\b(?:lihat|tampilkan|cari)\b/i.test(content) &&
-      /\b(?:warna(?:nya)?|palet|style|gaya|motif|corak|pattern|prompt|seed)\b/i.test(content);
+    /\b(?:lihat|tampilkan|cari)\b/i.test(content) && (
+      reference.query !== null ||
+      /\b(?:warna(?:nya)?|palet|style|gaya|motif|corak|pattern|prompt|seed)\b/i.test(content)
+    );
 }
 
 function publicPreviewUrl(batik: PublicBatik) {
@@ -155,6 +171,8 @@ const CATALOG_ALIASES: Record<string, string[]> = {
   lotus: ["lotus", "padma"],
   padma: ["padma", "lotus"],
   tradisional: ["traditional", "wax resist", "klasik"],
+  tropis: ["tropical"],
+  tropical: ["tropical", "tropis"],
   modern: ["modern", "contemporary", "geometric"],
   formal: ["elegant", "formal", "navy", "cream"],
 };
@@ -257,12 +275,15 @@ async function loadRecommendations(userMessage: string) {
     const items = payload.data?.items ?? [];
     if (!response.ok) return [];
 
-    return items
+    const ranked = items
       .map((item, index) => {
         const score = catalogScore(item, terms);
         return { item, index, score };
       })
-      .sort((left, right) => right.score - left.score || left.index - right.index)
+      .sort((left, right) => right.score - left.score || left.index - right.index);
+    const matches = terms.length ? ranked.filter((candidate) => candidate.score > 0) : ranked;
+
+    return matches
       .slice(0, 3)
       .map(({ item }) => item);
   } catch {
@@ -469,8 +490,9 @@ export async function POST(request: Request) {
 
   try {
     const recommend = wantsRecommendations(lastMessage.content);
+    const referencedMessage = findReferencedBatikMessage(messages);
     const [batik, recommendations, dateStatistic] = await Promise.all([
-      loadPublicBatikContext(lastMessage.content),
+      loadPublicBatikContext(referencedMessage?.content ?? lastMessage.content),
       recommend ? loadRecommendations(lastMessage.content) : Promise.resolve([]),
       loadDateStatistic(extractGeneratedDate(lastMessage.content)),
     ]);
@@ -480,7 +502,14 @@ export async function POST(request: Request) {
       buildSystemPrompt(batik, origin, recommendations, dateStatistic),
     );
     const includeCostume = wantsCostume(lastMessage.content);
-    return new Response(createChatStream(providerStream, batik, wantsBatikVisual(lastMessage.content) || includeCostume, includeCostume, recommendations), {
+    const lastReference = extractBatikReference(lastMessage.content);
+    const includeBatikVisual = wantsBatikVisual(lastMessage.content) ||
+      Boolean(batik && (
+        wantsVisualAction(lastMessage.content) ||
+        lastReference.id !== null ||
+        lastReference.query !== null
+      ));
+    return new Response(createChatStream(providerStream, batik, includeBatikVisual || includeCostume, includeCostume, recommendations), {
       headers: {
         "Cache-Control": "no-cache, no-transform",
         Connection: "keep-alive",
