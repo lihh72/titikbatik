@@ -1,3 +1,4 @@
+import { ChatbotWidget } from "@/components/chatbot-widget";
 import { PublicFooter } from "@/components/public-footer";
 import { PublicNavbar } from "@/components/public-navbar";
 
@@ -15,6 +16,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       <PublicFooter />
+      <ChatbotWidget />
     </div>
   );
 }

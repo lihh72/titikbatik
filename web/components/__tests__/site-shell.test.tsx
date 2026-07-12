@@ -44,6 +44,7 @@ describe("public site shell", () => {
     expect(brand).toHaveAttribute("href", "/");
     expect(brand.querySelector(".logo-mark")).toHaveAttribute("aria-hidden", "true");
     expect(screen.getByRole("link", { name: "Lewati ke konten" })).toHaveAttribute("href", "#main-content");
+    expect(screen.getByRole("button", { name: "Buka chatbot TitikBatik AI" })).toBeInTheDocument();
   });
 
   it("opens and closes the accessible mobile navigation", () => {

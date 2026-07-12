@@ -40,6 +40,8 @@ automation/storage/templates/*
 # Local agent and review artifacts
 /.codex-screenshots/
 /.superpowers/
+/docs/superpowers/
 
 # Local test, server, and generated report output
 /output/
+*.log
