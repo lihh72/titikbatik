@@ -357,14 +357,7 @@ function readProviderEvent(block: string) {
   }
 }
 
-function createChatStream(
-  providerStream: ReadableStream<Uint8Array>,
-  batik: PublicBatik | null,
-  includeBatikVisual: boolean,
-  includeCostume: boolean,
-  recommendations: PublicBatik[],
-  includeMarkdownMediaFallback: boolean,
-) {
+function createChatStream(providerStream: ReadableStream<Uint8Array>, batik: PublicBatik | null, includeBatikVisual: boolean, includeCostume: boolean, recommendations: PublicBatik[]) {
   return new ReadableStream<Uint8Array>({
     async start(controller) {
       const reader = providerStream.getReader();
@@ -372,13 +365,7 @@ function createChatStream(
       let buffer = "";
 
       try {
-        for (const candidate of recommendations) {
-          const imageUrl = publicPreviewUrl(candidate);
-          if (imageUrl) {
-            controller.enqueue(sseEvent("batik", { id: String(candidate.id), title: candidate.keyword, previewUrl: imageUrl, detailUrl: `/gallery/${candidate.slug}`, downloadUrl: imageUrl }));
-            if (includeMarkdownMediaFallback) controller.enqueue(sseEvent("token", { content: `![${candidate.keyword}](${imageUrl})` }));
-          }
-        }
+        for (const candidate of recommendations) { const imageUrl = publicPreviewUrl(candidate); if (imageUrl) controller.enqueue(sseEvent("batik", { id: String(candidate.id), title: candidate.keyword, previewUrl: imageUrl, detailUrl: `/gallery/${candidate.slug}`, downloadUrl: imageUrl })); }
         const costume = batik && includeCostume ? publicCostumeUrl(batik) : null;
         const previewUrl = costume ?? (batik ? publicPreviewUrl(batik) : null);
         if (!recommendations.length && batik && previewUrl && includeBatikVisual) {
@@ -389,7 +376,6 @@ function createChatStream(
             detailUrl: `/gallery/${batik.slug}`,
             downloadUrl: previewUrl,
           }));
-          if (includeMarkdownMediaFallback) controller.enqueue(sseEvent("token", { content: `![${costume ? `Costume preview Batik #${batik.id}` : `Batik #${batik.id}`}](${previewUrl})` }));
         }
 
         while (true) {
@@ -426,9 +412,9 @@ export async function POST(request: Request) {
     return jsonError("MODEL_API_KEY belum dikonfigurasi pada server web.", 500);
   }
 
-  let body: { messages?: unknown; image?: unknown; supportsBatikCards?: unknown };
+  let body: { messages?: unknown; image?: unknown };
   try {
-    body = await request.json() as { messages?: unknown; image?: unknown; supportsBatikCards?: unknown };
+    body = await request.json() as { messages?: unknown };
   } catch {
     return jsonError("Body request harus berupa JSON.", 400);
   }
@@ -480,14 +466,7 @@ export async function POST(request: Request) {
         lastReference.id !== null ||
         plan.catalog
       ));
-    return new Response(createChatStream(
-      providerStream,
-      batik,
-      includeBatikVisual || includeCostume,
-      includeCostume,
-      recommendations,
-      body.supportsBatikCards !== true,
-    ), {
+    return new Response(createChatStream(providerStream, batik, includeBatikVisual || includeCostume, includeCostume, recommendations), {
       headers: {
         "Cache-Control": "no-cache, no-transform",
         Connection: "keep-alive",

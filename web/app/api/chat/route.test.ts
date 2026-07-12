@@ -222,7 +222,6 @@ describe("chat API route", () => {
     expect(payload).toContain("event: batik");
     expect(payload).toContain('"id":"9"');
     expect(payload).toContain('"previewUrl":"/api/automation/public/images/preview/kawung.webp"');
-    expect(payload).toContain("![Batik #9](/api/automation/public/images/preview/kawung.webp)");
   });
 
   it("keeps the most recent batik reference for a follow-up request to see its image", async () => {
