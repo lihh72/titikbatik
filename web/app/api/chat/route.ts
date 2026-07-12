@@ -268,7 +268,7 @@ function buildSystemPrompt(
   return [
     ...batikContext,
     "",
-    "Kandidat rekomendasi terverifikasi. Pilih berdasarkan preferensi user, sebutkan paling banyak tiga, dan gunakan URL persis di bawah ini bila diperlukan:",
+    "Kandidat rekomendasi terverifikasi. Kartu gambar kandidat sudah tampil otomatis di UI, jadi jangan mengulangi daftar tautan atau judul panjang. Berikan ringkasan singkat yang merujuk ke kartu tersebut.",
     ...recommendations.map((candidate) => [
       `ID internal: ${candidate.id}`,
       `Judul tautan: ${candidate.keyword}`,

@@ -98,7 +98,9 @@ describe("chatbot widget", () => {
     await user.click(screen.getByRole("button", { name: "Kirim pesan" }));
 
     expect(await screen.findByAltText("Gambar yang dikirim: motif.webp")).toBeInTheDocument();
-    expect(await screen.findByRole("img", { name: "Batik #9" })).toHaveAttribute("src", "/preview/kawung.webp");
+    const catalogPreview = await screen.findByRole("img", { name: "Batik #9" });
+    expect(catalogPreview).toHaveAttribute("src", "/preview/kawung.webp");
+    expect(catalogPreview).toHaveClass("size-20");
     expect(screen.getByRole("link", { name: "Unduh motif" })).toHaveAttribute("href", "/preview/kawung.webp");
     expect(localStorage.getItem("titikbatik-chat:v1")).not.toContain("image-data");
   });

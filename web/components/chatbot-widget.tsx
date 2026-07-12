@@ -343,10 +343,10 @@ export function ChatbotWidget() {
                 >
                   {message.attachment && <img alt={`Gambar yang dikirim: ${message.attachment.name}`} className="mb-2 max-h-40 w-full rounded-[12px] object-cover" src={message.attachment.dataUrl} />}
                   {batikCards.map((batikCard) => (
-                    <div className="mb-3 overflow-hidden rounded-[14px] border border-[color:var(--line)] bg-[color:var(--paper-raised)]" key={`${message.id}-${batikCard.id}`}>
-                      <img alt={batikCard.title} className="aspect-square w-full object-cover" src={batikCard.previewUrl} />
-                      <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-                        <a className="min-w-0 truncate text-xs font-extrabold text-[color:var(--ink)] underline decoration-[color:var(--terracotta-dark)_45%] underline-offset-4" href={batikCard.detailUrl}>
+                    <div className="mb-2 flex min-w-0 items-center gap-3 rounded-[14px] border border-[color:var(--line)] bg-[color:var(--paper-raised)] p-2" key={`${message.id}-${batikCard.id}`}>
+                      <img alt={batikCard.title} className="size-20 shrink-0 rounded-[10px] object-cover" src={batikCard.previewUrl} />
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <a className="line-clamp-2 min-w-0 flex-1 text-xs font-extrabold leading-5 text-[color:var(--ink)] underline decoration-[color:var(--terracotta-dark)_45%] underline-offset-4" href={batikCard.detailUrl}>
                           {batikCard.title}
                         </a>
                         <a aria-label="Unduh motif" className="grid size-8 shrink-0 place-items-center rounded-full text-[color:var(--terracotta-dark)] transition hover:bg-[color-mix(in_srgb,var(--terracotta)_10%,var(--paper))]" download href={batikCard.downloadUrl}>
