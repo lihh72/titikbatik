@@ -47,6 +47,29 @@ const publicBatikList = {
   },
 };
 
+function publicStatistics({
+  count,
+  latestDate,
+  query = null,
+  date = null,
+}: {
+  count: number;
+  latestDate: string | null;
+  query?: string | null;
+  date?: string | null;
+}) {
+  return {
+    success: true,
+    message: "ok",
+    data: {
+      count,
+      latest_date: latestDate,
+      query,
+      date,
+    },
+  };
+}
+
 function providerStream(...chunks: string[]) {
   return new Response(
     new ReadableStream({
@@ -138,6 +161,209 @@ describe("chat API route", () => {
     const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
 
     expect(context).toContain("di luar cakupan TitikBatik AI");
+  });
+
+  it("keeps an explicit English language preference across the conversation", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Yes, I can answer in English." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [
+      { role: "user", content: "Can you speak English in this conversation?" },
+      { role: "assistant", content: "Yes." },
+      { role: "user", content: "Tell me about TitikBatik" },
+    ] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+  });
+
+  it("accepts a concise English language preference", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Sure." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "English, please." }] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+  });
+
+  it("does not treat a question about a language as a switch command", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "No, I am answering in English." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [
+      { role: "user", content: "Please reply in English." },
+      { role: "assistant", content: "Sure." },
+      { role: "user", content: "Is this Indonesian?" },
+    ] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+  });
+
+  it("recognizes a first-person language preference", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Understood." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "I prefer English from now on." }] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+  });
+
+  it("uses the last explicit language instruction", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Baik." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [
+      { role: "user", content: "Please reply in English." },
+      { role: "assistant", content: "Understood." },
+      { role: "user", content: "Please reply in Indonesian." },
+    ] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Indonesia");
+  });
+
+  it.each([
+    "Switch from Indonesian to English.",
+    "Don't reply in Indonesian; use English.",
+    "I'd prefer English from now on.",
+    "Bahasa Inggris, ya.",
+    "Jangan gunakan bahasa Indonesia, pakai bahasa Inggris.",
+  ])("recognizes an English switch without being confused by other language mentions: %s", async (content) => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Understood." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content }] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+  });
+
+  it("recognizes an Indonesian preference with a leading preposition", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Baik." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "In Indonesian, please." }] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Indonesia");
+  });
+
+  it("does not persist a diagnostic question as a language switch", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "I will continue in English." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [
+      { role: "user", content: "Please reply in English." },
+      { role: "assistant", content: "Understood." },
+      { role: "user", content: "Why did you reply in Indonesian?" },
+    ] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+  });
+
+  it("treats an explicit language negation as the opposite supported preference", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Understood." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "Please don't reply in Indonesian." }] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+  });
+
+  it("does not persist a yes-or-no question about the previous response language", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Yes." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [
+      { role: "user", content: "Please reply in English." },
+      { role: "assistant", content: "Understood." },
+      { role: "user", content: "Did you reply in Indonesian?" },
+    ] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+  });
+
+  it("answers a short, clearly English request in English", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicBatikList), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(
+        JSON.stringify({ choices: [{ delta: { content: "This motif uses a geometric composition." } }] }),
+      ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "Explain Batik #9." }] }));
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+  });
+
+  it("retains a language preference beyond the provider history limit", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Here is TitikBatik." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [
+      { role: "user", content: "Please reply in English." },
+      ...Array.from({ length: 12 }, (_, index) => ({
+        role: index % 2 === 0 ? "assistant" : "user",
+        content: `Message ${index + 1}`,
+      })),
+      { role: "user", content: "Tell me about TitikBatik." },
+    ] }));
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
   });
 
   it("streams Meta tokens while retaining TitikBatik and matching batik context", async () => {
@@ -262,6 +488,27 @@ describe("chat API route", () => {
 
     expect(payload).toContain('"id":"4"');
     expect(payload).toContain('"previewUrl":"/api/automation/public/images/preview/peacock.webp"');
+  });
+
+  it.each(["Show it.", "Can I see the image?"])("emits the active batik image for an English follow-up: %s", async (question) => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicBatikList), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(
+        JSON.stringify({ choices: [{ delta: { content: "Here is the image." } }] }),
+      ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(chatRequest({
+      messages: [
+        { role: "user", content: "Explain Batik #9" },
+        { role: "assistant", content: "Batik #9 is a kawung motif." },
+        { role: "user", content: question },
+      ],
+    }));
+    const payload = await response.text();
+
+    expect(payload).toContain("event: batik");
+    expect(payload).toContain('"id":"9"');
   });
 
   it("emits a public costume card when the user asks for costume Batik #9", async () => {
@@ -437,11 +684,8 @@ describe("chat API route", () => {
   });
 
   it("provides the verified generation count for an Indonesian calendar date", async () => {
-    const onJulyFirst = { ...publicBatikList.data.items[0], id: 1, created_at: "2026-07-01T08:00:00Z" };
-    const secondOnJulyFirst = { ...publicBatikList.data.items[0], id: 2, created_at: "2026-07-01T15:30:00Z" };
-    const anotherDay = { ...publicBatikList.data.items[0], id: 3, created_at: "2026-07-02T08:00:00Z" };
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [onJulyFirst, secondOnJulyFirst, anotherDay] } }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 2, latestDate: "2026-07-01", date: "2026-07-01" })), { status: 200 }))
       .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Terdapat 2 batik." } }] })));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -451,8 +695,335 @@ describe("chat API route", () => {
     const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
 
     expect(response.status).toBe(200);
+    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:8000/api/v1/catalog/batiks/statistics?date=2026-07-01");
     expect(context).toContain("2026-07-01");
     expect(context).toContain("2 batik");
+  });
+
+  it("infers the current year when an Indonesian date omits the year", async () => {
+    const currentYear = new Date().getFullYear();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 2, latestDate: `${currentYear}-07-11`, date: `${currentYear}-07-11` })), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Ada 2 batik." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "Tanggal 11 Juli ada berapa batik yang di-generate?" }] }));
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain(`${currentYear}-07-11`);
+    expect(context).toContain("2 batik");
+  });
+
+  it("answers an English catalog count question with an English date", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 2, latestDate: "2026-07-11", date: "2026-07-11" })), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Two batiks were generated." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "How many batiks were generated on July 11, 2026?" }] }));
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Gunakan bahasa Inggris");
+    expect(context).toContain("2026-07-11");
+    expect(context).toContain("2 batik");
+  });
+
+  it("provides the latest verified generation date from the catalog", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 10, latestDate: "2026-07-11" })), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Motif terbaru dibuat 11 Juli 2026." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "Motif terbaru di-generate tanggal berapa?" }] }));
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Tanggal generasi terbaru terverifikasi: 2026-07-11");
+  });
+
+  it.each([
+    "Tanggal generasi terbaru kapan?",
+    "When was the last batik generated?",
+  ])("recognizes common latest-generation wording: %s", async (question) => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 10, latestDate: "2026-07-11" })), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "11 July 2026." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: question }] }));
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("Tanggal generasi terbaru terverifikasi: 2026-07-11");
+    expect(plannerMock).toHaveBeenCalledOnce();
+  });
+
+  it("keeps catalog search and media cards for a latest-date discovery request", async () => {
+    plannerMock.mockResolvedValue({ catalog: true, intent: "search", queries: ["blue"], needsImage: true, needsCostume: false });
+    const blue = { ...publicBatikList.data.items[0], id: 4, slug: "blue-peacock", keyword: "blue peacock batik", file_preview: "blue.webp", created_at: "2026-07-07T08:00:00Z" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 1, latestDate: "2026-07-07", query: "blue" })), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [blue] } }), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Here is the latest blue batik." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(chatRequest({ messages: [{ role: "user", content: "Show me the latest blue batik and tell me its date." }] }));
+    const payload = await response.text();
+    const [, init] = fetchMock.mock.calls[2] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(plannerMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:8000/api/v1/catalog/batiks/statistics?q=blue");
+    expect(fetchMock.mock.calls[1][0]).toBe("http://127.0.0.1:8000/api/v1/batiks/search?q=blue&per_page=9&date=2026-07-07");
+    expect(context).toContain("Tanggal generasi terbaru terverifikasi: 2026-07-07");
+    expect(context).toContain("Tanggal dibuat: 2026-07-07T08:00:00Z");
+    expect(payload).toContain('"id":"4"');
+  });
+
+  it("keeps catalog search for batiks generated on a requested date", async () => {
+    plannerMock.mockResolvedValue({ catalog: true, intent: "search", queries: ["blue"], needsImage: true, needsCostume: false });
+    const wrongDate = { ...publicBatikList.data.items[0], id: 3, slug: "old-blue", keyword: "old blue batik", file_preview: "old-blue.webp", created_at: "2026-07-10T08:00:00Z" };
+    const blue = { ...publicBatikList.data.items[0], id: 4, slug: "blue-peacock", keyword: "blue peacock batik", file_preview: "blue.webp", created_at: "2026-07-11T08:00:00Z" };
+    const catalog = { ...publicBatikList, data: { ...publicBatikList.data, items: [wrongDate, blue] } };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 1, latestDate: "2026-07-11", query: "blue", date: "2026-07-11" })), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(catalog), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Here is a blue batik from that date." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(chatRequest({ messages: [{ role: "user", content: "Show blue batiks generated July 11, 2026." }] }));
+    const payload = await response.text();
+    const [, init] = fetchMock.mock.calls[2] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(plannerMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:8000/api/v1/catalog/batiks/statistics?date=2026-07-11&q=blue");
+    expect(fetchMock.mock.calls[1][0]).toBe("http://127.0.0.1:8000/api/v1/batiks/search?q=blue&per_page=9&date=2026-07-11");
+    expect(context).toContain("Statistik katalog terverifikasi untuk 2026-07-11: 1 batik");
+    expect(payload).toContain('"id":"4"');
+    expect(payload).not.toContain('"id":"3"');
+  });
+
+  it("uses a planner filter for a statistics-only catalog question", async () => {
+    plannerMock.mockResolvedValue({ catalog: true, intent: "search", queries: ["blue"], needsImage: false, needsCostume: false });
+    const blue = { ...publicBatikList.data.items[0], id: 4, slug: "blue-peacock", keyword: "blue peacock batik", file_preview: "blue.webp", created_at: "2026-07-11T08:00:00Z" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 1, latestDate: "2026-07-11", query: "blue", date: "2026-07-11" })), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [blue] } }), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "One blue batik was generated." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "How many blue batiks were generated on July 11, 2026?" }] }));
+    const [, init] = fetchMock.mock.calls[2] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(plannerMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:8000/api/v1/catalog/batiks/statistics?date=2026-07-11&q=blue");
+    expect(fetchMock.mock.calls[1][0]).toBe("http://127.0.0.1:8000/api/v1/batiks/search?q=blue&per_page=9&date=2026-07-11");
+    expect(context).toContain("2026-07-11: 1 batik");
+  });
+
+  it("does not label a failed aggregate request as verified", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Data belum dapat diverifikasi." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "Berapa batik yang dibuat tanggal 11 Juli 2026?" }] }));
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).not.toContain("Statistik katalog terverifikasi");
+  });
+
+  it("does not fall back to global statistics when planning fails", async () => {
+    plannerMock.mockResolvedValue({
+      catalog: false,
+      intent: "none",
+      queries: [],
+      needsImage: false,
+      needsCostume: false,
+      resolved: false,
+    });
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Data belum dapat diverifikasi." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "How many blue batiks were generated on July 11, 2026?" }] }));
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(url).toBe("https://api.meta.ai/v1/chat/completions");
+    expect(context).not.toContain("Statistik katalog terverifikasi");
+  });
+
+  it("does not trust a semantically unfiltered plan for a message containing a catalog filter", async () => {
+    plannerMock.mockResolvedValue({
+      catalog: false,
+      intent: "none",
+      queries: [],
+      needsImage: false,
+      needsCostume: false,
+      resolved: true,
+      statisticsScope: "filtered",
+    });
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Data filter belum dapat diverifikasi." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "How many blue batiks were generated on July 11, 2026?" }] }));
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(url).toBe("https://api.meta.ai/v1/chat/completions");
+    expect(context).not.toContain("Statistik katalog terverifikasi");
+  });
+
+  it("does not broaden cards when planning a filtered discovery request fails", async () => {
+    plannerMock.mockResolvedValue({
+      catalog: false,
+      intent: "none",
+      queries: [],
+      needsImage: false,
+      needsCostume: false,
+      resolved: false,
+    });
+    const fetchMock = vi.fn().mockResolvedValueOnce(providerStream(
+      JSON.stringify({ choices: [{ delta: { content: "Katalog belum dapat dicari." } }] }),
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(chatRequest({ messages: [{ role: "user", content: "Show blue batiks generated July 11, 2026." }] }));
+    const payload = await response.text();
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(payload).not.toContain("event: batik");
+  });
+
+  it("does not let an old Batik reference suppress a new filtered statistics plan", async () => {
+    plannerMock.mockResolvedValue({ catalog: true, intent: "search", queries: ["blue"], needsImage: false, needsCostume: false });
+    const blue = { ...publicBatikList.data.items[0], id: 4, slug: "blue-peacock", keyword: "blue peacock batik", file_preview: "blue.webp", created_at: "2026-07-11T08:00:00Z" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 1, latestDate: "2026-07-11", query: "blue", date: "2026-07-11" })), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [blue] } }), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "One blue batik." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [
+      { role: "user", content: "Jelaskan Batik #9" },
+      { role: "assistant", content: "Batik #9 adalah motif lotus." },
+      { role: "user", content: "How many blue batiks were generated on July 11, 2026?" },
+    ] }));
+    const [, init] = fetchMock.mock.calls[2] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(plannerMock).toHaveBeenCalledOnce();
+    expect(context).toContain("Filter katalog: blue");
+    expect(context).not.toContain("Batik #9\n");
+  });
+
+  it("does not treat a pronoun inside a new filtered catalog request as a Batik follow-up", async () => {
+    plannerMock.mockResolvedValue({ catalog: true, intent: "search", queries: ["blue"], needsImage: true, needsCostume: false });
+    const blue = { ...publicBatikList.data.items[0], id: 4, slug: "blue-peacock", keyword: "blue peacock batik", file_preview: "blue.webp", created_at: "2026-07-11T08:00:00Z" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 1, latestDate: "2026-07-11", query: "blue" })), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [blue] } }), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "The latest blue batik is here." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(chatRequest({ messages: [
+      { role: "user", content: "Jelaskan Batik #9" },
+      { role: "assistant", content: "Batik #9 adalah motif lotus." },
+      { role: "user", content: "What is the latest blue batik and when was it generated?" },
+    ] }));
+    const payload = await response.text();
+    const [, init] = fetchMock.mock.calls[2] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(plannerMock).toHaveBeenCalledOnce();
+    expect(context).not.toContain("Batik #9\n");
+    expect(payload).toContain('"id":"4"');
+  });
+
+  it("keeps a verified zero-match result for the latest filtered batik", async () => {
+    plannerMock.mockResolvedValue({ catalog: true, intent: "search", queries: ["magenta"], needsImage: false, needsCostume: false });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 0, latestDate: null, query: "magenta" })), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [] } }), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "No matching batik exists." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: "When was the latest magenta batik generated?" }] }));
+    const [, init] = fetchMock.mock.calls[2] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("tidak menemukan batik");
+    expect(context).toContain("magenta");
+  });
+
+  it.each([
+    { question: "Show batiks generated July 11, 2026.", date: "2026-07-11" },
+    { question: "Show batiks that were generated July 11, 2026.", date: "2026-07-11" },
+    { question: "Show the latest batik.", date: "2026-07-12" },
+    { question: "What is the latest batik?", date: "2026-07-12" },
+    { question: "Which batik is the latest?", date: "2026-07-12" },
+  ])("loads unfiltered catalog cards for date-scoped discovery: $question", async ({ question, date }) => {
+    plannerMock.mockResolvedValue({ catalog: false, intent: "none", queries: [], needsImage: false, needsCostume: false, resolved: true });
+    const item = { ...publicBatikList.data.items[0], id: 12, slug: "latest-batik", keyword: "latest batik", file_preview: "latest.webp", created_at: `${date}T08:00:00Z` };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 1, latestDate: date, date: question.includes("July") ? date : null })), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...publicBatikList, data: { ...publicBatikList.data, items: [item] } }), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Here is the requested batik." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(chatRequest({ messages: [{ role: "user", content: question }] }));
+    const payload = await response.text();
+
+    expect(fetchMock.mock.calls[1][0]).toBe(`http://127.0.0.1:8000/api/v1/batiks?page=1&per_page=9&date=${date}`);
+    expect(payload).toContain('"id":"12"');
+  });
+
+  it.each([
+    "How many batiks have been generated on July 11th, 2026?",
+    "Berapa banyak batik yang sudah di-generate tanggal 11 Juli 2026?",
+  ])("keeps verified global statistics for natural unfiltered wording: %s", async (question) => {
+    plannerMock.mockResolvedValue({
+      catalog: false,
+      intent: "none",
+      queries: [],
+      needsImage: false,
+      needsCostume: false,
+      resolved: true,
+      statisticsScope: "global",
+    });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(publicStatistics({ count: 2, latestDate: "2026-07-11", date: "2026-07-11" })), { status: 200 }))
+      .mockResolvedValueOnce(providerStream(JSON.stringify({ choices: [{ delta: { content: "Two batiks." } }] })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(chatRequest({ messages: [{ role: "user", content: question }] }));
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const requestBody = JSON.parse(init.body as string) as { messages: Array<{ role: string; content: string }> };
+    const context = requestBody.messages.find((message) => message.role === "system")?.content ?? "";
+
+    expect(context).toContain("2026-07-11: 2 batik");
   });
 
   it("forwards a validated temporary image as a vision content part without storing it", async () => {

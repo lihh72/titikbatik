@@ -42,6 +42,22 @@ type PublicBatikListEnvelope = {
   success: boolean;
   data?: {
     items?: PublicBatik[];
+    pagination?: {
+      page: number;
+      per_page: number;
+      total: number;
+      total_pages: number;
+    };
+  };
+};
+
+type PublicBatikStatisticsEnvelope = {
+  success: boolean;
+  data?: {
+    count: number;
+    latest_date: string | null;
+    query: string | null;
+    date: string | null;
   };
 };
 
@@ -99,13 +115,17 @@ function isChatMessage(value: unknown): value is ChatMessage {
   );
 }
 
-function sanitizeMessages(value: unknown): ChatMessage[] | null {
+function sanitizeConversation(value: unknown): { messages: ChatMessage[]; responseLanguage: ResponseLanguage } | null {
   if (!Array.isArray(value)) return null;
-  const messages = value.filter(isChatMessage).slice(-MAX_HISTORY_MESSAGES).map((message) => ({
+  const validMessages = value.filter(isChatMessage).map((message) => ({
     role: message.role,
     content: message.content.trim().slice(0, MAX_MESSAGE_LENGTH),
   }));
-  return messages.length ? messages : null;
+  if (!validMessages.length) return null;
+  return {
+    messages: validMessages.slice(-MAX_HISTORY_MESSAGES),
+    responseLanguage: detectResponseLanguage(validMessages),
+  };
 }
 
 function extractBatikReference(content: string) {
@@ -120,7 +140,7 @@ function wantsBatikVisual(content: string) {
 }
 
 function wantsVisualAction(content: string) {
-  return /\b(?:unduh|download|kirim|tampilkan|lihat|gambar|foto|visual)\b/i.test(content);
+  return /\b(?:unduh|download|kirim|tampilkan|lihat|gambar|foto|visual|show|view|see|image|picture)\b/i.test(content);
 }
 
 function wantsCostume(content: string) {
@@ -135,6 +155,14 @@ function findReferencedBatikMessage(messages: ChatMessage[]) {
       return reference.id !== null || reference.query !== null;
     })());
 }
+
+function shouldReusePreviousBatikReference(content: string) {
+  const words = content.trim().split(/\s+/);
+  if (words.length > 8) return false;
+  if (/\b(?:latest|newest|terbaru|paling baru|how many|berapa|jumlah|recommend|rekomendasikan|find|cari)\b/i.test(content)) return false;
+  return /\b(?:itu|tersebut|it|its|that|same|gambarnya|costumenya|kostumnya|promptnya|detailnya|videonya|warnanya|stylenya|seednya)\b|\b(?:costume|kostum|gambar)\s+(?:juga|too|itu|tersebut)\b|\b(?:the|its)\s+(?:image|picture)\b/i.test(content);
+}
+
 function publicPreviewUrl(batik: PublicBatik) {
   if (batik.file_preview) {
     return `/api/automation/public/images/preview/${encodeURIComponent(batik.file_preview)}`;
@@ -163,33 +191,149 @@ function costumeCount(batik: PublicBatik) {
   return batik.costume_urls?.length ?? 0;
 }
 
-type DateStatistic = {
-  date: string;
+type ResponseLanguage = "Indonesian" | "English";
+
+type CatalogStatistics = {
+  requestedDate: {
+    date: string;
+    count: number;
+  } | null;
+  latestDate: string | null;
+  query: string | null;
   count: number;
+  latestRequested: boolean;
 };
+
+function detectResponseLanguage(messages: ChatMessage[]): ResponseLanguage {
+  let explicitPreference: ResponseLanguage | null = null;
+
+  const detectLanguageDirective = (content: string): ResponseLanguage | null => {
+    const languageToken = "(?:english|bahasa\\s+inggris|indonesian|bahasa\\s+indonesia)";
+    const action = "(?:speak|answer|respond|reply|continue|use|switch|change|pakai|gunakan|jawab|balas|lanjutkan|ganti|ubah)";
+    const preference = "(?:i(?:\\s+would|'d)?\\s+prefer|my\\s+preference\\s+is|saya\\s+(?:lebih\\s+suka|memilih|mau)|aku\\s+(?:lebih\\s+suka|pilih|mau))";
+    const toLanguage = (token: string): ResponseLanguage => /english|inggris/.test(token) ? "English" : "Indonesian";
+    const oppositeLanguage = (token: string): ResponseLanguage => /english|inggris/.test(token) ? "Indonesian" : "English";
+    const normalized = content.toLowerCase().trim();
+
+    if (/^(?:why|kenapa|mengapa|did|do|does)\b[^?]*\b(?:reply|answer|respond|jawab|balas)\b[^?]*\b(?:english|bahasa\s+inggris|indonesian|bahasa\s+indonesia)\b/.test(normalized)) {
+      return null;
+    }
+
+    const negatedDirective = normalized.match(new RegExp(`^(?:please\\s+)?(?:don't|do\\s+not|jangan)\\s+${action}\\b[^;,.!?]{0,32}\\b(${languageToken})\\b`));
+    if (negatedDirective) return oppositeLanguage(negatedDirective[1]);
+
+    const transition = normalized.match(new RegExp(`\\b(?:switch|change|ganti|ubah)\\b[^.!?]{0,24}\\bfrom\\s+(${languageToken})\\s+to\\s+(${languageToken})\\b`));
+    if (transition) return toLanguage(transition[2]);
+
+    const affirmativeNot = normalized.match(new RegExp(`\\b${action}\\b[^.!?]{0,24}\\b(${languageToken})\\b[^.!?]{0,16}\\b(?:not|bukan)\\b[^.!?]{0,16}\\b(${languageToken})\\b`));
+    if (affirmativeNot) return toLanguage(affirmativeNot[1]);
+
+    const preferenceMatch = normalized.match(new RegExp(`\\b${preference}\\b[^.!?]{0,48}\\b(${languageToken})\\b`));
+    if (preferenceMatch) return toLanguage(preferenceMatch[1]);
+
+    const continuity = normalized.match(new RegExp(`\\b(${languageToken})\\b[^.!?]{0,24}\\b(?:from\\s+now\\s+on|for\\s+this\\s+conversation|mulai\\s+sekarang|untuk\\s+percakapan\\s+ini)\\b`));
+    if (continuity) return toLanguage(continuity[1]);
+
+    let directive: ResponseLanguage | null = null;
+    for (const clause of normalized.split(/[;,.!?]+/)) {
+      if (/^\s*(?:please\s+)?(?:don't|do not|jangan)\b/.test(clause)) continue;
+      const actionMatch = new RegExp(`\\b${action}\\b`).exec(clause);
+      if (!actionMatch || actionMatch.index === undefined) continue;
+      const targets = [...clause.matchAll(new RegExp(`\\b(${languageToken})\\b`, "g"))]
+        .filter((match) => (match.index ?? -1) > actionMatch.index);
+      if (targets.length) directive = toLanguage(targets.at(-1)?.[1] ?? "indonesian");
+    }
+    if (directive) return directive;
+
+    const concise = normalized.match(new RegExp(`^(?:(?:please|in|dalam)\\s+)?(${languageToken})(?:\\s*,?\\s*(?:please|ya|dong))?[.!?]*$`));
+    return concise ? toLanguage(concise[1]) : null;
+  };
+
+  for (const message of messages) {
+    if (message.role !== "user") continue;
+    explicitPreference = detectLanguageDirective(message.content) ?? explicitPreference;
+  }
+
+  if (explicitPreference) return explicitPreference;
+
+  const latestUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content.toLowerCase() ?? "";
+  const englishSignals = latestUserMessage.match(/\b(?:what|when|where|which|who|why|how|can|could|would|should|please|tell|show|explain|describe|find|recommend|give|help|want|latest|generated|about|this|that|the|is|are|was|were|do|does|did|you|your|me|my)\b/g)?.length ?? 0;
+  const indonesianSignals = latestUserMessage.match(/\b(?:apa|kapan|di mana|yang mana|siapa|kenapa|bagaimana|bisa|boleh|tolong|jelaskan|lihat|rekomendasikan|terbaru|tanggal|tentang|ini|itu|yang|adalah|ada)\b/g)?.length ?? 0;
+
+  return englishSignals >= 1 && englishSignals > indonesianSignals ? "English" : "Indonesian";
+}
 
 function extractGeneratedDate(content: string) {
   const months: Record<string, string> = {
     januari: "01", februari: "02", maret: "03", april: "04", mei: "05", juni: "06",
     juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", desember: "12",
+    january: "01", february: "02", march: "03", may: "05", june: "06",
+    july: "07", august: "08", october: "10", december: "12",
   };
-  const match = content.toLowerCase().match(/\b(?:tanggal\s+)?(\d{1,2})\s+(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s+(20\d{2})\b/);
-  if (!match) return null;
-  return `${match[3]}-${months[match[2]]}-${match[1].padStart(2, "0")}`;
+  const monthNames = Object.keys(months).join("|");
+  const normalized = content.toLowerCase();
+  const isoMatch = normalized.match(/\b(20\d{2})-(\d{2})-(\d{2})\b/);
+  const dayFirstMatch = normalized.match(new RegExp(`\\b(?:tanggal\\s+)?(\\d{1,2})\\s+(${monthNames})(?:\\s+(20\\d{2}))?\\b`));
+  const monthFirstMatch = normalized.match(new RegExp(`\\b(${monthNames})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:(?:,\\s*|\\s+)(20\\d{2}))?\\b`));
+
+  const year = isoMatch?.[1] ?? dayFirstMatch?.[3] ?? monthFirstMatch?.[3] ?? String(new Date().getFullYear());
+  const month = isoMatch?.[2] ?? (dayFirstMatch ? months[dayFirstMatch[2]] : monthFirstMatch ? months[monthFirstMatch[1]] : null);
+  const day = (isoMatch?.[3] ?? dayFirstMatch?.[1] ?? monthFirstMatch?.[2])?.padStart(2, "0") ?? null;
+  if (!month || !day) return null;
+  const candidate = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (
+    candidate.getUTCFullYear() !== Number(year) ||
+    candidate.getUTCMonth() !== Number(month) - 1 ||
+    candidate.getUTCDate() !== Number(day)
+  ) {
+    return null;
+  }
+  return `${year}-${month}-${day}`;
 }
 
-async function loadDateStatistic(date: string | null): Promise<DateStatistic | null> {
-  if (!date) return null;
+function asksLatestGenerationDate(content: string) {
+  const normalized = content.toLowerCase();
+  const asksLatest = /\b(?:terbaru|paling baru|terakhir|latest|newest|most recent|last)\b/.test(normalized);
+  const asksAboutGeneration = /\b(?:motif|batik|karya|output|generasi|generation|generate|generated|dibuat|created)\b/.test(normalized);
+  const asksForDateOrDiscovery = /\b(?:tanggal|date|kapan|when|what|which|apa|mana|show|tampilkan|tunjukkan|lihat|recommend|rekomendasikan)\b/.test(normalized);
+  return asksLatest && asksAboutGeneration && asksForDateOrDiscovery;
+}
+
+function wantsCatalogDiscovery(content: string) {
+  return /\b(?:show|tampilkan|tunjukkan|lihat|cari|find|recommend|rekomendasikan|what|which|apa|mana|image|gambar|foto|visual|download|unduh|kirim)\b/i.test(content);
+}
+
+async function loadCatalogStatistics(
+  date: string | null,
+  includeLatestDate: boolean,
+  query: string | null = null,
+): Promise<CatalogStatistics | null> {
+  if (!date && !includeLatestDate) return null;
 
   try {
+    const params = new URLSearchParams();
+    if (date) params.set("date", date);
+    if (query) params.set("q", query);
     const response = await fetch(
-      backendUrl(`/api/v1/batiks?per_page=${PUBLIC_BATIK_CONTEXT_LIMIT}`),
+      backendUrl(`/api/v1/catalog/batiks/statistics?${params.toString()}`),
       { cache: "no-store" },
     );
     if (!response.ok) return null;
-    const payload = (await response.json()) as PublicBatikListEnvelope;
-    const count = (payload.data?.items ?? []).filter((item) => item.created_at.startsWith(date)).length;
-    return { date, count };
+    const payload = (await response.json()) as PublicBatikStatisticsEnvelope;
+    if (!payload.data || !Number.isInteger(payload.data.count) || payload.data.count < 0) return null;
+    const requestedDate = date
+      ? { date, count: payload.data.count }
+      : null;
+    const latestDate = includeLatestDate
+      ? payload.data.latest_date
+      : null;
+    return {
+      requestedDate,
+      latestDate,
+      query: payload.data.query ?? query,
+      count: payload.data.count,
+      latestRequested: includeLatestDate,
+    };
   } catch {
     return null;
   }
@@ -209,11 +353,21 @@ async function loadPublicBatikById(id: number) {
   }
 }
 
-async function searchPublicBatiks(queries: string[]) {
+async function searchPublicBatiks(queries: string[], date: string | null = null) {
   try {
-    const responses = await Promise.all(queries.map((query) =>
-      fetch(backendUrl(`/api/v1/batiks/search?q=${encodeURIComponent(query)}&per_page=9`), { cache: "no-store" }),
-    ));
+    if (!queries.length) {
+      if (!date) return [];
+      const params = new URLSearchParams({ page: "1", per_page: "9", date });
+      const response = await fetch(backendUrl(`/api/v1/batiks?${params.toString()}`), { cache: "no-store" });
+      if (!response.ok) return [];
+      const payload = (await response.json()) as PublicBatikListEnvelope;
+      return (payload.data?.items ?? []).slice(0, 3);
+    }
+    const responses = await Promise.all(queries.map((query) => {
+      const params = new URLSearchParams({ q: query, per_page: "9" });
+      if (date) params.set("date", date);
+      return fetch(backendUrl(`/api/v1/batiks/search?${params.toString()}`), { cache: "no-store" });
+    }));
     const payloads = await Promise.all(responses.map(async (response) =>
       response.ok ? (await response.json()) as PublicBatikListEnvelope : null,
     ));
@@ -239,11 +393,15 @@ function buildSystemPrompt(
   batik: PublicBatik | null,
   origin: string,
   recommendations: PublicBatik[] = [],
-  dateStatistic: DateStatistic | null = null,
+  catalogStatistics: CatalogStatistics | null = null,
+  responseLanguage: ResponseLanguage = "Indonesian",
 ) {
+  const languageInstruction = responseLanguage === "English"
+    ? "Gunakan bahasa Inggris yang natural, lengkap, dan maksimal 80 kata kecuali user meminta detail. Pertahankan bahasa Inggris sampai user secara eksplisit meminta bahasa lain."
+    : "Gunakan bahasa Indonesia yang natural, lengkap, dan maksimal 80 kata kecuali user meminta detail.";
   const base = [
     "Kamu adalah asisten TitikBatik AI.",
-    "Jawab dalam bahasa Indonesia yang natural, lengkap, dan maksimal 80 kata kecuali user meminta detail.",
+    languageInstruction,
     "Jika user meminta URL atau ingin melihat Batik tertentu, berikan satu tautan Markdown langsung tanpa langkah pencarian atau pengantar panjang. Gunakan nama atau keyword motif sebagai teks tautan, bukan label internal seperti 'Batik #6', kecuali user secara eksplisit meminta nomor tersebut. Jangan pernah membuat domain atau pola URL sendiri.",
     "TitikBatik AI adalah galeri output generative AI untuk motif batik, preview costume, video, dan metadata kurasi.",
     "Fokus pada kualitas visual, palet, motif, prompt, seed, costume preview, video, dan cara menjelajahi galeri.",
@@ -252,10 +410,25 @@ function buildSystemPrompt(
     "Jangan mengarang data batik yang tidak tersedia di konteks.",
   ];
 
-  if (dateStatistic) {
+  if (catalogStatistics?.requestedDate) {
+    const filterSuffix = catalogStatistics.query ? ` Filter katalog: ${catalogStatistics.query}.` : "";
     base.push(
-      `Statistik katalog terverifikasi untuk ${dateStatistic.date}: ${dateStatistic.count} batik dibuat pada tanggal tersebut.`,
+      `Statistik katalog terverifikasi untuk ${catalogStatistics.requestedDate.date}: ${catalogStatistics.requestedDate.count} batik dibuat pada tanggal tersebut.${filterSuffix}`,
       "Jika user menanyakan jumlah pada tanggal ini, jawab angka tersebut secara langsung dan jangan menyarankan filter galeri.",
+    );
+  }
+
+  if (catalogStatistics?.latestRequested && catalogStatistics.count === 0) {
+    const filterText = catalogStatistics.query ? ` dengan filter ${catalogStatistics.query}` : "";
+    base.push(
+      `Statistik katalog terverifikasi tidak menemukan batik${filterText}.`,
+      "Jawab dengan jelas bahwa belum ada karya yang cocok dan jangan mengarang rekomendasi.",
+    );
+  } else if (catalogStatistics?.latestDate) {
+    const filterSuffix = catalogStatistics.query ? ` Filter katalog: ${catalogStatistics.query}.` : "";
+    base.push(
+      `Tanggal generasi terbaru terverifikasi: ${catalogStatistics.latestDate}.${filterSuffix}`,
+      "Jika user menanyakan tanggal motif terbaru, jawab tanggal tersebut secara langsung dan jangan menyarankan filter galeri.",
     );
   }
 
@@ -288,6 +461,7 @@ function buildSystemPrompt(
       `Nama/keyword: ${candidate.keyword}`,
       `Style: ${candidate.style ?? "tidak tersedia"}`,
       `Warna: ${candidate.warna ?? "tidak tersedia"}`,
+      `Tanggal dibuat: ${candidate.created_at}`,
     ].join(" | ")),
   ].join("\n");
 }
@@ -429,8 +603,9 @@ export async function POST(request: Request) {
     return jsonError("Body request harus berupa JSON.", 400);
   }
 
-  const messages = sanitizeMessages(body.messages);
-  if (!messages) return jsonError("Minimal satu pesan diperlukan.", 400);
+  const conversation = sanitizeConversation(body.messages);
+  if (!conversation) return jsonError("Minimal satu pesan diperlukan.", 400);
+  const { messages, responseLanguage } = conversation;
 
   const lastMessage = messages[messages.length - 1];
   if (lastMessage.role !== "user") return jsonError("Pesan terakhir harus berasal dari user.", 400);
@@ -443,30 +618,56 @@ export async function POST(request: Request) {
   }
 
   try {
-    const referencedMessage = findReferencedBatikMessage(messages);
-    const referencedId = referencedMessage ? extractBatikReference(referencedMessage.content).id : null;
+    const explicitReference = extractBatikReference(lastMessage.content).id;
+    const referencedMessage = explicitReference === null && shouldReusePreviousBatikReference(lastMessage.content)
+      ? findReferencedBatikMessage(messages.slice(0, -1))
+      : null;
+    const referencedId = explicitReference ?? (referencedMessage ? extractBatikReference(referencedMessage.content).id : null);
     const requestedDate = extractGeneratedDate(lastMessage.content);
-    const plan: CatalogSearchPlan = referencedId === null && !requestedDate
+    const wantsLatestDate = asksLatestGenerationDate(lastMessage.content);
+    const plan: CatalogSearchPlan = referencedId === null
       ? await planCatalogSearch({
           apiKey: process.env.MODEL_API_KEY,
           baseUrl: (process.env.MODEL_API_BASE_URL ?? "https://api.meta.ai/v1").replace(/\/$/, ""),
           model: process.env.MODEL_API_MODEL ?? "muse-spark-1.1",
           message: lastMessage.content,
         })
-      : { catalog: false, intent: "none", queries: [], needsImage: false, needsCostume: false };
-    const [referencedBatik, searchedBatiks, dateStatistic] = await Promise.all([
+      : { catalog: false, intent: "none", queries: [], needsImage: false, needsCostume: false, resolved: true, statisticsScope: "none" };
+    const statisticsQuery = plan.catalog ? plan.queries[0] ?? null : null;
+    const catalogQueries = (requestedDate || wantsLatestDate) && statisticsQuery
+      ? [statisticsQuery]
+      : plan.queries;
+    const statisticsScope = plan.statisticsScope ?? (plan.catalog ? "filtered" : "global");
+    const statisticsRequested = requestedDate !== null || wantsLatestDate;
+    const planningSupportsStatistics = plan.resolved !== false && (
+      !statisticsRequested ||
+      (plan.catalog ? statisticsScope === "filtered" : statisticsScope === "global")
+    );
+    const catalogStatistics = !planningSupportsStatistics
+      ? null
+      : await loadCatalogStatistics(requestedDate, wantsLatestDate, statisticsQuery);
+    const searchDate = requestedDate ?? (wantsLatestDate ? catalogStatistics?.latestDate ?? null : null);
+    const wantsUnfilteredCards = planningSupportsStatistics && !plan.catalog && Boolean(searchDate) && wantsCatalogDiscovery(lastMessage.content);
+    const shouldLoadCatalogItems = plan.catalog || wantsUnfilteredCards;
+    const [referencedBatik, searchedBatiks] = await Promise.all([
       referencedId === null ? Promise.resolve(null) : loadPublicBatikById(referencedId),
-      plan.catalog ? searchPublicBatiks(plan.queries) : Promise.resolve([]),
-      loadDateStatistic(requestedDate),
+      shouldLoadCatalogItems ? searchPublicBatiks(catalogQueries, searchDate) : Promise.resolve([]),
     ]);
-    const batik = referencedBatik ?? (plan.intent === "detail" ? searchedBatiks[0] ?? null : null);
-    const recommendations = plan.catalog && (plan.intent === "recommend" || plan.intent === "search" || plan.needsImage)
-      ? searchedBatiks
+    const scopedBatiks = requestedDate
+      ? searchedBatiks.filter((candidate) => candidate.created_at.startsWith(requestedDate))
+      : wantsLatestDate
+        ? catalogStatistics?.latestDate
+          ? searchedBatiks.filter((candidate) => candidate.created_at.startsWith(catalogStatistics.latestDate ?? ""))
+          : []
+        : searchedBatiks;
+    const batik = referencedBatik ?? (plan.intent === "detail" ? scopedBatiks[0] ?? null : null);
+    const recommendations = (wantsUnfilteredCards || (plan.catalog && (plan.intent === "recommend" || plan.intent === "search" || plan.needsImage)))
+      ? scopedBatiks
       : [];
     const origin = new URL(request.url).origin;
     const providerStream = await callMetaChat(
       buildProviderMessages(messages, image),
-      buildSystemPrompt(batik, origin, recommendations, dateStatistic),
+      buildSystemPrompt(batik, origin, recommendations, catalogStatistics, responseLanguage),
     );
     const includeCostume = wantsCostume(lastMessage.content);
     const lastReference = extractBatikReference(lastMessage.content);

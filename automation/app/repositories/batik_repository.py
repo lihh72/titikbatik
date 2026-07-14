@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,15 +10,8 @@ from app.utils.time import utcnow
 
 
 class BatikRepository:
-    async def list_public(
-        self,
-        session: AsyncSession,
-        *,
-        page: int,
-        per_page: int,
-        search: str | None = None,
-        ordering: str = "newest",
-    ) -> tuple[list[Batik], int]:
+    @staticmethod
+    def _public_filters(search: str | None = None, created_date: date | None = None):
         filters = [Batik.is_published.is_(True), Batik.file_preview.is_not(None), Batik.deleted_at.is_(None)]
         if search:
             pattern = f"%{search.lower()}%"
@@ -29,6 +22,22 @@ class BatikRepository:
                     func.lower(Batik.style).like(pattern),
                 )
             )
+        if created_date:
+            start = datetime.combine(created_date, time.min)
+            filters.extend((Batik.created_at >= start, Batik.created_at < start + timedelta(days=1)))
+        return filters
+
+    async def list_public(
+        self,
+        session: AsyncSession,
+        *,
+        page: int,
+        per_page: int,
+        search: str | None = None,
+        created_date: date | None = None,
+        ordering: str = "newest",
+    ) -> tuple[list[Batik], int]:
+        filters = self._public_filters(search, created_date)
 
         count_stmt = select(func.count(Batik.id)).where(*filters)
         total = int(await session.scalar(count_stmt) or 0)
@@ -45,6 +54,19 @@ class BatikRepository:
         stmt = stmt.offset((page - 1) * per_page).limit(per_page)
         items = list((await session.scalars(stmt)).all())
         return items, total
+
+    async def public_statistics(
+        self,
+        session: AsyncSession,
+        *,
+        search: str | None = None,
+        created_date: date | None = None,
+    ) -> tuple[int, datetime | None]:
+        filters = self._public_filters(search, created_date)
+
+        stmt = select(func.count(Batik.id), func.max(Batik.created_at)).where(*filters)
+        count, latest_created_at = (await session.execute(stmt)).one()
+        return int(count or 0), latest_created_at
 
     async def get(self, session: AsyncSession, batik_id: int) -> Batik | None:
         stmt = (

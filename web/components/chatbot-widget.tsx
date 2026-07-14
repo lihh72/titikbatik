@@ -465,6 +465,7 @@ export function ChatbotWidget() {
           </form>
           <div className="shrink-0 space-y-1 px-4 pb-3 text-[0.68rem] leading-4 text-[color:var(--ink-soft)]">
             <p>AI dapat membuat kesalahan. Periksa kembali informasi penting.</p>
+            <p>Riwayat chat tersimpan di browser ini, bukan di server TitikBatik. Pesan dikirim ke Meta AI saat diproses.</p>
             <p className="font-semibold text-[color:var(--ink-soft)]">Model: Muse Spark 1.1 oleh Meta AI</p>
           </div>
         </section>

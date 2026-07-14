@@ -46,6 +46,7 @@ describe("chatbot widget", () => {
     expect(within(dialog).getByText("Tanya TitikBatik AI")).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Jelaskan Batik #9" })).toBeInTheDocument();
     expect(within(dialog).getByPlaceholderText("Tanya motif, warna, atau Batik #9")).toBeInTheDocument();
+    expect(within(dialog).getByText("Riwayat chat tersimpan di browser ini, bukan di server TitikBatik. Pesan dikirim ke Meta AI saat diproses.")).toBeInTheDocument();
   });
 
   it("streams a Markdown answer from the server and persists the completed message", async () => {

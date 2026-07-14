@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(images.router)
     app.include_router(compatibility_batik.router)
+    app.include_router(public_batik.statistics_router)
     app.include_router(public_batik.router)
     app.include_router(batches.router)
     app.include_router(jobs.router)

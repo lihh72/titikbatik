@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from pydantic import BaseModel, Field
 
@@ -36,7 +36,7 @@ class BatikCostumeFileRead(OrmModel):
     template_id: int | None = None
     template: CostumeTemplateMini | None = None
     sort_order: int
-    created_at: datetime
+    created_at: dt.datetime
 
 
 class BatikRead(OrmModel):
@@ -52,8 +52,8 @@ class BatikRead(OrmModel):
     file_video: str | None = None
     prompt_hash: str
     is_published: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt.datetime
+    updated_at: dt.datetime
     preview_url: str | None = None
     costume_urls: list[str] = Field(default_factory=list)
     costume_files: list[BatikCostumeFileRead] = Field(default_factory=list)
@@ -62,6 +62,13 @@ class BatikRead(OrmModel):
 class BatikListResponse(BaseModel):
     items: list[BatikRead]
     pagination: PaginationMeta
+
+
+class BatikStatisticsResponse(BaseModel):
+    count: int
+    latest_date: dt.date | None
+    query: str | None
+    date: dt.date | None
 
 
 class BatikUpdate(BaseModel):
