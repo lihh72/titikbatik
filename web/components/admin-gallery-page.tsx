@@ -2,8 +2,8 @@
 
 import { adminClass } from "@/components/admin-styles";
 import { BatikMedia } from "@/components/batik-media";
-import { deleteBatik, listAdminBatiks, publishBatik, regenerateCostume, regenerateVideo, unpublishBatik, updateBatik } from "@/lib/automation-api";
-import type { Batik } from "@/lib/automation-types";
+import { deleteBatik, getBtxImportJob, listAdminBatiks, publishBatik, queueBtxImport, regenerateCostume, regenerateVideo, unpublishBatik, updateBatik } from "@/lib/automation-api";
+import type { Batik, BtxImportJob } from "@/lib/automation-types";
 import { AlertCircle, Eye, EyeOff, LoaderCircle, RefreshCw, Save, Shirt, Trash2, Video } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,6 +16,8 @@ export function AdminGalleryPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [btxLimit, setBtxLimit] = useState(10);
+  const [importJob, setImportJob] = useState<BtxImportJob | null>(null);
 
   const metrics = useMemo(() => {
     const published = items.filter((item) => item.is_published).length;
@@ -62,6 +64,23 @@ export function AdminGalleryPage() {
     };
   }, [select]);
 
+  useEffect(() => {
+    let active = true;
+    const refreshImport = async () => {
+      try {
+        const job = await getBtxImportJob();
+        if (active) setImportJob((current) => job ?? current);
+      } catch {
+        // The import panel remains usable if its historical status is unavailable.
+      }
+    };
+    void refreshImport();
+    const isRunning = ["queued", "claimed", "running", "retry_wait"].includes(importJob?.status ?? "");
+    if (!isRunning) return () => { active = false; };
+    const timer = window.setInterval(() => void refreshImport(), 2000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [importJob?.status]);
+
   async function perform(action: () => Promise<unknown>, success: string, keepSelection = true) {
     if (!selected) return;
     const id = selected.id;
@@ -74,6 +93,20 @@ export function AdminGalleryPage() {
       await load(keepSelection ? id : undefined);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Aksi batik gagal.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function importBtx() {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      setImportJob(await queueBtxImport({ limit: Math.min(100, Math.max(1, btxLimit || 1)) }));
+      setNotice("Impor BTX masuk antrean dan tetap berjalan meski halaman ditutup.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Impor BTX gagal.");
     } finally {
       setBusy(false);
     }
@@ -100,6 +133,26 @@ export function AdminGalleryPage() {
         <MetricCard label="Masih ditahan" value={`${metrics.draft} draft`} />
         <MetricCard label="Kostum dan video" value={`${metrics.supportingMedia} media`} />
       </div>
+
+      <section className={adminClass("admin-detail-card")} aria-labelledby="btx-import-title">
+        <p className={adminClass("admin-eyebrow")}>Sumber eksternal</p>
+        <h2 id="btx-import-title">Impor koleksi BTX</h2>
+        <div className={adminClass("admin-form-stack")}>
+          <label htmlFor="btx-import-limit">Jumlah pasangan BTX
+            <input id="btx-import-limit" className={adminClass("admin-field")} type="number" min={1} max={100} value={btxLimit} onChange={(event) => setBtxLimit(Number(event.target.value))} />
+          </label>
+          <p>Endpoint getall dapat memuat seluruh database, jadi pengambilan katalog bisa membutuhkan waktu.</p>
+        </div>
+        <button type="button" disabled={busy} onClick={() => void importBtx()} className={adminClass("admin-primary-action")}>
+          {busy ? <LoaderCircle size={15} className="animate-spin" aria-hidden="true" /> : <RefreshCw size={15} aria-hidden="true" />}
+          Antrekan impor BTX
+        </button>
+        {importJob && <div className="mt-3 space-y-1 text-sm">
+          <p>{["queued", "claimed", "running", "retry_wait"].includes(importJob.status) ? `Sedang mengimpor: ${importJob.examined} / ${importJob.requested_limit}` : `Impor ${importJob.status}: ${importJob.imported} diimpor, ${importJob.skipped_duplicates} duplikat dilewati, ${importJob.failed} gagal.`}</p>
+          {importJob.error_message && <p className="text-[color:var(--terracotta-dark)]">{importJob.error_message}</p>}
+          {importJob.errors.map((message) => <p key={message} className="text-[color:var(--terracotta-dark)]">{message}</p>)}
+        </div>}
+      </section>
 
       {error && <div role="alert" className={adminClass("admin-alert")}><AlertCircle size={17} aria-hidden="true" />{error}</div>}
       {notice && <div className={adminClass("studio-success")}>{notice}</div>}

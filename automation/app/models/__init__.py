@@ -1,5 +1,6 @@
 from app.models.app_setting import AppSetting
 from app.models.batik import Batik
+from app.models.btx_import_job import BtxImportJob
 from app.models.costume_file import BatikCostumeFile
 from app.models.costume_template import CostumeTemplate
 from app.models.generation_batch import GenerationBatch
@@ -9,6 +10,7 @@ from app.models.wordlist import WordlistCategory, WordlistItem
 __all__ = [
     "AppSetting",
     "Batik",
+    "BtxImportJob",
     "BatikCostumeFile",
     "CostumeTemplate",
     "GenerationBatch",

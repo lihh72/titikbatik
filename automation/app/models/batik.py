@@ -25,6 +25,9 @@ class Batik(TimestampMixin, Base):
     file_preview: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     file_video: Mapped[str | None] = mapped_column(String(255), nullable=True)
     prompt_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    source_provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    source_media_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     generation_job_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("generation_jobs.id", ondelete="SET NULL"), nullable=True
     )

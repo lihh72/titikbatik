@@ -1,6 +1,6 @@
 from datetime import date, datetime, time, timedelta
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -10,6 +10,14 @@ from app.utils.time import utcnow
 
 
 class BatikRepository:
+    @staticmethod
+    def video_first_ordering():
+        has_video = case(
+            ((Batik.file_video.is_not(None)) & (Batik.file_video != ""), 1),
+            else_=0,
+        )
+        return (has_video.desc(), Batik.created_at.desc(), Batik.id.desc())
+
     @staticmethod
     def _public_filters(search: str | None = None, created_date: date | None = None):
         filters = [Batik.is_published.is_(True), Batik.file_preview.is_not(None), Batik.deleted_at.is_(None)]
@@ -50,7 +58,7 @@ class BatikRepository:
         if ordering == "random":
             stmt = stmt.order_by(func.random())
         else:
-            stmt = stmt.order_by(Batik.created_at.desc(), Batik.id.desc())
+            stmt = stmt.order_by(*self.video_first_ordering())
         stmt = stmt.offset((page - 1) * per_page).limit(per_page)
         items = list((await session.scalars(stmt)).all())
         return items, total
@@ -93,6 +101,23 @@ class BatikRepository:
 
     async def find_by_prompt_hash(self, session: AsyncSession, prompt_hash: str) -> Batik | None:
         return await session.scalar(select(Batik).where(Batik.prompt_hash == prompt_hash))
+
+    async def find_imported_source(
+        self,
+        session: AsyncSession,
+        *,
+        provider: str,
+        source_id: str | None,
+        media_hash: str | None,
+    ) -> Batik | None:
+        clauses = []
+        if source_id:
+            clauses.append(and_(Batik.source_provider == provider, Batik.source_id == source_id))
+        if media_hash:
+            clauses.append(and_(Batik.source_provider == provider, Batik.source_media_hash == media_hash))
+        if not clauses:
+            return None
+        return await session.scalar(select(Batik).where(or_(*clauses), Batik.deleted_at.is_(None)))
 
     async def soft_delete(self, session: AsyncSession, batik: Batik) -> Batik:
         batik.deleted_at = utcnow()
