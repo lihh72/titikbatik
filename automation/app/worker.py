@@ -12,10 +12,12 @@ from app.core.config import get_settings
 from app.core.database import async_session_factory
 from app.core.exceptions import AppError, WorkflowMappingError
 from app.core.logging import configure_logging
-from app.models import AppSetting, Batik, BatikCostumeFile, CostumeTemplate, GenerationBatch, GenerationJob
+from app.models import AppSetting, Batik, BatikCostumeFile, BtxImportJob, CostumeTemplate, GenerationBatch, GenerationJob
 from app.repositories.batch_repository import BatchRepository
+from app.repositories.btx_import_job_repository import BtxImportJobRepository
 from app.repositories.job_repository import JobRepository
 from app.services.combination_service import CombinationService
+from app.services.btx_import_service import BtxImportService
 from app.services.comfyui_service import ComfyUIService
 from app.services.generation_service import GenerationService
 from app.services.storage_service import StorageService
@@ -34,6 +36,8 @@ class Worker:
         self.workflow = WorkflowService(self.settings)
         self.comfyui = ComfyUIService(self.settings)
         self.jobs = JobRepository()
+        self.btx_import_jobs = BtxImportJobRepository()
+        self.btx_imports = BtxImportService(self.settings)
         self.batches = BatchRepository()
         self.generation = GenerationService(self.settings)
         self.combination = CombinationService()
@@ -51,7 +55,7 @@ class Worker:
         await self.recover_stale_jobs()
         next_idle_log_at = 0.0
         while True:
-            did_work = False
+            did_work = await self.process_one_btx_import()
             for _ in range(max(self.settings.worker_concurrency, 1)):
                 job_id = await self.claim_next_job()
                 if not job_id:
@@ -69,9 +73,31 @@ class Worker:
     async def recover_stale_jobs(self) -> None:
         async with async_session_factory() as session:
             count = await self.jobs.reset_stale_locks(session, older_than_seconds=self.settings.stale_job_lock_seconds)
+            count += await self.btx_import_jobs.reset_stale_locks(session, older_than_seconds=self.settings.stale_job_lock_seconds)
             await session.commit()
             if count:
                 logger.info("Recovered %s stale jobs", count)
+
+    async def process_one_btx_import(self) -> bool:
+        async with async_session_factory() as session:
+            job = await self.btx_import_jobs.claim_next(session, worker_id=self.worker_id)
+            await session.commit()
+        if not job:
+            return False
+        try:
+            async with async_session_factory() as session:
+                current = await session.get(BtxImportJob, job.id)
+                if current:
+                    await self.btx_imports.process_job(session, current)
+            return True
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("BTX import job failed: %s", exc)
+            async with async_session_factory() as session:
+                current = await session.get(BtxImportJob, job.id)
+                if current:
+                    await self.btx_import_jobs.mark_retry_or_failed(session, current, message=str(exc))
+                    await session.commit()
+            return True
 
     async def claim_next_job(self) -> str | None:
         async with async_session_factory() as session:

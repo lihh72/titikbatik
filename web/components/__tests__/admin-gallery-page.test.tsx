@@ -7,11 +7,12 @@ import type { Batik } from "@/lib/automation-types";
 
 const mocks = vi.hoisted(() => ({
   deleteBatik: vi.fn(),
-  importBtxBatiks: vi.fn(),
+  getBtxImportJob: vi.fn(),
   listAdminBatiks: vi.fn(),
   publishBatik: vi.fn(),
   regenerateCostume: vi.fn(),
   regenerateVideo: vi.fn(),
+  queueBtxImport: vi.fn(),
   unpublishBatik: vi.fn(),
   updateBatik: vi.fn(),
 }));
@@ -19,11 +20,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/automation-api", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/automation-api")>(),
   deleteBatik: mocks.deleteBatik,
-  importBtxBatiks: mocks.importBtxBatiks,
+  getBtxImportJob: mocks.getBtxImportJob,
   listAdminBatiks: mocks.listAdminBatiks,
   publishBatik: mocks.publishBatik,
   regenerateCostume: mocks.regenerateCostume,
   regenerateVideo: mocks.regenerateVideo,
+  queueBtxImport: mocks.queueBtxImport,
   unpublishBatik: mocks.unpublishBatik,
   updateBatik: mocks.updateBatik,
 }));
@@ -82,6 +84,7 @@ const batiks: Batik[] = [{
 describe("AdminGalleryPage", () => {
   beforeEach(() => {
     mocks.listAdminBatiks.mockResolvedValue(batiks);
+    mocks.getBtxImportJob.mockResolvedValue(null);
   });
 
   it("renders a curated admin gallery with summary metrics and clean metadata", async () => {
@@ -103,15 +106,15 @@ describe("AdminGalleryPage", () => {
     expect(screen.getByRole("button", { name: "Buat ulang kostum" })).toBeInTheDocument();
   });
 
-  it("imports the requested BTX pair count and shows the summary", async () => {
+  it("queues the requested BTX pair count and shows persisted progress", async () => {
     const user = userEvent.setup();
-    mocks.importBtxBatiks.mockResolvedValue({ requested_limit: 4, examined: 4, imported: 2, skipped_duplicates: 1, failed: 1, errors: [] });
+    mocks.queueBtxImport.mockResolvedValue({ id: 1, status: "running", requested_limit: 4, examined: 2, imported: 1, skipped_duplicates: 1, failed: 0, errors: [], error_message: null, attempt_count: 0, max_attempts: 3, started_at: null, completed_at: null, created_at: "2026-07-21T00:00:00Z", updated_at: "2026-07-21T00:00:00Z" });
     render(<AdminGalleryPage />);
     const input = await screen.findByLabelText("Jumlah pasangan BTX");
     await user.clear(input);
     await user.type(input, "4");
-    await user.click(screen.getByRole("button", { name: "Impor dari BTX" }));
-    expect(mocks.importBtxBatiks).toHaveBeenCalledWith({ limit: 4 });
-    expect(await screen.findByText("2 diimpor, 1 duplikat dilewati, 1 gagal.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Antrekan impor BTX" }));
+    expect(mocks.queueBtxImport).toHaveBeenCalledWith({ limit: 4 });
+    expect(await screen.findByText("Sedang mengimpor: 2 / 4")).toBeInTheDocument();
   });
 });

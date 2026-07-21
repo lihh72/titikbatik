@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -6,7 +7,7 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.models import Batik, BatikCostumeFile
+from app.models import Batik, BatikCostumeFile, BtxImportJob
 from app.repositories.batik_repository import BatikRepository
 from app.schemas.batik_import import BtxImportSummary
 from app.services.storage_service import StorageService
@@ -30,7 +31,7 @@ def unwrap_btx_records(payload: Any) -> list[dict[str, Any]]:
         return [item for item in payload if isinstance(item, dict)]
     if not isinstance(payload, dict):
         raise ValueError("BTX catalogue has an unsupported JSON shape")
-    for key in ("items", "results", "data"):
+    for key in ("batiks", "items", "results", "data"):
         value = payload.get(key)
         if isinstance(value, list):
             return [item for item in value if isinstance(item, dict)]
@@ -51,7 +52,16 @@ def _first(record: dict[str, Any], *keys: str) -> str | None:
 
 def _urls(value: Any) -> list[str]:
     if isinstance(value, str):
-        return [value] if value.strip() else []
+        normalized = value.strip()
+        if not normalized:
+            return []
+        if normalized.startswith("["):
+            try:
+                decoded = json.loads(normalized)
+            except json.JSONDecodeError:
+                return [normalized]
+            return _urls(decoded)
+        return [normalized]
     if isinstance(value, list):
         return [str(item).strip() for item in value if str(item).strip()]
     if isinstance(value, dict):
@@ -116,6 +126,42 @@ class BtxImportService:
                     summary.failed += 1
                     summary.errors.append(str(exc)[:240])
         return summary
+
+    async def process_job(self, session: AsyncSession, job: BtxImportJob) -> None:
+        job.status = "running"
+        await session.commit()
+        records = await self.fetch_catalogue()
+        self.storage.ensure_directories()
+        async with httpx.AsyncClient(timeout=self.settings.btx_media_timeout_seconds) as client:
+            for raw in records[:job.requested_limit]:
+                job = await session.get(BtxImportJob, job.id)
+                if not job:
+                    return
+                job.examined += 1
+                await session.commit()
+                try:
+                    candidate = normalize_btx_record(raw)
+                    existing = await self.repository.find_imported_source(session, provider=self.provider, source_id=candidate.source_id, media_hash=candidate.source_media_hash)
+                    if existing:
+                        job.skipped_duplicates += 1
+                    else:
+                        await self._import_one(session, client, candidate)
+                        job.imported += 1
+                except Exception as exc:  # noqa: BLE001
+                    await session.rollback()
+                    job = await session.get(BtxImportJob, job.id)
+                    if not job:
+                        return
+                    job.failed += 1
+                    job.errors_json = [*job.errors_json, str(exc)[:240]][-20:]
+                await session.commit()
+        job = await session.get(BtxImportJob, job.id)
+        if job:
+            job.status = "completed"
+            job.locked_by = job.locked_at = None
+            from app.utils.time import utcnow
+            job.completed_at = utcnow()
+            await session.commit()
 
     async def _download_image(self, client: httpx.AsyncClient, url: str, *, filename: str, category: str) -> str:
         response = await client.get(self.media_url(url))
