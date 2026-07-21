@@ -117,4 +117,12 @@ describe("AdminGalleryPage", () => {
     expect(mocks.queueBtxImport).toHaveBeenCalledWith({ limit: 4 });
     expect(await screen.findByText("Sedang mengimpor: 2 / 4")).toBeInTheDocument();
   });
+
+  it("renders a persisted import response that omits optional errors", async () => {
+    mocks.getBtxImportJob.mockResolvedValue({ id: 1, status: "completed", requested_limit: 1, examined: 1, imported: 1, skipped_duplicates: 0, failed: 0, error_message: null, attempt_count: 0, max_attempts: 3, started_at: null, completed_at: null, created_at: "2026-07-21T00:00:00Z", updated_at: "2026-07-21T00:00:00Z" });
+
+    render(<AdminGalleryPage />);
+
+    expect(await screen.findByText("Impor completed: 1 diimpor, 0 duplikat dilewati, 0 gagal.")).toBeInTheDocument();
+  });
 });

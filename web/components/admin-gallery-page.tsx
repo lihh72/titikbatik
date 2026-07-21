@@ -150,7 +150,7 @@ export function AdminGalleryPage() {
         {importJob && <div className="mt-3 space-y-1 text-sm">
           <p>{["queued", "claimed", "running", "retry_wait"].includes(importJob.status) ? `Sedang mengimpor: ${importJob.examined} / ${importJob.requested_limit}` : `Impor ${importJob.status}: ${importJob.imported} diimpor, ${importJob.skipped_duplicates} duplikat dilewati, ${importJob.failed} gagal.`}</p>
           {importJob.error_message && <p className="text-[color:var(--terracotta-dark)]">{importJob.error_message}</p>}
-          {importJob.errors.map((message) => <p key={message} className="text-[color:var(--terracotta-dark)]">{message}</p>)}
+          {(importJob.errors ?? []).map((message) => <p key={message} className="text-[color:var(--terracotta-dark)]">{message}</p>)}
         </div>}
       </section>
 
