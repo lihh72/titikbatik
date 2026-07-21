@@ -9,7 +9,7 @@ from app.core.config import get_settings
 from app.core.exceptions import install_exception_handlers
 from app.core.logging import configure_logging
 from app.routers import admin_web, compatibility_batik, health, images, public_batik
-from app.routers.admin import batches, batiks, costume_templates, jobs, settings as admin_settings, wordlists
+from app.routers.admin import batik_imports, batches, batiks, costume_templates, jobs, settings as admin_settings, wordlists
 from app.services.storage_service import StorageService
 
 
@@ -45,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(batches.router)
     app.include_router(jobs.router)
     app.include_router(batiks.router)
+    app.include_router(batik_imports.router)
     app.include_router(wordlists.router)
     app.include_router(costume_templates.router)
     app.include_router(admin_settings.router)

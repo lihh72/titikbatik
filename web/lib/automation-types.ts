@@ -185,3 +185,14 @@ export type CostumeTemplate = {
 };
 
 export type AppSettings = Record<string, Record<string, unknown>>;
+
+export type BtxImportRequest = { limit: number };
+
+export type BtxImportSummary = {
+  requested_limit: number;
+  examined: number;
+  imported: number;
+  skipped_duplicates: number;
+  failed: number;
+  errors: string[];
+};

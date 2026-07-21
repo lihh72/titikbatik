@@ -2,6 +2,8 @@ import {
   type AppSettings,
   type AutomationResponse,
   type Batik,
+  type BtxImportRequest,
+  type BtxImportSummary,
   type CostumeTemplate,
   type DashboardData,
   type GenerationBatch,
@@ -198,6 +200,8 @@ export const publishBatik = (id: number) => automationRequest<unknown>(`${ADMIN_
 export const unpublishBatik = (id: number) => automationRequest<unknown>(`${ADMIN_BASE}/batiks/${id}/unpublish`, jsonRequest("POST"));
 export const regenerateCostume = (id: number) => automationRequest<{ queued_count: number }>(`${ADMIN_BASE}/batiks/${id}/regenerate-costume`, jsonRequest("POST"));
 export const regenerateVideo = (id: number) => automationRequest<{ queued_count: number; job_id: string }>(`${ADMIN_BASE}/batiks/${id}/regenerate-video`, jsonRequest("POST"));
+export const importBtxBatiks = (request: BtxImportRequest) =>
+  automationRequest<BtxImportSummary>(`${ADMIN_BASE}/batik-imports/btx`, jsonRequest("POST", request));
 
 export const listWordlistCategories = () => automationRequest<WordlistCategory[]>(`${ADMIN_BASE}/wordlist-categories`);
 export const createWordlistCategory = (values: Omit<WordlistCategory, "id">) =>

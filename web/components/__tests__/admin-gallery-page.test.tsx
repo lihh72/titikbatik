@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AdminGalleryPage } from "@/components/admin-gallery-page";
@@ -6,6 +7,7 @@ import type { Batik } from "@/lib/automation-types";
 
 const mocks = vi.hoisted(() => ({
   deleteBatik: vi.fn(),
+  importBtxBatiks: vi.fn(),
   listAdminBatiks: vi.fn(),
   publishBatik: vi.fn(),
   regenerateCostume: vi.fn(),
@@ -17,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/automation-api", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/automation-api")>(),
   deleteBatik: mocks.deleteBatik,
+  importBtxBatiks: mocks.importBtxBatiks,
   listAdminBatiks: mocks.listAdminBatiks,
   publishBatik: mocks.publishBatik,
   regenerateCostume: mocks.regenerateCostume,
@@ -98,5 +101,17 @@ describe("AdminGalleryPage", () => {
     expect(screen.getByTestId("batik-media")).toHaveTextContent("Media Kawung Indigo");
     expect(screen.getByRole("button", { name: "Tampilkan sebagai draft" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Buat ulang kostum" })).toBeInTheDocument();
+  });
+
+  it("imports the requested BTX pair count and shows the summary", async () => {
+    const user = userEvent.setup();
+    mocks.importBtxBatiks.mockResolvedValue({ requested_limit: 4, examined: 4, imported: 2, skipped_duplicates: 1, failed: 1, errors: [] });
+    render(<AdminGalleryPage />);
+    const input = await screen.findByLabelText("Jumlah pasangan BTX");
+    await user.clear(input);
+    await user.type(input, "4");
+    await user.click(screen.getByRole("button", { name: "Impor dari BTX" }));
+    expect(mocks.importBtxBatiks).toHaveBeenCalledWith({ limit: 4 });
+    expect(await screen.findByText("2 diimpor, 1 duplikat dilewati, 1 gagal.")).toBeInTheDocument();
   });
 });

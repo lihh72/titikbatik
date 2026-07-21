@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     public_ordering: Literal["newest", "random"] = "newest"
 
     legacy_api_base_url: str = "https://btx.agunghakase.my.id"
+    btx_catalogue_url: str = "https://btx.agunghakase.my.id/api/batik/getall"
+    btx_catalogue_timeout_seconds: int = 120
+    btx_media_timeout_seconds: int = 60
+    btx_import_default_limit: int = 10
+    btx_import_max_limit: int = 100
     allowed_origins: str = "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000"
 
     database_busy_timeout_ms: int = 5000
