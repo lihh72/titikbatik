@@ -296,6 +296,26 @@ pytest
 
 Test utama mencakup prompt generator deterministik, ketiga workflow, chain job 1:1:1, recovery ComfyUI, penyimpanan WebP/video, API, dan proteksi path traversal.
 
+## Public API Performance Test
+
+Skenario Locust hanya memanggil endpoint katalog publik dengan metode `GET`.
+Endpoint admin, generate, impor, dan rute lain yang mengubah data tidak ikut
+diuji. Instal dependensi setelah mengambil perubahan:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+Dengan API lokal sudah aktif, jalankan baseline 1.000 virtual user secara
+bertahap selama satu menit:
+
+```powershell
+locust -f tests/performance/locustfile.py --host http://127.0.0.1:8000 --headless --users 1000 --spawn-rate 25 --run-time 1m
+```
+
+Gunakan opsi `--host` yang sama untuk target lain. Tinjau error rate dan p95
+per nama request sebelum menaikkan beban atau menjalankannya terhadap produksi.
+
 ## Troubleshooting
 
 - `ComfyUI is offline`: pastikan ComfyUI berjalan di `COMFYUI_BASE_URL`.
