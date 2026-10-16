@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "TitikBatik",
+    "slug": "titikbatik-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "scheme": "titikbatik",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "id.titikbatik.mobile"
+    },
+    "android": {
+      "package": "id.titikbatik.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#000000",
+        "foregroundImage": "./assets/logo.png"
+      }
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/logo.png",
+          "imageWidth": 100,
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Pilih gambar batik untuk ditanyakan kepada asisten TitikBatik.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-video",
+      "expo-sharing",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6bebd343-1488-481f-912c-6733b111f3dc"
+      }
+    },
+    "owner": "faihilmy"
+  }
+}

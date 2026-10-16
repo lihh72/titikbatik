@@ -1,0 +1,26 @@
+{
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "local" },
+  "build": {
+    "apk": {
+      "distribution": "internal",
+      "environment": "preview",
+      "android": { "buildType": "apk" }
+    },
+    "ipa": {
+      "distribution": "internal",
+      "environment": "preview",
+      "withoutCredentials": true,
+      "ios": { "simulator": false, "config": "ios-unsigned.yml" }
+    },
+    "ipa-store": {
+      "distribution": "store",
+      "environment": "production",
+      "ios": { "simulator": false }
+    },
+    "ipa-internal": {
+      "extends": "ipa-store",
+      "distribution": "internal",
+      "environment": "preview"
+    }
+  }
+}
