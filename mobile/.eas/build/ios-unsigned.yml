@@ -1,0 +1,40 @@
+build:
+  name: TitikBatik unsigned IPA for personal sideloading
+  steps:
+    - eas/checkout
+    - eas/install_node_modules
+    - eas/resolve_build_config
+    - eas/prebuild
+    - run:
+        name: Install CocoaPods dependencies
+        working_directory: ios
+        command: pod install
+    - run:
+        name: Archive for physical iPhone without signing
+        command: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace ios/TitikBatik.xcworkspace \
+            -scheme TitikBatik \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/TitikBatik.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
+            archive
+    - run:
+        name: Package unsigned IPA
+        command: |
+          set -euo pipefail
+          mkdir -p build/Payload
+          cp -R build/TitikBatik.xcarchive/Products/Applications/TitikBatik.app build/Payload/
+          test -f build/Payload/TitikBatik.app/Info.plist
+          cd build
+          zip -qry TitikBatik-unsigned.ipa Payload
+    - eas/upload_artifact:
+        name: Upload unsigned IPA
+        inputs:
+          type: application-archive
+          path: build/TitikBatik-unsigned.ipa
