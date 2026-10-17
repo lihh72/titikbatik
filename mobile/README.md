@@ -74,6 +74,18 @@ Kontrak backend tetap menggunakan `GET /api/automation/public/batiks`, `/batiks/
 
 Preview browser tidak merender UIKit atau SwiftUI. File `.ios.tsx` digunakan pada iPhone, sedangkan file tanpa suffix menyediakan fallback web/Android. Nilai kualitas native melalui Expo Go di iPhone, terutama transisi header/glass antar-tab dan detail, efek tekan glass serta perluasan blur saat scroll, pencarian, menu tekan-lama, pager media, dan sheet pengaturan.
 
+## Performa
+
+Context katalog, bookmark, suka dan chat terpisah agar update token tidak merender ulang layar lain. Grid/hero memakai data dan render row yang stabil; Markdown pesan lama tidak diparse ulang setiap token. Penyimpanan chat digabung dalam jendela 250 ms dan di-flush saat background/pergantian scope; bookmark dan suka ditulis segera. UI streaming dan semua timing animasi dipertahankan. Lihat [laporan optimasi](./PERFORMANCE-2026-10-17.md) untuk verifikasi, benchmark terbatas, dan batasan durability buffer.
+
+## Motion dan refresh
+
+Setiap cold boot atau reload penuh JS menampilkan logo/wordmark lalu membuka katalog dalam sekitar 0,9 detik. Animasi menunggu preferensi lokal siap, tidak berulang saat ganti tab, ganti mode, atau kembali dari background, dan dilewati ketika Reduce Motion aktif. Untuk melihat ulang di Expo Go, gunakan Reload; Fast Refresh dapat mempertahankan state boot yang sudah selesai.
+
+Sorotan memakai kapsul navigasi di dalam hero: chevron, dots putih, dan marker aktif terracotta yang memanjang dan terisi selama 3 detik. Navigasi manual mengulang countdown, jeda melanjutkan sisa waktu, dan autoplay berhenti ketika layar tidak aktif, app di background, atau Reduce Motion aktif. Carousel menunggu animasi boot selesai sebelum menjalankan timer. Hero menyambung slide terakhir ke pertama dan sebaliknya dengan halaman salinan pada kedua ujung. Detail memakai carousel yang sama, dengan kapsul di bawah media agar kontrol video tidak tertutup; autoplay berhenti pada video, yang tetap diputar manual.
+
+Pull-to-refresh tetap memakai spinner native iOS, termasuk gaya preview UIKit. Offset native 24 pt memberi jarak dari logo tanpa mengubah header/search. State refreshing aktif langsung saat onRefresh dan berhenti setelah request selesai, minimal 600 ms agar putaran tetap terlihat pada demo instan. Query, kategori, dan layout tetap dipertahankan. Tidak ada overlay spinner atau fade preview kustom.
+
 ## Pemeriksaan otomatis
 
 ```powershell

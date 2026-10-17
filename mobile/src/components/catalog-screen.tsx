@@ -1,17 +1,18 @@
 import { useHeaderScroll } from "./header-scroll";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { feedback } from "../lib/haptics";
 import { Platform, RefreshControl, View } from "react-native";
-import { BatikCard, Copy, Status, useAccessibility, usePalette } from "./ui";
+import { Copy, Status, useAccessibility, usePalette } from "./ui";
 import CatalogChrome from "./catalog-chrome";
 import CatalogWordmark from "./catalog-wordmark";
-import CatalogTile from "./catalog-tile";
+import CatalogRow from "./catalog-row";
 import CatalogCarousel from "./catalog-carousel";
 import CatalogCategories from "./catalog-categories";
 import CostumeCollection from "./costume-collection";
 import type { Batik, Catalog } from "../lib/types";
-import { useApp } from "../state/app";
+import { useCatalog } from "../state/app";
 import { SafeAreaView } from "react-native-screens/experimental";
+import { appendCatalogPage } from "../lib/catalog-page";
 import { catalogRows } from "../lib/catalog-rows";
 import { categoryCatalog } from "../lib/catalog-filter";
 import { useTabChrome } from "./tab-chrome";
@@ -21,13 +22,19 @@ import Animated, {
   LinearTransition,
 } from "react-native-reanimated";
 
+const emptyItems: Batik[] = [];
+const rowKey = (_: unknown, index: number) => `row-${index}`;
+
 export default function CatalogScreen() {
   const p = usePalette();
   const { height: headerHeight, catalogScroll } = useTabChrome();
   const headerScroll = useHeaderScroll(undefined, catalogScroll);
   const { reducedMotion } = useAccessibility();
-  const transition = reducedMotion ? undefined : LinearTransition.duration(280);
-  const { catalog, settings } = useApp();
+  const transition = useMemo(
+    () => (reducedMotion ? undefined : LinearTransition.duration(280)),
+    [reducedMotion],
+  );
+  const { catalog, settings } = useCatalog();
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [category, setCategory] = useState("");
@@ -43,6 +50,8 @@ export default function CatalogScreen() {
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshStarted = useRef<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const filteredCatalog = useMemo(() => {
@@ -62,6 +71,7 @@ export default function CatalogScreen() {
   }, [query, category]);
   useEffect(() => {
     const controller = new AbortController();
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     busyRef.current = true;
     queueMicrotask(() => {
       if (!controller.signal.aborted) {
@@ -79,14 +89,7 @@ export default function CatalogScreen() {
         if (!activeQuery && !activeCategory && page === 1)
           setDiscovery({ source: catalog, items: result.items });
         setItems((current) =>
-          page === 1
-            ? result.items
-            : [
-                ...current,
-                ...result.items.filter(
-                  (item) => !current.some((value) => value.id === item.id),
-                ),
-              ],
+          page === 1 ? result.items : appendCatalogPage(current, result.items),
         );
         setTotal(result.total);
         setTotalPages(result.totalPages);
@@ -99,32 +102,79 @@ export default function CatalogScreen() {
         if (!controller.signal.aborted) {
           busyRef.current = false;
           setLoading(false);
+          if (refreshStarted.current !== null) {
+            // Give UIKit time to show its active rotation even for instant demo results.
+            const remaining = Math.max(
+              0,
+              600 - (Date.now() - refreshStarted.current),
+            );
+            refreshTimer = setTimeout(() => {
+              refreshStarted.current = null;
+              setRefreshing(false);
+            }, remaining);
+          }
         }
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      clearTimeout(refreshTimer);
+    };
   }, [catalog, filteredCatalog, activeQuery, activeCategory, page, revision]);
   function refresh() {
+    if (refreshStarted.current !== null) return;
+    refreshStarted.current = Date.now();
+    setRefreshing(true);
+    busyRef.current = true;
     feedback("light");
     setPage(1);
     setRevision((value) => value + 1);
   }
   function loadNext() {
-    if (busyRef.current || error || page >= totalPages) return;
+    if (refreshing || busyRef.current || error || page >= totalPages) return;
     busyRef.current = true;
     setPage((value) => value + 1);
   }
-  const rows = catalogRows(items, columns);
-  const discoveryItems = discovery?.source === catalog ? discovery.items : [];
-  const featured =
-    discoveryItems.find(
-      (item) =>
-        item.media.some((media) => media.kind === "video") &&
-        item.media.filter((media) => media.kind === "image").length > 1,
-    ) ??
-    discoveryItems.find(
-      (item) => item.media.filter((media) => media.kind === "image").length > 1,
-    ) ??
-    discoveryItems[0];
+  const rows = useMemo(() => catalogRows(items, columns), [items, columns]);
+  const discoveryItems =
+    discovery?.source === catalog ? discovery.items : emptyItems;
+  const heroItems = useMemo(() => {
+    const featured =
+      discoveryItems.find(
+        (item) =>
+          item.media.some((media) => media.kind === "video") &&
+          item.media.filter((media) => media.kind === "image").length > 1,
+      ) ??
+      discoveryItems.find(
+        (item) =>
+          item.media.filter((media) => media.kind === "image").length > 1,
+      ) ??
+      discoveryItems[0];
+    return featured
+      ? [
+          featured,
+          ...discoveryItems.filter(
+            (item) =>
+              item.id !== featured.id &&
+              item.media.some((media) => media.kind === "image"),
+          ),
+        ].slice(0, 3)
+      : emptyItems;
+  }, [discoveryItems]);
+  const heroKey = useMemo(
+    () => discoveryItems.map((item) => item.id).join("|"),
+    [discoveryItems],
+  );
+  const renderRow = useCallback(
+    ({ item: row }: { item: (Batik | null)[] }) => (
+      <CatalogRow
+        row={row}
+        detailed={detailed}
+        reducedMotion={reducedMotion}
+        transition={transition}
+      />
+    ),
+    [detailed, reducedMotion, transition],
+  );
   const chromeProps = {
     query,
     onQueryChange: setQuery,
@@ -147,7 +197,7 @@ export default function CatalogScreen() {
         automaticallyAdjustsScrollIndicatorInsets
         itemLayoutAnimation={transition}
         data={rows}
-        keyExtractor={(_, index) => `row-${index}`}
+        keyExtractor={rowKey}
         contentContainerStyle={{
           gap: 22,
           paddingBottom: 20,
@@ -160,23 +210,7 @@ export default function CatalogScreen() {
                 entering={reducedMotion ? undefined : FadeIn.duration(220)}
                 exiting={reducedMotion ? undefined : FadeOut.duration(160)}
               >
-                <CatalogCarousel
-                  key={discoveryItems.map((item) => item.id).join("|")}
-                  items={
-                    featured
-                      ? [
-                          featured,
-                          ...discoveryItems.filter(
-                            (item) =>
-                              item.id !== featured.id &&
-                              item.media.some(
-                                (media) => media.kind === "image",
-                              ),
-                          ),
-                        ].slice(0, 3)
-                      : []
-                  }
-                />
+                <CatalogCarousel key={heroKey} items={heroItems} />
               </Animated.View>
             )}
             <CatalogCategories
@@ -213,40 +247,15 @@ export default function CatalogScreen() {
             )}
           </Animated.View>
         }
-        renderItem={({ item: row }) => (
-          <Animated.View
-            layout={transition}
-            style={{
-              flexDirection: "row",
-              gap: detailed ? 12 : 8,
-              paddingHorizontal: 16,
-            }}
-          >
-            {row.map((item, index) => (
-              <Animated.View
-                layout={transition}
-                entering={reducedMotion ? undefined : FadeIn.duration(220)}
-                exiting={reducedMotion ? undefined : FadeOut.duration(160)}
-                key={item?.id ?? `space-${index}`}
-                style={{ flex: 1 }}
-              >
-                {item &&
-                  (detailed ? (
-                    <BatikCard item={item} />
-                  ) : (
-                    <CatalogTile item={item} />
-                  ))}
-              </Animated.View>
-            ))}
-          </Animated.View>
-        )}
+        renderItem={renderRow}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
-            refreshing={loading && page === 1 && items.length > 0}
+            refreshing={refreshing}
             onRefresh={refresh}
             tintColor={p.soft}
+            progressViewOffset={Platform.OS === "ios" ? 24 : 0}
           />
         }
         onEndReached={loadNext}

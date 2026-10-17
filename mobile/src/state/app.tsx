@@ -2,6 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { feedback } from "../lib/haptics";
 import {
   createContext,
+  useCallback,
+  useRef,
   useContext,
   useEffect,
   useMemo,
@@ -10,8 +12,14 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
-import { ActivityIndicator, View } from "react-native";
+import {
+  ActivityIndicator,
+  AppState as NativeAppState,
+  View,
+} from "react-native";
 import { backendCatalog, validateBaseUrl } from "../lib/api";
+import { PreferenceWriter } from "../lib/preference-writer";
+import { withCatalogCache } from "../lib/catalog-cache";
 import { demoBatiks, demoCatalog } from "../lib/demo";
 import {
   emptyPreferences,
@@ -31,7 +39,23 @@ type AppState = {
   toggleSave: (item: Batik) => void;
   storageError: string | null;
 };
-const Context = createContext<AppState | null>(null);
+type CatalogState = Pick<
+  AppState,
+  "settings" | "changeSettings" | "catalog" | "storageError"
+>;
+type SavedState = { saved: Batik[]; toggleSave: AppState["toggleSave"] };
+type LikesState = { liked: string[]; toggleLike: AppState["toggleLike"] };
+type ChatState = {
+  messages: Preferences["messages"];
+  setPreferences: AppState["setPreferences"];
+};
+const CatalogContext = createContext<CatalogState | null>(null);
+const SavedContext = createContext<SavedState | null>(null);
+const LikesContext = createContext<LikesState | null>(null);
+const ChatContext = createContext<ChatState | null>(null);
+const preferenceWrites = new PreferenceWriter((key, value) =>
+  AsyncStorage.setItem(key, value),
+);
 const initialSettings: Settings = {
   mode: "demo",
   baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "",
@@ -89,8 +113,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, []);
-  if (!settings) return <Loading />;
-  async function changeSettings(next: Settings) {
+  const changeSettings = useCallback(async (next: Settings) => {
     const normalized = {
       ...next,
       baseUrl: next.baseUrl ? validateBaseUrl(next.baseUrl) : "",
@@ -99,7 +122,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw new Error("Isi alamat server terlebih dahulu.");
     await persist(settingsKey, JSON.stringify(normalized));
     setSettings(normalized);
-  }
+  }, []);
+  if (!settings) return <Loading />;
   return (
     <ScopedProvider
       key={preferenceKey(settings)}
@@ -125,7 +149,8 @@ function ScopedProvider({
   const key = preferenceKey(settings);
   useEffect(() => {
     let active = true;
-    (writes.get(key) ?? Promise.resolve())
+    preferenceWrites
+      .flush(key)
       .catch(() => {})
       .then(() => AsyncStorage.getItem(key))
       .then((raw) => {
@@ -149,52 +174,122 @@ function ScopedProvider({
       active = false;
     };
   }, [key, settings.mode]);
+  const lastPersisted = useRef<Preferences | null>(null);
   useEffect(() => {
     if (!ready) return;
     let active = true;
-    persist(key, JSON.stringify(preferences)).catch(() => {
-      if (active) setStorageError("Perubahan belum tersimpan di perangkat.");
-    });
+    const previous = lastPersisted.current;
+    const immediate =
+      !previous ||
+      previous.saved !== preferences.saved ||
+      previous.liked !== preferences.liked;
+    lastPersisted.current = preferences;
+    preferenceWrites.schedule(
+      key,
+      () => JSON.stringify(preferences),
+      () => {
+        if (active) setStorageError("Perubahan belum tersimpan di perangkat.");
+      },
+      immediate,
+    );
     return () => {
       active = false;
     };
   }, [key, preferences, ready]);
+  useEffect(() => {
+    const subscription = NativeAppState.addEventListener("change", (state) => {
+      if (state !== "active") void preferenceWrites.flush(key);
+    });
+    return () => {
+      subscription.remove();
+      void preferenceWrites.flush(key);
+    };
+  }, [key]);
   const catalog = useMemo(
     () =>
-      settings.mode === "demo" ? demoCatalog : backendCatalog(settings.baseUrl),
+      settings.mode === "demo"
+        ? withCatalogCache(demoCatalog, demoBatiks)
+        : withCatalogCache(backendCatalog(settings.baseUrl)),
     [settings.mode, settings.baseUrl],
   );
-  const value: AppState = {
-    settings,
-    changeSettings,
-    preferences,
-    setPreferences,
-    catalog,
-    storageError,
-    toggleLike(id) {
-      feedback("light");
-      setPreferences((current) => ({
-        ...current,
-        liked: current.liked.includes(id)
-          ? current.liked.filter((value) => value !== id)
-          : [...current.liked, id],
-      }));
-    },
-    toggleSave(item) {
-      feedback("light");
-      setPreferences((current) => ({
-        ...current,
-        saved: current.saved.some((value) => value.id === item.id)
-          ? current.saved.filter((value) => value.id !== item.id)
-          : [...current.saved, item],
-      }));
-    },
-  };
+  const toggleLike = useCallback((id: string) => {
+    feedback("light");
+    setPreferences((current) => ({
+      ...current,
+      liked: current.liked.includes(id)
+        ? current.liked.filter((value) => value !== id)
+        : [...current.liked, id],
+    }));
+  }, []);
+  const toggleSave = useCallback((item: Batik) => {
+    feedback("light");
+    setPreferences((current) => ({
+      ...current,
+      saved: current.saved.some((value) => value.id === item.id)
+        ? current.saved.filter((value) => value.id !== item.id)
+        : [...current.saved, item],
+    }));
+  }, []);
+  const catalogValue = useMemo(
+    () => ({ settings, changeSettings, catalog, storageError }),
+    [settings, changeSettings, catalog, storageError],
+  );
+  const savedValue = useMemo(
+    () => ({ saved: preferences.saved, toggleSave }),
+    [preferences.saved, toggleSave],
+  );
+  const likesValue = useMemo(
+    () => ({ liked: preferences.liked, toggleLike }),
+    [preferences.liked, toggleLike],
+  );
+  const chatValue = useMemo(
+    () => ({ messages: preferences.messages, setPreferences }),
+    [preferences.messages],
+  );
   if (!ready) return <Loading />;
-  return <Context.Provider value={value}>{children}</Context.Provider>;
+  return (
+    <CatalogContext.Provider value={catalogValue}>
+      <SavedContext.Provider value={savedValue}>
+        <LikesContext.Provider value={likesValue}>
+          <ChatContext.Provider value={chatValue}>
+            {children}
+          </ChatContext.Provider>
+        </LikesContext.Provider>
+      </SavedContext.Provider>
+    </CatalogContext.Provider>
+  );
 }
-export function useApp() {
-  const value = useContext(Context);
+export function useCatalog() {
+  const value = useContext(CatalogContext);
   if (!value) throw new Error("AppProvider diperlukan.");
   return value;
+}
+export function useSaved() {
+  const value = useContext(SavedContext);
+  if (!value) throw new Error("AppProvider diperlukan.");
+  return value;
+}
+export function useLikes() {
+  const value = useContext(LikesContext);
+  if (!value) throw new Error("AppProvider diperlukan.");
+  return value;
+}
+export function useChat() {
+  const value = useContext(ChatContext);
+  if (!value) throw new Error("AppProvider diperlukan.");
+  return value;
+}
+/** Compatibility for settings pages that display counts from several slices. */
+export function useApp(): AppState {
+  const catalog = useCatalog();
+  const { saved, toggleSave } = useSaved();
+  const { liked, toggleLike } = useLikes();
+  const { messages, setPreferences } = useChat();
+  return {
+    ...catalog,
+    preferences: { saved, liked, messages },
+    setPreferences,
+    toggleSave,
+    toggleLike,
+  };
 }

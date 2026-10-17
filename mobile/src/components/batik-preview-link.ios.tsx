@@ -3,7 +3,7 @@ import { Pressable } from "react-native";
 import type { ReactNode } from "react";
 import type { Batik } from "../lib/types";
 import { feedback } from "../lib/haptics";
-import { useApp } from "../state/app";
+import { useSaved, useLikes } from "../state/app";
 
 export default function BatikPreviewLink({
   item,
@@ -12,9 +12,10 @@ export default function BatikPreviewLink({
   item: Batik;
   children: ReactNode;
 }) {
-  const { preferences, toggleSave, toggleLike } = useApp();
-  const saved = preferences.saved.some((value) => value.id === item.id);
-  const liked = preferences.liked.includes(item.id);
+  const { saved: savedItems, toggleSave } = useSaved();
+  const { liked: likedIds, toggleLike } = useLikes();
+  const saved = savedItems.some((value) => value.id === item.id);
+  const liked = likedIds.includes(item.id);
   return (
     <Link
       asChild

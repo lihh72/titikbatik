@@ -14,7 +14,7 @@ import BatikInfo from "../../components/batik-info";
 import MediaPager from "../../components/media-pager";
 import { shareMedia } from "../../lib/share";
 import type { Batik, Media } from "../../lib/types";
-import { useApp } from "../../state/app";
+import { useCatalog, useSaved, useLikes } from "../../state/app";
 
 export default function Detail() {
   const isPreview = useIsPreview();
@@ -24,9 +24,17 @@ export default function Detail() {
   const initialMedia = Array.isArray(params.media)
     ? params.media[0]
     : params.media;
-  const { catalog, preferences, toggleSave, toggleLike, settings } = useApp();
-  const [item, setItem] = useState<Batik | null>(null);
-  const [selected, setSelected] = useState("motif");
+  const { catalog, settings } = useCatalog();
+  const { saved: savedItems, toggleSave } = useSaved();
+  const { liked: likedIds, toggleLike } = useLikes();
+  const [record, setItem] = useState<Batik | null>(
+    () =>
+      catalog.peek?.(slug ?? "") ??
+      savedItems.find((value) => value.slug === slug) ??
+      null,
+  );
+  const item = record?.slug === slug ? record : null;
+  const [selected, setSelected] = useState(initialMedia ?? "motif");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
@@ -35,9 +43,10 @@ export default function Detail() {
     const controller = new AbortController();
     queueMicrotask(() => {
       if (!controller.signal.aborted) {
-        setLoading(true);
+        const cached = catalog.peek?.(slug ?? "");
+        setLoading(!cached);
         setError(null);
-        setItem(null);
+        if (cached) setItem(cached);
         setSelected(initialMedia ?? "motif");
       }
     });
@@ -57,7 +66,7 @@ export default function Detail() {
   }, [catalog, slug, revision, initialMedia]);
   const media =
     item?.media.find((value) => value.id === selected) ?? item?.media[0];
-  const saved = preferences.saved.some((value) => value.id === item?.id);
+  const saved = savedItems.some((value) => value.id === item?.id);
   useDetailHeaderAction(
     {
       primary: () => {
@@ -67,10 +76,10 @@ export default function Detail() {
         if (item) toggleSave(item);
       },
     },
-    { saved, disabled: sharing || !media, loading: loading || !item },
+    { saved, disabled: sharing || !media, loading: loading && !item },
     !isPreview,
   );
-  const liked = !!item && preferences.liked.includes(item.id);
+  const liked = !!item && likedIds.includes(item.id);
   async function share(selection: Media) {
     if (sharing) return;
     feedback("light");
@@ -103,7 +112,7 @@ export default function Detail() {
         automaticallyAdjustsScrollIndicatorInsets
         contentContainerStyle={{ paddingBottom: 36, gap: 26 }}
       >
-        {loading || error || !item ? (
+        {error || !item ? (
           <Status
             loading={loading}
             error={error}
@@ -114,6 +123,7 @@ export default function Detail() {
           <>
             {media ? (
               <MediaPager
+                key={item.id}
                 media={item.media}
                 selected={media.id}
                 onSelect={setSelected}

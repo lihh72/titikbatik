@@ -1,15 +1,10 @@
+import { memo } from "react";
 import { Image } from "expo-image";
 import { Text, View } from "react-native";
 import type { Batik } from "../lib/types";
 import { Icon, usePalette } from "./ui";
 
-export default function CatalogTileContent({
-  item,
-  saved,
-}: {
-  item: Batik;
-  saved: boolean;
-}) {
+function CatalogTileContent({ item, saved }: { item: Batik; saved: boolean }) {
   const p = usePalette();
   const preview = item.media.find((media) => media.kind === "image");
   const video = item.media.some((media) => media.kind === "video");
@@ -63,3 +58,5 @@ export default function CatalogTileContent({
     </View>
   );
 }
+
+export default memo(CatalogTileContent);

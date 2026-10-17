@@ -1,3 +1,4 @@
+import { memo } from "react";
 import CategoryChip from "./category-chip";
 import { Image } from "expo-image";
 import { Pressable, ScrollView, View } from "react-native";
@@ -5,7 +6,7 @@ import type { Batik } from "../lib/types";
 import { feedback } from "../lib/haptics";
 import { Copy, usePalette } from "./ui";
 
-export default function CatalogCategories({
+function CatalogCategories({
   items,
   selected,
   onSelect,
@@ -90,3 +91,5 @@ export default function CatalogCategories({
     </View>
   );
 }
+
+export default memo(CatalogCategories);

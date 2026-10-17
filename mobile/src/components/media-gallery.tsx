@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { feedback } from "../lib/haptics";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -8,9 +8,10 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import LoopCarousel from "./loop-carousel";
 import type { Media } from "../lib/types";
 import { BatikVideo } from "./video";
-import { Icon, useAccessibility, usePalette } from "./ui";
+import { Icon, usePalette } from "./ui";
 
 export type MediaPagerProps = {
   media: Media[];
@@ -29,8 +30,6 @@ export default function MediaGallery({
   const [width, setWidth] = useState(window.width);
   const height = Math.min(width * 1.2, window.height * 0.58, 600);
   const p = usePalette();
-  const { reducedMotion } = useAccessibility();
-  const pager = useRef<ScrollView>(null);
   function selectMedia(id: string) {
     if (id === selected) return;
     feedback();
@@ -40,47 +39,40 @@ export default function MediaGallery({
     0,
     media.findIndex((item) => item.id === selected),
   );
-  useEffect(() => {
-    pager.current?.scrollTo({ x: index * width, animated: !reducedMotion });
-  }, [index, width, reducedMotion]);
   return (
     <View
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       style={{ gap: 16 }}
     >
-      <ScrollView
-        ref={pager}
-        horizontal
-        pagingEnabled
-        contentInsetAdjustmentBehavior="never"
-        automaticallyAdjustContentInsets={false}
-        bounces={false}
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(event) => {
-          const next = Math.round(event.nativeEvent.contentOffset.x / width);
-          if (media[next]) selectMedia(media[next].id);
-        }}
-        style={{ height, backgroundColor: p.paper }}
-      >
-        {media.map((item) => (
-          <View
-            key={item.id}
-            style={{ width, height, backgroundColor: p.paper }}
-          >
+      <LoopCarousel
+        items={media}
+        initialWidth={width}
+        slideHeight={height}
+        controlsBelow
+        selectedId={selected}
+        onSelect={onSelect}
+        autoplay={media[index]?.kind !== "video"}
+        label={(item, i) =>
+          `Media ${i + 1} dari ${media.length}: ${item.label}`
+        }
+        renderSlide={(item, _index, slideWidth, active) => (
+          <View style={{ width: slideWidth, height, backgroundColor: p.paper }}>
             {item.kind === "image" ? (
               <Image
                 source={item.source}
+                cachePolicy="memory-disk"
+                transition={0}
                 contentFit="contain"
                 accessibilityLabel={item.label}
-                style={{ width, height }}
+                style={{ width: slideWidth, height }}
                 onError={onError}
               />
-            ) : item.id === selected ? (
+            ) : active ? (
               <BatikVideo source={item.source} height={height} />
             ) : null}
           </View>
-        ))}
-      </ScrollView>
+        )}
+      />
       <View
         style={{
           paddingHorizontal: 20,

@@ -1,4 +1,7 @@
 import { Platform, View } from "react-native";
+import { useCallback, useState } from "react";
+import { AccessibilityProvider } from "../components/accessibility";
+import BootEntrance from "../components/boot-entrance";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   NavigationChromeProvider,
@@ -117,6 +120,8 @@ function Navigation() {
   );
 }
 export default function RootLayout() {
+  const [bootComplete, setBootComplete] = useState(false);
+  const finishBoot = useCallback(() => setBootComplete(true), []);
   return (
     <ThemeProvider
       value={{
@@ -130,11 +135,15 @@ export default function RootLayout() {
         },
       }}
     >
-      <AppProvider>
-        <NavigationChromeProvider>
-          <Navigation />
-        </NavigationChromeProvider>
-      </AppProvider>
+      <AccessibilityProvider>
+        <AppProvider>
+          <BootEntrance completed={bootComplete} onComplete={finishBoot}>
+            <NavigationChromeProvider>
+              <Navigation />
+            </NavigationChromeProvider>
+          </BootEntrance>
+        </AppProvider>
+      </AccessibilityProvider>
     </ThemeProvider>
   );
 }

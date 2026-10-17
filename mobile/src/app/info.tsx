@@ -2,11 +2,11 @@ import { router, Stack } from "expo-router";
 import { useState, type ReactNode } from "react";
 import { Alert, Pressable, ScrollView, TextInput, View } from "react-native";
 import { Copy, Icon, Screen, usePalette } from "../components/ui";
-import { useApp } from "../state/app";
+import { useCatalog } from "../state/app";
 
 export default function Settings() {
   const p = usePalette();
-  const { settings, changeSettings } = useApp();
+  const { settings, changeSettings } = useCatalog();
   const [mode, setMode] = useState(settings.mode);
   const [url, setUrl] = useState(settings.baseUrl);
   const [saving, setSaving] = useState(false);
