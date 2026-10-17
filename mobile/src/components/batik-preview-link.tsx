@@ -3,7 +3,7 @@ import { Alert, Platform, Pressable } from "react-native";
 import type { ReactNode } from "react";
 import type { Batik } from "../lib/types";
 import { feedback } from "../lib/haptics";
-import { useApp } from "../state/app";
+import { useSaved } from "../state/app";
 
 export default function BatikPreviewLink({
   item,
@@ -12,8 +12,8 @@ export default function BatikPreviewLink({
   item: Batik;
   children: ReactNode;
 }) {
-  const { preferences, toggleSave } = useApp();
-  const saved = preferences.saved.some((value) => value.id === item.id);
+  const { saved: savedItems, toggleSave } = useSaved();
+  const saved = savedItems.some((value) => value.id === item.id);
   return (
     <Pressable
       accessibilityRole="button"

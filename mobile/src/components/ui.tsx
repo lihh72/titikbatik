@@ -1,3 +1,4 @@
+import { useAccessibility } from "./accessibility";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { feedback } from "../lib/haptics";
 import {
@@ -7,14 +8,8 @@ import {
 } from "expo-glass-effect";
 import { Image } from "expo-image";
 import BatikPreviewLink from "./batik-preview-link";
+import { type ComponentProps, type ReactNode } from "react";
 import {
-  useEffect,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from "react";
-import {
-  AccessibilityInfo,
   ActivityIndicator,
   Platform,
   Pressable,
@@ -26,7 +21,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-screens/experimental";
 import type { Batik } from "../lib/types";
-import { useApp } from "../state/app";
+import { useCatalog, useSaved } from "../state/app";
+
+export { useAccessibility } from "./accessibility";
 
 const dark = {
   paper: "#000000",
@@ -39,41 +36,6 @@ const dark = {
 };
 export function usePalette() {
   return dark;
-}
-export function useAccessibility() {
-  const [reducedMotion, setMotion] = useState(false);
-  const [reducedTransparency, setTransparency] = useState(true);
-  useEffect(() => {
-    let active = true;
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then((value) => {
-        if (active) setMotion(value);
-      })
-      .catch(() => {});
-    if (Platform.OS === "ios")
-      AccessibilityInfo.isReduceTransparencyEnabled()
-        .then((value) => {
-          if (active) setTransparency(value);
-        })
-        .catch(() => {});
-    const motion = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setMotion,
-    );
-    const transparency =
-      Platform.OS === "ios"
-        ? AccessibilityInfo.addEventListener(
-            "reduceTransparencyChanged",
-            setTransparency,
-          )
-        : null;
-    return () => {
-      active = false;
-      motion.remove();
-      transparency?.remove();
-    };
-  }, []);
-  return { reducedMotion, reducedTransparency };
 }
 export function Icon({
   name,
@@ -278,7 +240,7 @@ export function Screen({
   style?: StyleProp<ViewStyle>;
 }) {
   const p = usePalette();
-  const { storageError } = useApp();
+  const { storageError } = useCatalog();
   return (
     <SafeAreaView
       edges={{ top, bottom: true, left: true, right: true }}
@@ -341,8 +303,8 @@ export function BatikCard({
 }) {
   const p = usePalette();
   const { reducedMotion } = useAccessibility();
-  const { preferences, toggleSave } = useApp();
-  const saved = preferences.saved.some((value) => value.id === item.id);
+  const { saved: savedItems, toggleSave } = useSaved();
+  const saved = savedItems.some((value) => value.id === item.id);
   const preview = item.media.find((media) => media.kind === "image");
   return (
     <View style={{ flex: 1, position: "relative" }}>

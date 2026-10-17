@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
@@ -5,7 +6,7 @@ import type { Batik } from "../lib/types";
 import { feedback } from "../lib/haptics";
 import { Copy, Icon, usePalette } from "./ui";
 
-export default function CostumeCollection({ items }: { items: Batik[] }) {
+function CostumeCollection({ items }: { items: Batik[] }) {
   const p = usePalette();
   const costumes = items
     .flatMap((item) => {
@@ -74,3 +75,5 @@ export default function CostumeCollection({ items }: { items: Batik[] }) {
     </View>
   );
 }
+
+export default memo(CostumeCollection);

@@ -4,11 +4,11 @@ import { router } from "expo-router";
 import { Alert, Platform, Pressable } from "react-native";
 
 import type { Batik } from "../lib/types";
-import { useApp } from "../state/app";
+import { useSaved } from "../state/app";
 
 export default function CatalogTile({ item }: { item: Batik }) {
-  const { preferences, toggleSave } = useApp();
-  const saved = preferences.saved.some((value) => value.id === item.id);
+  const { saved: savedItems, toggleSave } = useSaved();
+  const saved = savedItems.some((value) => value.id === item.id);
   const open = () =>
     router.push({ pathname: "/batik/[slug]", params: { slug: item.slug } });
 

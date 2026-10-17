@@ -23,6 +23,7 @@ export type Page = {
   totalPages: number;
 };
 export type Catalog = {
+  peek?: (slug: string) => Batik | undefined;
   list: (query: string, page: number, signal?: AbortSignal) => Promise<Page>;
   detail: (slug: string, signal?: AbortSignal) => Promise<Batik>;
 };

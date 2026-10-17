@@ -34,7 +34,7 @@ import { feedback } from "../../../lib/haptics";
 import { streamChat } from "../../../lib/chat";
 import { demoBatiks, searchDemo } from "../../../lib/demo";
 import type { Attachment, Message } from "../../../lib/types";
-import { useApp } from "../../../state/app";
+import { useCatalog, useChat } from "../../../state/app";
 
 const suggestions = [
   "Tampilkan koleksi terbaru",
@@ -44,7 +44,8 @@ const suggestions = [
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 export default function Assistant() {
   const p = usePalette();
-  const { settings, preferences, setPreferences } = useApp();
+  const { settings } = useCatalog();
+  const { messages, setPreferences } = useChat();
   const { height: headerHeight } = useTabChrome();
   const [input, setInput] = useState("");
   const [image, setImage] = useState<Attachment | null>(null);
@@ -65,7 +66,6 @@ export default function Assistant() {
     [],
   );
   const headerScroll = useHeaderScroll(updateScrollPosition);
-  const messages = preferences.messages;
   const update = useCallback(
     (id: string, apply: (message: Message) => Message) =>
       setPreferences((current) => ({

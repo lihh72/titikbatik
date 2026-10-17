@@ -6,7 +6,7 @@ type Scheduler = {
 
 /** Slide timing is independent of UI-thread animation values and callbacks. */
 export class CarouselClock {
-  readonly duration = 5500;
+  readonly duration = 3000;
   private remaining = this.duration;
   private startedAt: number | null = null;
   private handle: unknown;

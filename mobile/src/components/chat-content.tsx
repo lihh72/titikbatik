@@ -1,8 +1,13 @@
+import { memo } from "react";
 import { Linking, Text, View } from "react-native";
 import { Copy, usePalette } from "./ui";
 
 // Native text rendering for the Markdown structures returned by the existing assistant.
-export function ChatContent({ content }: { content: string }) {
+export const ChatContent = memo(function ChatContent({
+  content,
+}: {
+  content: string;
+}) {
   const p = usePalette();
   return (
     <View style={{ gap: 8 }}>
@@ -55,4 +60,4 @@ export function ChatContent({ content }: { content: string }) {
       })}
     </View>
   );
-}
+});
