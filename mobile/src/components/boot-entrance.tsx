@@ -1,4 +1,15 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useCallback,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import * as SplashScreen from "expo-splash-screen";
+import { Image } from "expo-image";
+import { remainingBootHold } from "../lib/boot-timing";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   cancelAnimation,
@@ -10,7 +21,6 @@ import Animated, {
   withDelay,
   withTiming,
 } from "react-native-reanimated";
-import BrandTitle from "./brand-title";
 
 const BootReady = createContext(true);
 export const useBootReady = () => useContext(BootReady);
@@ -19,27 +29,58 @@ export const useBootReady = () => useContext(BootReady);
 export default function BootEntrance({
   children,
   completed,
+  ready,
   onComplete,
 }: {
   children: ReactNode;
   completed: boolean;
+  ready: boolean;
   onComplete: () => void;
 }) {
   const reducedMotion = useReducedMotion();
+  const [visible, setVisible] = useState(completed);
+  const [imageReady, setImageReady] = useState(false);
+  const [layoutReady, setLayoutReady] = useState(false);
+  const startedAt = useRef(0);
+  const handleLayout = useCallback(() => {
+    setLayoutReady(true);
+  }, []);
+  useEffect(() => {
+    if (completed || !layoutReady || !imageReady) return;
+    let active = true;
+    void SplashScreen.hideAsync()
+      .catch(() => {})
+      .then(() => {
+        if (!active) return;
+        startedAt.current = Date.now();
+        setVisible(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [completed, layoutReady, imageReady]);
   const mark = useSharedValue(completed ? 1 : 0);
   const reveal = useSharedValue(completed ? 1 : 0);
   useEffect(() => {
     if (completed) {
       mark.value = 1;
-      reveal.value = 1;
       return;
     }
+    if (!visible) return;
     mark.value = withTiming(1, {
       duration: reducedMotion ? 0 : 420,
       easing: Easing.out(Easing.cubic),
     });
+    return () => cancelAnimation(mark);
+  }, [completed, visible, mark, reducedMotion]);
+  useEffect(() => {
+    if (completed) {
+      reveal.value = 1;
+      return;
+    }
+    if (!visible || !ready) return;
     reveal.value = withDelay(
-      reducedMotion ? 0 : 520,
+      remainingBootHold(Date.now() - startedAt.current, reducedMotion),
       withTiming(
         1,
         {
@@ -51,22 +92,21 @@ export default function BootEntrance({
         },
       ),
     );
-    return () => {
-      cancelAnimation(mark);
-      cancelAnimation(reveal);
-    };
-  }, [completed, mark, reveal, onComplete, reducedMotion]);
+    return () => cancelAnimation(reveal);
+  }, [completed, visible, ready, reveal, onComplete, reducedMotion]);
   const brandStyle = useAnimatedStyle(() => ({
-    opacity: mark.value,
     transform: [
-      { translateY: reducedMotion ? 0 : 12 * (1 - mark.value) },
-      { scale: 1.35 + mark.value * 0.1 },
+      { translateY: reducedMotion ? 0 : -8 * mark.value },
+      { scale: reducedMotion ? 1 : 1 + mark.value * 0.08 },
     ],
   }));
   const veilStyle = useAnimatedStyle(() => ({ opacity: 1 - reveal.value }));
   return (
     <BootReady.Provider value={completed}>
-      <View style={{ flex: 1, backgroundColor: "#000000" }}>
+      <View
+        onLayout={handleLayout}
+        style={{ flex: 1, backgroundColor: "#000000" }}
+      >
         <View
           style={{ flex: 1 }}
           accessibilityElementsHidden={!completed}
@@ -89,7 +129,14 @@ export default function BootEntrance({
             ]}
           >
             <Animated.View style={brandStyle}>
-              <BrandTitle />
+              <Image
+                source={require("../../assets/logo.png")}
+                style={{ width: 100, height: 100 }}
+                contentFit="contain"
+                transition={0}
+                onDisplay={() => setImageReady(true)}
+                onError={() => setImageReady(true)}
+              />
             </Animated.View>
           </Animated.View>
         )}

@@ -80,7 +80,9 @@ Context katalog, bookmark, suka dan chat terpisah agar update token tidak merend
 
 ## Motion dan refresh
 
-Setiap cold boot atau reload penuh JS menampilkan logo/wordmark lalu membuka katalog dalam sekitar 0,9 detik. Animasi menunggu preferensi lokal siap, tidak berulang saat ganti tab, ganti mode, atau kembali dari background, dan dilewati ketika Reduce Motion aktif. Untuk melihat ulang di Expo Go, gunakan Reload; Fast Refresh dapat mempertahankan state boot yang sudah selesai.
+Setiap cold boot atau reload penuh JS melanjutkan logo splash menjadi animasi sambil memuat preferensi lokal, lalu membuka katalog dalam sekitar 0,9 detik jika data sudah siap. Frame pertama memakai logo 100 pt tepat di tengah latar hitam, sama dengan konfigurasi splash native yang ada. Splash dilepas setelah logo React sudah ditampilkan; logo kemudian membesar dan naik sedikit sebelum membuka katalog, tanpa pembuka logo kedua. Jika pemuatan data lebih lama, katalog dibuka setelah data siap tanpa mengulang countdown. Animasi tidak berulang saat ganti tab, ganti mode, atau kembali dari background, dan dilewati ketika Reduce Motion aktif. Untuk melihat ulang di Expo Go, gunakan Reload; Fast Refresh dapat mempertahankan state boot yang sudah selesai. Expo Go tidak merepresentasikan splash release secara penuh.
+
+Versi alpha dimulai dari `0.1.0-alpha.1`. Label lengkap ditampilkan di Pengaturan; versi native iOS menggunakan `0.1.0` dengan build number `1` sesuai format Apple.
 
 Sorotan memakai kapsul navigasi di dalam hero: chevron, dots putih, dan marker aktif terracotta yang memanjang dan terisi selama 3 detik. Navigasi manual mengulang countdown, jeda melanjutkan sisa waktu, dan autoplay berhenti ketika layar tidak aktif, app di background, atau Reduce Motion aktif. Carousel menunggu animasi boot selesai sebelum menjalankan timer. Hero menyambung slide terakhir ke pertama dan sebaliknya dengan halaman salinan pada kedua ujung. Detail memakai carousel yang sama, dengan kapsul di bawah media agar kontrol video tidak tertutup; autoplay berhenti pada video, yang tetap diputar manual.
 

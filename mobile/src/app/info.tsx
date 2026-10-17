@@ -1,3 +1,4 @@
+import { appVersion } from "../lib/app-version";
 import { router, Stack } from "expo-router";
 import { useState, type ReactNode } from "react";
 import { Alert, Pressable, ScrollView, TextInput, View } from "react-native";
@@ -123,7 +124,7 @@ export default function Settings() {
           </Pressable>
         </SettingsSection>
         <Copy muted style={{ textAlign: "center", fontSize: 13 }}>
-          TitikBatik · Versi 1.0
+          TitikBatik · Versi {appVersion}
         </Copy>
       </ScrollView>
     </Screen>

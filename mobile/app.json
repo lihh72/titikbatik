@@ -2,14 +2,15 @@
   "expo": {
     "name": "TitikBatik",
     "slug": "titikbatik-mobile",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "scheme": "titikbatik",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "id.titikbatik.mobile"
+      "bundleIdentifier": "id.titikbatik.mobile",
+      "buildNumber": "1"
     },
     "android": {
       "package": "id.titikbatik.mobile",
@@ -54,7 +55,8 @@
       "router": {},
       "eas": {
         "projectId": "6bebd343-1488-481f-912c-6733b111f3dc"
-      }
+      },
+      "versionLabel": "0.1.0-alpha.1"
     },
     "owner": "faihilmy"
   }

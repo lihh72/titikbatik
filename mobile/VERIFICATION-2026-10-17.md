@@ -62,3 +62,11 @@ CatalogScreen, useHeaderScroll, HeaderTitle dan CatalogWordmark dikembalikan per
 ## Optimasi performa tanpa perubahan animasi
 
 Lihat PERFORMANCE-2026-10-17.md. Context dipisah, derivasi grid/hero dimemoisasi, Markdown lama dimemoisasi, merge pagination linear, dan buffer preference chat 250 ms dengan flush lifecycle. 36 tes, lint, TypeScript dan ekspor iOS lolos; 10 hash file motion identik. Expo Doctor 20/21: tiga patch versi Expo tersedia, dependency tidak diganti. Browser smoke bookmark/chat persistence/detail lolos.
+
+## Alpha 0.1.0-alpha.1 dan splash menyambung
+
+- Optimized snapshot dimerge ke main setelah fetch/pull. Snapshot final dan optimized tetap terpisah.
+- Package dan label Pengaturan memakai 0.1.0-alpha.1; versi native 0.1.0/build 1.
+- Konfigurasi splash native dipertahankan: logo 100 pt di tengah latar hitam. Overlay React memakai frame awal yang sama dan menunggu onDisplay sebelum melepaskan splash, lalu menganimasikan logo. Tidak ada pembuka wordmark kedua.
+- Overlay berjalan selama hydration; navigator tetap menunggu preferensi aksesibilitas dan data lokal. Ancestor navigator tidak ditransformasi. Reveal menunggu data siap, tanpa countdown kedua jika hydration lambat. Reduce Motion melewati motion/hold.
+- TypeScript, lint, 39 tes dan ekspor iOS lolos. Belum diverifikasi secara visual pada perangkat release fisik; splash Expo Go berbeda dari release. Tidak membuat IPA baru sesuai instruksi pengguna.

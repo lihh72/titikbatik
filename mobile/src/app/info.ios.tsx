@@ -1,3 +1,4 @@
+import { appVersion } from "../lib/app-version";
 import {
   Button,
   Form,
@@ -183,7 +184,7 @@ export default function NativeSettings() {
               <Text>TitikBatik · katalog motif digital dan penerapannya.</Text>
             }
           >
-            <Text>Versi 1.0</Text>
+            <Text>{`Versi ${appVersion}`}</Text>
           </Section>
         </Form>
       </Host>

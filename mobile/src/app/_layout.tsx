@@ -1,6 +1,7 @@
 import { Platform, View } from "react-native";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AccessibilityProvider } from "../components/accessibility";
+import * as SplashScreen from "expo-splash-screen";
 import BootEntrance from "../components/boot-entrance";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -13,6 +14,15 @@ import { DarkTheme, Stack, ThemeProvider, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AppProvider } from "../state/app";
 import { useAccessibility, usePalette } from "../components/ui";
+
+void SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function BootContentReady({ onReady }: { onReady: () => void }) {
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
+  return null;
+}
 
 function Navigation() {
   const p = usePalette();
@@ -121,6 +131,8 @@ function Navigation() {
 }
 export default function RootLayout() {
   const [bootComplete, setBootComplete] = useState(false);
+  const [contentReady, setContentReady] = useState(false);
+  const contentLoaded = useCallback(() => setContentReady(true), []);
   const finishBoot = useCallback(() => setBootComplete(true), []);
   return (
     <ThemeProvider
@@ -135,15 +147,20 @@ export default function RootLayout() {
         },
       }}
     >
-      <AccessibilityProvider>
-        <AppProvider>
-          <BootEntrance completed={bootComplete} onComplete={finishBoot}>
+      <BootEntrance
+        completed={bootComplete}
+        ready={contentReady}
+        onComplete={finishBoot}
+      >
+        <AccessibilityProvider>
+          <AppProvider>
             <NavigationChromeProvider>
               <Navigation />
+              <BootContentReady onReady={contentLoaded} />
             </NavigationChromeProvider>
-          </BootEntrance>
-        </AppProvider>
-      </AccessibilityProvider>
+          </AppProvider>
+        </AccessibilityProvider>
+      </BootEntrance>
     </ThemeProvider>
   );
 }
