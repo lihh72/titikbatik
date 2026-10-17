@@ -12,6 +12,7 @@ import {
 } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { backendCatalog, validateBaseUrl } from "../lib/api";
+import { withCatalogCache } from "../lib/catalog-cache";
 import { demoBatiks, demoCatalog } from "../lib/demo";
 import {
   emptyPreferences,
@@ -161,7 +162,9 @@ function ScopedProvider({
   }, [key, preferences, ready]);
   const catalog = useMemo(
     () =>
-      settings.mode === "demo" ? demoCatalog : backendCatalog(settings.baseUrl),
+      settings.mode === "demo"
+        ? withCatalogCache(demoCatalog, demoBatiks)
+        : withCatalogCache(backendCatalog(settings.baseUrl)),
     [settings.mode, settings.baseUrl],
   );
   const value: AppState = {

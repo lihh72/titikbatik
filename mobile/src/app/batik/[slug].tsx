@@ -25,8 +25,14 @@ export default function Detail() {
     ? params.media[0]
     : params.media;
   const { catalog, preferences, toggleSave, toggleLike, settings } = useApp();
-  const [item, setItem] = useState<Batik | null>(null);
-  const [selected, setSelected] = useState("motif");
+  const [record, setItem] = useState<Batik | null>(
+    () =>
+      catalog.peek?.(slug ?? "") ??
+      preferences.saved.find((value) => value.slug === slug) ??
+      null,
+  );
+  const item = record?.slug === slug ? record : null;
+  const [selected, setSelected] = useState(initialMedia ?? "motif");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
@@ -35,9 +41,10 @@ export default function Detail() {
     const controller = new AbortController();
     queueMicrotask(() => {
       if (!controller.signal.aborted) {
-        setLoading(true);
+        const cached = catalog.peek?.(slug ?? "");
+        setLoading(!cached);
         setError(null);
-        setItem(null);
+        if (cached) setItem(cached);
         setSelected(initialMedia ?? "motif");
       }
     });
@@ -67,7 +74,7 @@ export default function Detail() {
         if (item) toggleSave(item);
       },
     },
-    { saved, disabled: sharing || !media, loading: loading || !item },
+    { saved, disabled: sharing || !media, loading: loading && !item },
     !isPreview,
   );
   const liked = !!item && preferences.liked.includes(item.id);
@@ -103,7 +110,7 @@ export default function Detail() {
         automaticallyAdjustsScrollIndicatorInsets
         contentContainerStyle={{ paddingBottom: 36, gap: 26 }}
       >
-        {loading || error || !item ? (
+        {error || !item ? (
           <Status
             loading={loading}
             error={error}
@@ -114,6 +121,7 @@ export default function Detail() {
           <>
             {media ? (
               <MediaPager
+                key={item.id}
                 media={item.media}
                 selected={media.id}
                 onSelect={setSelected}

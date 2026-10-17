@@ -8,9 +8,11 @@ import { Icon } from "./ui";
 export default function CatalogIntro({
   item,
   variant = 0,
+  hasPagination = false,
 }: {
   item?: Batik;
   variant?: number;
+  hasPagination?: boolean;
 }) {
   const { fontScale } = useWindowDimensions();
   if (!item) return null;
@@ -52,7 +54,10 @@ export default function CatalogIntro({
         }}
         style={({ pressed }) => ({
           flexDirection: "row",
-          minHeight: Math.max(260, Math.ceil(240 * fontScale)),
+          minHeight: Math.max(
+            hasPagination ? 308 : 260,
+            Math.ceil(240 * fontScale) + (hasPagination ? 48 : 0),
+          ),
           flex: 1,
           borderRadius: 24,
           overflow: "hidden",
@@ -64,6 +69,7 @@ export default function CatalogIntro({
           style={{
             width: "53%",
             padding: 20,
+            paddingBottom: hasPagination ? 72 : 20,
             gap: 12,
             justifyContent: "space-between",
           }}
@@ -130,7 +136,7 @@ export default function CatalogIntro({
               style={{
                 position: "absolute",
                 right: 12,
-                bottom: 12,
+                bottom: hasPagination ? 64 : 12,
                 width: 64,
                 height: 64,
                 borderRadius: 15,

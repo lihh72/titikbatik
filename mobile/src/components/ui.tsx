@@ -1,3 +1,4 @@
+import { useAccessibility } from "./accessibility";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { feedback } from "../lib/haptics";
 import {
@@ -7,14 +8,8 @@ import {
 } from "expo-glass-effect";
 import { Image } from "expo-image";
 import BatikPreviewLink from "./batik-preview-link";
+import { type ComponentProps, type ReactNode } from "react";
 import {
-  useEffect,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from "react";
-import {
-  AccessibilityInfo,
   ActivityIndicator,
   Platform,
   Pressable,
@@ -28,6 +23,8 @@ import { SafeAreaView } from "react-native-screens/experimental";
 import type { Batik } from "../lib/types";
 import { useApp } from "../state/app";
 
+export { useAccessibility } from "./accessibility";
+
 const dark = {
   paper: "#000000",
   raised: "#151515",
@@ -39,41 +36,6 @@ const dark = {
 };
 export function usePalette() {
   return dark;
-}
-export function useAccessibility() {
-  const [reducedMotion, setMotion] = useState(false);
-  const [reducedTransparency, setTransparency] = useState(true);
-  useEffect(() => {
-    let active = true;
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then((value) => {
-        if (active) setMotion(value);
-      })
-      .catch(() => {});
-    if (Platform.OS === "ios")
-      AccessibilityInfo.isReduceTransparencyEnabled()
-        .then((value) => {
-          if (active) setTransparency(value);
-        })
-        .catch(() => {});
-    const motion = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setMotion,
-    );
-    const transparency =
-      Platform.OS === "ios"
-        ? AccessibilityInfo.addEventListener(
-            "reduceTransparencyChanged",
-            setTransparency,
-          )
-        : null;
-    return () => {
-      active = false;
-      motion.remove();
-      transparency?.remove();
-    };
-  }, []);
-  return { reducedMotion, reducedTransparency };
 }
 export function Icon({
   name,

@@ -36,6 +36,7 @@ function fixture() {
 
 test("every automatic slide gets a full duration, including cleanup after completion", () => {
   const f = fixture();
+  assert.equal(f.clock.duration, 3000);
   let slides = 0;
   const next = () => {
     slides++;
@@ -44,7 +45,7 @@ test("every automatic slide gets a full duration, including cleanup after comple
   };
   f.clock.start(next);
   for (let expected = 1; expected <= 6; expected++) {
-    f.advance(5499);
+    f.advance(f.clock.duration - 1);
     assert.equal(slides, expected - 1);
     f.advance(1);
     assert.equal(slides, expected);
@@ -62,15 +63,15 @@ test("pause preserves remaining time and resume advances only once", () => {
   assert.equal(slides, 0);
   assert.equal(
     f.clock.start(() => slides++),
-    3500,
+    f.clock.duration - 2000,
   );
-  f.advance(3499);
+  f.advance(f.clock.duration - 2001);
   assert.equal(slides, 0);
   f.advance(1);
   assert.equal(slides, 1);
   assert.equal(
     f.clock.start(() => slides++),
-    5500,
+    f.clock.duration,
   );
 });
 
@@ -79,15 +80,15 @@ test("manual reset invalidates queued callbacks and gives the chosen slide full 
   let slides = 0;
   f.clock.start(() => slides++);
   const stale = [...f.jobs.values()][0].callback;
-  f.advance(5400);
+  f.advance(f.clock.duration - 100);
   f.clock.reset();
   assert.equal(
     f.clock.start(() => slides++),
-    5500,
+    f.clock.duration,
   );
   stale();
   assert.equal(slides, 0);
-  f.advance(5499);
+  f.advance(f.clock.duration - 1);
   assert.equal(slides, 0);
   f.advance(1);
   assert.equal(slides, 1);

@@ -43,6 +43,8 @@ export default function CatalogScreen() {
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshStarted = useRef<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const filteredCatalog = useMemo(() => {
@@ -62,6 +64,7 @@ export default function CatalogScreen() {
   }, [query, category]);
   useEffect(() => {
     const controller = new AbortController();
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     busyRef.current = true;
     queueMicrotask(() => {
       if (!controller.signal.aborted) {
@@ -99,17 +102,35 @@ export default function CatalogScreen() {
         if (!controller.signal.aborted) {
           busyRef.current = false;
           setLoading(false);
+          if (refreshStarted.current !== null) {
+            // Give UIKit time to show its active rotation even for instant demo results.
+            const remaining = Math.max(
+              0,
+              600 - (Date.now() - refreshStarted.current),
+            );
+            refreshTimer = setTimeout(() => {
+              refreshStarted.current = null;
+              setRefreshing(false);
+            }, remaining);
+          }
         }
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      clearTimeout(refreshTimer);
+    };
   }, [catalog, filteredCatalog, activeQuery, activeCategory, page, revision]);
   function refresh() {
+    if (refreshStarted.current !== null) return;
+    refreshStarted.current = Date.now();
+    setRefreshing(true);
+    busyRef.current = true;
     feedback("light");
     setPage(1);
     setRevision((value) => value + 1);
   }
   function loadNext() {
-    if (busyRef.current || error || page >= totalPages) return;
+    if (refreshing || busyRef.current || error || page >= totalPages) return;
     busyRef.current = true;
     setPage((value) => value + 1);
   }
@@ -244,9 +265,10 @@ export default function CatalogScreen() {
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
-            refreshing={loading && page === 1 && items.length > 0}
+            refreshing={refreshing}
             onRefresh={refresh}
             tintColor={p.soft}
+            progressViewOffset={Platform.OS === "ios" ? 24 : 0}
           />
         }
         onEndReached={loadNext}
