@@ -1,21 +1,32 @@
 {
-  "cli": { "version": ">= 16.0.0", "appVersionSource": "local" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
   "build": {
     "apk": {
       "distribution": "internal",
       "environment": "preview",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      }
     },
     "ipa": {
       "distribution": "internal",
       "environment": "preview",
       "withoutCredentials": true,
-      "ios": { "simulator": false, "config": "ios-unsigned.yml" }
+      "ios": {
+        "simulator": false,
+        "config": "ios-unsigned.yml",
+        "image": "macos-tahoe-26.6-xcode-27.1"
+      }
     },
     "ipa-store": {
       "distribution": "store",
       "environment": "production",
-      "ios": { "simulator": false }
+      "ios": {
+        "simulator": false
+      }
     },
     "ipa-internal": {
       "extends": "ipa-store",

@@ -1,7 +1,7 @@
 import TabChromeShell from "../../components/tab-chrome-shell";
 import { Tabs } from "expo-router";
 import { Icon, usePalette } from "../../components/ui";
-export const unstable_settings = { initialRouteName: "(catalog)" };
+export const unstable_settings = { anchor: "(catalog)" };
 export default function WebTabs() {
   const p = usePalette();
   return (
@@ -18,8 +18,8 @@ export default function WebTabs() {
           name="(catalog)"
           options={{
             title: "Koleksi",
-            tabBarIcon: ({ color }) => (
-              <Icon name="grid-outline" color={color} />
+            tabBarIcon: ({ focused }) => (
+              <Icon name="grid-outline" color={focused ? p.accent : p.soft} />
             ),
           }}
         />
@@ -27,8 +27,8 @@ export default function WebTabs() {
           name="(saved)"
           options={{
             title: "Tersimpan",
-            tabBarIcon: ({ color }) => (
-              <Icon name="bookmark-outline" color={color} />
+            tabBarIcon: ({ focused }) => (
+              <Icon name="bookmark-outline" color={focused ? p.accent : p.soft} />
             ),
           }}
         />
@@ -36,8 +36,8 @@ export default function WebTabs() {
           name="(assistant)"
           options={{
             title: "Asisten",
-            tabBarIcon: ({ color }) => (
-              <Icon name="chatbubbles-outline" color={color} />
+            tabBarIcon: ({ focused }) => (
+              <Icon name="chatbubbles-outline" color={focused ? p.accent : p.soft} />
             ),
           }}
         />

@@ -79,7 +79,7 @@ export default function Saved() {
             >
               {saved.length} motif tersimpan
             </Copy>
-          ) : null
+          ) : undefined
         }
       />
     </>

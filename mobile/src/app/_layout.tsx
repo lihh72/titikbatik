@@ -13,6 +13,7 @@ import HeaderActions from "../components/header-actions";
 import { DarkTheme, Stack, ThemeProvider, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AppProvider } from "../state/app";
+import { nativeHeaderAppearance } from "../lib/native-header-appearance";
 import { useAccessibility, usePalette } from "../components/ui";
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -44,17 +45,13 @@ function Navigation() {
       <Stack
         screenOptions={{
           headerTintColor: p.accent,
-          headerTransparent: Platform.OS === "ios" && !reducedTransparency,
-          headerStyle: {
-            backgroundColor:
-              Platform.OS === "ios" && !reducedTransparency
-                ? "transparent"
-                : p.paper,
-          },
+          ...nativeHeaderAppearance(
+            Platform.OS,
+            Platform.Version,
+            reducedTransparency,
+            p.paper,
+          ),
           headerLargeTitleEnabled: false,
-          scrollEdgeEffects: {
-            top: reducedTransparency ? "hidden" : "automatic",
-          },
           contentStyle: { backgroundColor: p.paper },
           headerShadowVisible: false,
           animation: reducedMotion ? "none" : "default",
@@ -84,6 +81,7 @@ function Navigation() {
           }}
           options={{
             title: "Detail karya",
+            headerTransparent: Platform.OS === "ios" && !reducedTransparency,
             headerStyle: {
               backgroundColor:
                 Platform.OS === "ios" && !reducedTransparency

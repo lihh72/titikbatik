@@ -1,8 +1,8 @@
 import TabChromeShell from "../../components/tab-chrome-shell";
-import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { NativeTabs } from "expo-router/native-tabs";
 import { feedback } from "../../lib/haptics";
 import { useAccessibility, usePalette } from "../../components/ui";
-export const unstable_settings = { initialRouteName: "(catalog)" };
+export const unstable_settings = { anchor: "(catalog)" };
 
 export default function Tabs() {
   const p = usePalette();

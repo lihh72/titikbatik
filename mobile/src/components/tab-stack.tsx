@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { Platform, View } from "react-native";
 import { usePalette, useAccessibility } from "./ui";
+import { nativeHeaderAppearance } from "../lib/native-header-appearance";
 import type { HeaderMode } from "../lib/header-buttons";
 export default function TabStack({
   mode = "catalog",
@@ -13,9 +14,12 @@ export default function TabStack({
     <Stack
       screenOptions={{
         headerShown: Platform.OS === "ios",
-        scrollEdgeEffects: {
-          top: reducedTransparency ? "hidden" : "automatic",
-        },
+        ...nativeHeaderAppearance(
+          Platform.OS,
+          Platform.Version,
+          reducedTransparency,
+          p.paper,
+        ),
         headerTintColor: p.accent,
         // UIKit reserves the large-title/search geometry; shared chrome draws the one visible title.
         title:
@@ -44,13 +48,6 @@ export default function TabStack({
         },
         headerLargeTitleShadowVisible: false,
         headerShadowVisible: false,
-        headerTransparent: Platform.OS === "ios" && !reducedTransparency,
-        headerStyle: {
-          backgroundColor:
-            Platform.OS === "ios" && !reducedTransparency
-              ? "transparent"
-              : p.paper,
-        },
         contentStyle: { backgroundColor: p.paper },
         animation: reducedMotion ? "none" : "default",
       }}

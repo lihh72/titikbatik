@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "id.titikbatik.mobile",
-      "buildNumber": "1"
+      "buildNumber": "2"
     },
     "android": {
       "package": "id.titikbatik.mobile",
@@ -56,7 +56,7 @@
       "eas": {
         "projectId": "6bebd343-1488-481f-912c-6733b111f3dc"
       },
-      "versionLabel": "0.1.0-alpha.1"
+      "versionLabel": "0.1.0-alpha"
     },
     "owner": "faihilmy"
   }

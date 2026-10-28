@@ -323,7 +323,7 @@ export default function CatalogScreen() {
                 </>
               )}
             </View>
-          ) : null
+          ) : undefined
         }
       />
       <CatalogChrome {...chromeProps} />

@@ -11,7 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
+  type ScrollViewInstance,
   TextInput,
   View,
 } from "react-native";
@@ -57,7 +57,7 @@ export default function Assistant() {
     history: Message[];
     image: Attachment | null;
   } | null>(null);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   const nearBottom = useRef(true);
   const updateScrollPosition = useCallback(
     (offset: number, size: number, viewport: number) => {

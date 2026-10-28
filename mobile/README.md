@@ -1,10 +1,14 @@
 # TitikBatik Mobile
 
-App React Native + Expo SDK 57 untuk iOS, dengan native tabs dan Liquid Glass asli pada iOS 26+. Tampilan solid menjadi fallback pada perangkat yang tidak mendukung atau ketika Reduce Transparency aktif. Tidak menggunakan WebView.
+Rilis `0.1.0-alpha` memakai SDK 58. Tidak memuat revamp foto/header setelah snapshot tersebut.
+
+Header iOS 26+ memakai tampilan sistem SDK 58 tanpa override background transparan. Pada iOS 27+, efek scroll edge dipilih `soft` secara eksplisit agar transisinya tetap memburam bertahap. Reduce Transparency tetap memakai background solid. Setelah mengubah konfigurasi ini dari sesi lama, lakukan reload penuh Expo Go.
+
+App React Native + Expo SDK 58 untuk iOS, dengan native tabs dan Liquid Glass asli pada iOS 26+. Tampilan solid menjadi fallback pada perangkat yang tidak mendukung atau ketika Reduce Transparency aktif. Tidak menggunakan WebView.
 
 ## Menjalankan di Expo Go
 
-Prasyarat: Node.js 22.13+ (disarankan Node 24 LTS), npm, dan Expo Go yang mendukung SDK 57 pada iPhone.
+Prasyarat: Node.js 22.13+ (disarankan Node 24 LTS), npm, dan Expo Go yang mendukung SDK 58 pada iPhone.
 
 ```powershell
 cd mobile
@@ -55,7 +59,7 @@ Tidak ada perpindahan otomatis ke demo saat server gagal. Error ditampilkan deng
 - Tombol titik tiga berubah menjadi tutup melalui animasi, sementara tombol pengaturan tetap terlihat. Panel pilihan Nyaman/Rapat memakai indikator geser dan Liquid Glass native pada perangkat yang mendukung. Panel layout mengambang tanpa mendorong daftar. Daftar virtual tetap terpasang saat jumlah kolom berubah, dengan transisi baris Reanimated. Hasil lama dipertahankan selama permintaan filter berlangsung agar tidak berkedip kosong; pergantian sumber data tetap mengosongkan data sebelumnya. Reduce Motion menonaktifkan animasi, dan Reduce Transparency memakai permukaan solid.
 - Haptik melalui `expo-haptics` pada perpindahan tab, membuka motif, simpan/suka, menu/pengaturan, refresh, thumbnail/swipe media, disclosure prompt, berbagi, kirim chat, hasil chat, lampiran dan penyimpanan pengaturan. Pemicu berdekatan digabung selama 90 ms, diabaikan saat background/web, dan kegagalan hardware tidak mengganggu aksi. Tidak ada haptik saat mengetik atau untuk setiap token streaming.
 - Pengaturan iOS memakai SwiftUI Form, Section, Picker dan TextField dalam native form sheet. Tampilan non-iOS menggunakan fallback terpisah.
-- Blur dan gerakan header iOS kembali dikelola UIKit dengan scroll edge automatic, tanpa overlay BlurView tambahan. Katalog memakai `Stack.SearchBar` dengan placement stacked; search tetap tampil dan mengikuti perubahan ukuran navigation bar saat scroll. ScrollView/FlatList memakai automatic content insets agar posisi awal tidak tertutup header. Detail mempertahankan native back gesture dan judul tab asal.
+- Blur dan gerakan header iOS kembali dikelola UIKit dengan scroll edge automatic pada iOS 26 dan soft pada iOS 27+, tanpa overlay BlurView tambahan. Katalog memakai `Stack.SearchBar` dengan placement stacked; search tetap tampil dan mengikuti perubahan ukuran navigation bar saat scroll. ScrollView/FlatList memakai automatic content insets agar posisi awal tidak tertutup header. Detail mempertahankan native back gesture dan judul tab asal.
 - Suka dan bookmark lokal. Riwayat, bookmark, dan suka dipisahkan antara demo dan setiap alamat backend; tidak ada sinkronisasi akun. Bookmark backend menyimpan metadata dan URL, bukan mengunduh seluruh media untuk offline.
 - Share sheet membagikan file media aktif; file unduhan sementara dibersihkan setelah selesai. iOS menyediakan tujuan berbagi/penyimpanan sesuai tipe file.
 - Chatbot streaming dengan protokol SSE web (`token`, `batik`, `error`, `done`), kartu karya, stop, retry, dan hapus riwayat. Stream dihentikan saat tab/layar ditinggalkan. Riwayat teks tersimpan; isi gambar tidak disimpan permanen.
@@ -102,7 +106,7 @@ Test mencakup adapter, URL media, pencarian/paginasi, storage antarmode/server, 
 
 ## Pemeriksaan perangkat sebelum rilis
 
-- Di iPhone iOS 26+, buka melalui Expo Go SDK 57; periksa glass tab bar dan kontrol detail, gesture kembali, notch, serta keyboard chat.
+- Di iPhone iOS 26+, buka melalui Expo Go SDK 58; periksa glass tab bar dan kontrol detail, gesture kembali, notch, serta keyboard chat.
 - Ketuk titik tiga, pilih Rapat/Nyaman, lalu tutup panel; pastikan kontrol kanan atas tetap terlihat dan animasi tidak melompat. Rasakan haptik pada tab, bookmark, suka, pergantian media, dan kirim chat. Getaran fisik perlu diperiksa pada iPhone; browser tidak menjalankan haptik.
 - Uji dengan tema sistem terang/gelap: app tetap memakai latar hitam. Aktifkan ukuran teks besar, Reduce Motion, dan Reduce Transparency; pastikan teks dan semua kontrol terbaca.
 - Mode demo: jelajahi tujuh karya dari hasil generation proyek, buka sorotan, cari `geometris` dan kata tanpa hasil, pilih Rapat/Nyaman dari menu toolbar, pastikan judul tetap terbaca, simpan lewat kartu atau tekan-lama pada mode Nyaman maupun Rapat, buka ulang app, geser media, jalankan video, dan bagikan file. Demo tujuh karya dimuat dalam satu halaman; backend memakai pagination otomatis.
