@@ -2,14 +2,9 @@ import { useDetailHeaderAction } from "../../components/tab-chrome";
 import { Stack, useIsPreview, useLocalSearchParams } from "expo-router";
 import { feedback } from "../../lib/haptics";
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
-import {
-  Copy,
-  IconButton,
-  Screen,
-  Status,
-  usePalette,
-} from "../../components/ui";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Copy, Screen, Status, usePalette } from "../../components/ui";
+import ArtworkIdentity from "../../components/artwork-identity";
 import BatikInfo from "../../components/batik-info";
 import MediaPager from "../../components/media-pager";
 import { shareMedia } from "../../lib/share";
@@ -76,7 +71,7 @@ export default function Detail() {
         if (item) toggleSave(item);
       },
     },
-    { saved, disabled: sharing || !media, loading: loading && !item },
+    { saved, disabled: sharing || !media, loading: !item },
     !isPreview,
   );
   const liked = !!item && likedIds.includes(item.id);
@@ -96,29 +91,38 @@ export default function Detail() {
       setSharing(false);
     }
   }
+  const identity = item ? (
+    <ArtworkIdentity
+      item={item}
+      saved={saved}
+      liked={liked}
+      onSave={() => toggleSave(item)}
+      onLike={() => toggleLike(item.id)}
+    />
+  ) : null;
   return (
     <Screen top={false}>
       {!isPreview && (
         <Stack.Screen
-          options={{
-            title: "Detail karya",
-            headerTintColor: p.ink,
-          }}
+          options={{ title: "Detail karya", headerTintColor: p.ink }}
         />
       )}
       <ScrollView
         style={{ flex: 1 }}
         contentInsetAdjustmentBehavior="automatic"
         automaticallyAdjustsScrollIndicatorInsets
-        contentContainerStyle={{ paddingBottom: 36, gap: 26 }}
+        contentContainerStyle={{ paddingBottom: 42 }}
       >
-        {error || !item ? (
-          <Status
-            loading={loading}
-            error={error}
-            empty="Motif tidak ditemukan."
-            retry={() => setRevision((value) => value + 1)}
-          />
+        {!item ? (
+          loading ? (
+            <DetailSkeleton />
+          ) : (
+            <Status
+              error={error}
+              empty="Motif tidak ditemukan."
+              retry={() => setRevision((value) => value + 1)}
+            />
+          )
         ) : (
           <>
             {media ? (
@@ -127,53 +131,53 @@ export default function Detail() {
                 media={item.media}
                 selected={media.id}
                 onSelect={setSelected}
-                onError={() =>
-                  setError(
-                    "Gambar gagal dimuat. Periksa koneksi lalu coba lagi.",
-                  )
-                }
-              />
-            ) : (
-              <Status empty="Media belum tersedia." />
-            )}
-            <View style={{ paddingHorizontal: 20, gap: 26 }}>
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
               >
-                <View style={{ flex: 1, gap: 8 }}>
-                  <Copy
-                    style={{ color: p.accent, fontSize: 13, fontWeight: "600" }}
-                  >
-                    {item.style}
-                  </Copy>
+                {identity}
+              </MediaPager>
+            ) : (
+              <>
+                <Status empty="Media belum tersedia." />
+                {identity}
+              </>
+            )}
+            <View style={{ paddingHorizontal: 24 }}>
+              {error && (
+                <View style={detailStyles.error}>
+                  <Copy style={{ color: p.accent, fontSize: 13 }}>{error}</Copy>
                   <Text
-                    accessibilityRole="header"
+                    accessibilityRole="button"
+                    onPress={() => {
+                      feedback();
+                      setRevision((value) => value + 1);
+                    }}
                     style={{
                       color: p.ink,
-                      fontSize: 30,
-                      lineHeight: 35,
-                      fontWeight: "700",
-                      letterSpacing: -0.8,
+                      fontSize: 13,
+                      paddingVertical: 12,
+                      fontWeight: "600",
                     }}
                   >
-                    {item.title}
+                    Coba lagi
                   </Text>
                 </View>
-                <View style={{ borderRadius: 28, backgroundColor: p.raised }}>
-                  <IconButton
-                    name={liked ? "heart" : "heart-outline"}
-                    label={liked ? "Batal sukai" : "Sukai motif"}
-                    selected={liked}
-                    onPress={() => toggleLike(item.id)}
-                  />
-                </View>
-              </View>
-              <View style={{ height: 1, backgroundColor: p.line }} />
+              )}
               <BatikInfo item={item} />
               {settings.mode === "demo" && (
-                <Copy muted style={{ fontSize: 12 }}>
-                  Koleksi demo · tersimpan di perangkat ini.
-                </Copy>
+                <View style={detailStyles.demo}>
+                  <View
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: 2,
+                      marginTop: 7,
+                      backgroundColor: p.accent,
+                    }}
+                  />
+                  <Copy muted style={{ fontSize: 11, lineHeight: 18, flex: 1 }}>
+                    Koleksi demo · tersimpan di perangkat ini. Tanggal
+                    penciptaan bersifat ilustratif.
+                  </Copy>
+                </View>
               )}
             </View>
           </>
@@ -182,3 +186,74 @@ export default function Detail() {
     </Screen>
   );
 }
+
+function DetailSkeleton() {
+  return (
+    <View
+      accessibilityLabel="Memuat karya"
+      accessibilityRole="progressbar"
+      accessibilityState={{ busy: true }}
+    >
+      <View
+        style={{
+          width: "100%",
+          aspectRatio: 0.93,
+          maxHeight: 480,
+          backgroundColor: "#141411",
+        }}
+      />
+      <View style={{ padding: 24, gap: 17 }}>
+        <View
+          style={{
+            width: 90,
+            height: 10,
+            borderRadius: 3,
+            backgroundColor: "#30231e",
+          }}
+        />
+        <View
+          style={{
+            width: "76%",
+            height: 38,
+            borderRadius: 5,
+            backgroundColor: "#1b1b18",
+          }}
+        />
+        <View
+          style={{
+            width: "48%",
+            height: 12,
+            borderRadius: 3,
+            backgroundColor: "#171714",
+          }}
+        />
+        <View
+          style={{
+            width: "100%",
+            height: 52,
+            borderRadius: 26,
+            marginTop: 12,
+            backgroundColor: "#24231e",
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+const detailStyles = StyleSheet.create({
+  error: {
+    padding: 16,
+    borderRadius: 14,
+    backgroundColor: "#2c1e19",
+    marginBottom: 24,
+  },
+  demo: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 9,
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#292822",
+  },
+});

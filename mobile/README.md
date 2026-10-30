@@ -1,6 +1,6 @@
 # TitikBatik Mobile
 
-Rilis `0.1.0-alpha` memakai SDK 58. Tidak memuat revamp foto/header setelah snapshot tersebut.
+Rilis `0.1.1-alpha` memakai SDK 58, dengan revamp detail karya, tipografi sistem, galeri gambar layar penuh, serta progressive blur pada header detail.
 
 Header iOS 26+ memakai tampilan sistem SDK 58 tanpa override background transparan. Pada iOS 27+, efek scroll edge dipilih `soft` secara eksplisit agar transisinya tetap memburam bertahap. Reduce Transparency tetap memakai background solid. Setelah mengubah konfigurasi ini dari sesi lama, lakukan reload penuh Expo Go.
 
@@ -86,7 +86,7 @@ Context katalog, bookmark, suka dan chat terpisah agar update token tidak merend
 
 Setiap cold boot atau reload penuh JS melanjutkan logo splash menjadi animasi sambil memuat preferensi lokal, lalu membuka katalog dalam sekitar 0,9 detik jika data sudah siap. Frame pertama memakai logo 100 pt tepat di tengah latar hitam, sama dengan konfigurasi splash native yang ada. Splash dilepas setelah logo React sudah ditampilkan; logo kemudian membesar dan naik sedikit sebelum membuka katalog, tanpa pembuka logo kedua. Jika pemuatan data lebih lama, katalog dibuka setelah data siap tanpa mengulang countdown. Animasi tidak berulang saat ganti tab, ganti mode, atau kembali dari background, dan dilewati ketika Reduce Motion aktif. Untuk melihat ulang di Expo Go, gunakan Reload; Fast Refresh dapat mempertahankan state boot yang sudah selesai. Expo Go tidak merepresentasikan splash release secara penuh.
 
-Versi alpha dimulai dari `0.1.0-alpha.1`. Label lengkap ditampilkan di Pengaturan; versi native iOS menggunakan `0.1.0` dengan build number `1` sesuai format Apple.
+Rilis saat ini adalah `0.1.1-alpha`. Label lengkap ditampilkan di Pengaturan; versi native iOS menggunakan `0.1.1` dengan build number `3` sesuai format Apple.
 
 Sorotan memakai kapsul navigasi di dalam hero: chevron, dots putih, dan marker aktif terracotta yang memanjang dan terisi selama 3 detik. Navigasi manual mengulang countdown, jeda melanjutkan sisa waktu, dan autoplay berhenti ketika layar tidak aktif, app di background, atau Reduce Motion aktif. Carousel menunggu animasi boot selesai sebelum menjalankan timer. Hero menyambung slide terakhir ke pertama dan sebaliknya dengan halaman salinan pada kedua ujung. Detail memakai carousel yang sama, dengan kapsul di bawah media agar kontrol video tidak tertutup; autoplay berhenti pada video, yang tetap diputar manual.
 
@@ -115,3 +115,11 @@ Test mencakup adapter, URL media, pencarian/paginasi, storage antarmode/server, 
 - Pada iOS sebelum 26 atau Android, pastikan fallback solid dan tab native tetap berfungsi. Android tidak menjadi target QA utama versi ini.
 
 Pengujian visual dan native di iPhone memerlukan perangkat nyata; environment Windows tidak menyediakan simulator iOS.
+
+## Detail karya — galeri editorial
+
+Detail memakai media berukuran besar, tipografi sistem (SF Pro di iPhone) dengan warna paper/terracotta, aksi simpan/suka yang tersinkron dengan toolbar, serta filmstrip motif, busana, dan video. Carousel infinite dan indikator autoplay yang ada tetap dipakai; kontrolnya mendapat ruang tersendiri agar tidak menutupi kontrol video. Latar aplikasi tetap hitam dan header detail tetap memakai progressive scroll-edge native.
+
+Tombol expand membuka gambar di atas layar detail melalui overFullScreen, dengan SafeAreaProvider tersendiri yang diinisialisasi dari inset layar saat ini. Viewer tidak melepas layar detail di belakangnya. Ukuran gambar diukur dari area viewer dan inset ScrollView otomatis dinonaktifkan agar tidak menggandakan safe area. Di iOS gambar dapat diperbesar dengan pinch melalui ScrollView native. Autoplay berhenti selama viewer terbuka. Video tetap dimulai oleh pengguna, serta berhenti saat meninggalkan layar/background. Palet visual mewakili **nama warna dari metadata**, bukan ekstraksi warna atau analisis gambar. Nama yang belum dikenali tetap ditampilkan tanpa menebak warnanya.
+
+Prompt dan seed berada dalam disclosure “Di balik motif”. Skeleton mengikuti bentuk galeri; kegagalan satu gambar memiliki retry di galeri dan tidak menghapus detail karya. Bila revalidasi backend gagal, karya cache tetap tampil dengan error/retry. Verifikasi browser mencakup simpan/suka, pilihan media, prompt, dan modal; pinch, blur, haptik, safe area, dan kontrol video native tetap perlu pemeriksaan di iPhone.

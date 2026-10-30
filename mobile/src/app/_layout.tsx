@@ -81,14 +81,6 @@ function Navigation() {
           }}
           options={{
             title: "Detail karya",
-            headerTransparent: Platform.OS === "ios" && !reducedTransparency,
-            headerStyle: {
-              backgroundColor:
-                Platform.OS === "ios" && !reducedTransparency
-                  ? "#000000b3"
-                  : p.paper,
-            },
-            scrollEdgeEffects: { top: "hidden" },
             gestureEnabled: true,
             headerBackTitle: title,
             headerTitle: () => <HeaderTitle mode="detail" />,
